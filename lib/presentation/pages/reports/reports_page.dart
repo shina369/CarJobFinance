@@ -14,6 +14,25 @@ class ReportsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Período do Relatório
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Período do Relatório',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  _PeriodChips(),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Resumo do Período
           Card(
             child: Padding(
@@ -121,25 +140,6 @@ class ReportsPage extends ConsumerWidget {
                       // TODO: Export JSON backup
                     },
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Filtros de Período
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Período do Relatório',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  _PeriodChips(),
                 ],
               ),
             ),
