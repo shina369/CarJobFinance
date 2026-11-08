@@ -166,7 +166,7 @@ class _MainShell extends ConsumerWidget {
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.directions_car_outlined),
@@ -186,7 +186,7 @@ class _MainShell extends ConsumerWidget {
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
-            label: 'Configurações',
+            label: 'Config',
           ),
         ],
       ),
