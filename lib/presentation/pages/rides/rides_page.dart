@@ -3,30 +3,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../presentation/controllers/controllers.dart';
+import '../../../domain/entities/ride.dart' as entity_ride;
+
 class RidesPage extends ConsumerWidget {
   const RidesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ridesState = ref.watch(ridesControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Corridas'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // TODO: Show filter dialog
-            },
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.sort),
-            onPressed: () {
-              // TODO: Show sort options
-            },
+            onPressed: () {},
           ),
         ],
       ),
-      body: _RidesList(),
+      body: ridesState.when(
+        data: (rides) => _RidesList(rides: rides),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Erro: $error')),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/rides/new'),
         icon: const Icon(Icons.add),
@@ -36,29 +41,46 @@ class RidesPage extends ConsumerWidget {
   }
 }
 
-class _RidesList extends ConsumerWidget {
+class _RidesList extends StatelessWidget {
+  const _RidesList({required this.rides});
+
+  final List<entity_ride.Ride> rides;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: Connect to rides provider
+  Widget build(BuildContext context) {
+    if (rides.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.directions_car_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Nenhuma corrida registrada', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
-        // TODO: Refresh rides
+        // Streams auto-update via provider
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 0, // TODO: rides.length
+        itemCount: rides.length,
         itemBuilder: (context, index) {
-          // TODO: Return RideCard(rides[index])
-          return const SizedBox.shrink();
+          final ride = rides[index];
+          return RideCard(ride: ride);
         },
       ),
     );
   }
 }
 
-// Placeholder para RideCard
 class RideCard extends StatelessWidget {
-  const RideCard({super.key});
+  const RideCard({super.key, required this.ride});
+
+  final entity_ride.Ride ride;
 
   @override
   Widget build(BuildContext context) {
@@ -72,13 +94,24 @@ class RideCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
-        title: const Text('Corrida Exemplo'),
-        subtitle: const Text('Uber • R\$ 25,00 • 10 km'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          // TODO: Navigate to detail
-        },
+        title: Text(ride.platform),
+        subtitle: Text(
+          '${ride.formattedDate} • ${ride.durationMinutes}min • ${ride.distanceKm.toStringAsFixed(1)} km',
+        ),
+        trailing: Text(
+          ride.formattedAmount,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+        onTap: () => context.push('/rides/${ride.id}'),
       ),
     );
   }
+}
+
+extension on entity_ride.Ride {
+  String get formattedAmount =>
+      'R\$ ${earnings.toStringAsFixed(2).replaceAll('.', ',')}';
 }

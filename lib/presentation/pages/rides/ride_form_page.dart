@@ -2,8 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../presentation/controllers/controllers.dart';
+import '../../../domain/entities/ride.dart' as entity_ride;
 
 class RideFormPage extends ConsumerStatefulWidget {
   const RideFormPage({super.key, this.rideId});
@@ -18,6 +21,7 @@ class RideFormPage extends ConsumerStatefulWidget {
 
 class _RideFormPageState extends ConsumerState<RideFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _uuid = const Uuid();
 
   // Controllers
   final _dateController = TextEditingController();
@@ -37,7 +41,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     super.initState();
     _dateController.text = _formatDate(_selectedDate);
     if (widget.isEditing) {
-      // TODO: Load existing ride data
+      _loadExistingRide();
     }
   }
 
@@ -50,6 +54,34 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     _originController.dispose();
     _destinationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingRide() async {
+    final ridesState = ref.read(ridesControllerProvider);
+    if (ridesState is entity_ride.Ride) return;
+    // Stream-based: watch and populate when ready
+    ref.listen<AsyncValue<List<entity_ride.Ride>>>(
+      ridesControllerProvider,
+      (_, next) {
+        next.whenData((rides) {
+          final ride = rides.firstWhere(
+            (r) => r.id == widget.rideId,
+            orElse: () => throw Exception('Ride not found'),
+          );
+          setState(() {
+            _selectedDate = ride.date;
+            _dateController.text = _formatDate(ride.date);
+            _earningsController.text = ride.earnings.toString();
+            _distanceController.text = ride.distanceKm.toString();
+            _durationController.text = ride.durationMinutes.toString();
+            _originController.text = ride.origin ?? '';
+            _destinationController.text = ride.destination ?? '';
+            _selectedPlatform = ride.platform;
+            _selectedRideType = ride.rideType;
+          });
+        });
+      },
+    );
   }
 
   String _formatDate(DateTime date) {
@@ -89,10 +121,65 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     }
   }
 
-  void _save() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Save ride
-      context.pop();
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final earnings = double.tryParse(
+            _earningsController.text.replaceAll(',', '.')) ??
+        0.0;
+    final distance = double.tryParse(
+            _distanceController.text.replaceAll(',', '.')) ??
+        0.0;
+    final duration = int.tryParse(_durationController.text) ?? 0;
+
+    final ride = entity_ride.Ride(
+      id: widget.rideId ?? _uuid.v4(),
+      date: _selectedDate,
+      platform: _selectedPlatform,
+      earnings: earnings,
+      distanceKm: distance,
+      durationMinutes: duration,
+      origin: _originController.text.isEmpty ? null : _originController.text,
+      destination:
+          _destinationController.text.isEmpty ? null : _destinationController.text,
+      rideType: _selectedRideType,
+      createdAt: widget.rideId != null
+          ? null
+          : DateTime.now(),
+    );
+
+    final controller = ref.read(ridesControllerProvider.notifier);
+    if (widget.isEditing) {
+      await controller.edit(ride);
+    } else {
+      await controller.add(ride);
+    }
+
+    if (mounted) context.pop();
+  }
+
+  Future<void> _delete() async {
+    if (widget.rideId == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir Corrida?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await ref.read(ridesControllerProvider.notifier).remove(widget.rideId!);
+      if (mounted) context.pop();
     }
   }
 
@@ -105,9 +192,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
           if (widget.isEditing)
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              onPressed: () {
-                // TODO: Show delete confirmation
-              },
+              onPressed: _delete,
             ),
         ],
       ),
@@ -142,7 +227,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: TextEditingController(
-                      text: '${_selectedDate.hour.toString().padLeft(2, '0')}:${_selectedDate.minute.toString().padLeft(2, '0')}',
+                      text:
+                          '${_selectedDate.hour.toString().padLeft(2, '0')}:${_selectedDate.minute.toString().padLeft(2, '0')}',
                     ),
                     readOnly: true,
                     onTap: _pickTime,
@@ -200,7 +286,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 prefixText: 'R\$ ',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Valor é obrigatório';
@@ -225,10 +312,12 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                       labelText: 'Distância (km)',
                       prefixIcon: Icon(Icons.straighten),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) return null;
-                      final km = double.tryParse(value.replaceAll(',', '.'));
+                      final km =
+                          double.tryParse(value.replaceAll(',', '.'));
                       if (km == null || km > AppConstants.maxKmPerRide) {
                         return 'Distância inválida';
                       }
@@ -291,7 +380,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
-                    child: Text(widget.isEditing ? 'Salvar Alterações' : 'Salvar Corrida'),
+                    child: Text(widget.isEditing
+                        ? 'Salvar Alterações'
+                        : 'Salvar Corrida'),
                   ),
                 ),
               ],
@@ -312,8 +403,8 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+            fontWeight: FontWeight.w600,
+          ),
     );
   }
 }

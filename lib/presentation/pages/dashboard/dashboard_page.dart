@@ -1,59 +1,45 @@
 // Dashboard Page
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../presentation/controllers/controllers.dart';
+import '../../../domain/entities/ride.dart' as entity_ride;
+import '../../../domain/entities/expense.dart' as entity_expense;
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ridesState = ref.watch(ridesControllerProvider);
+    final expensesState = ref.watch(expensesControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // TODO: Refresh data
-            },
+            onPressed: () {},
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Resumo Financeiro - Compact horizontal layout
-                  _CompactFinancialSummary(),
-                  const SizedBox(height: 8),
-
-                  // Métricas Principais - Compact grid
-                  _CompactMetricsGrid(),
-                  const SizedBox(height: 8),
-
-                  // Últimas Corridas - Minimal
-                  _CompactRecentRides(),
-                ],
-              ),
-            ),
-          );
-        },
+      body: ridesState.when(
+        data: (rides) => expensesState.when(
+          data: (expenses) => _DashboardContent(
+            rides: rides,
+            expenses: expenses,
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(child: Text('Erro: $error')),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Erro: $error')),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navigate to new ride form
-        },
+        onPressed: () => context.push('/rides/new'),
         icon: const Icon(Icons.add),
         label: const Text('Nova Corrida'),
       ),
@@ -61,10 +47,80 @@ class DashboardPage extends ConsumerWidget {
   }
 }
 
-/// Resumo financeiro compacto - horizontal layout
-class _CompactFinancialSummary extends ConsumerWidget {
+class _DashboardContent extends StatelessWidget {
+  const _DashboardContent({required this.rides, required this.expenses});
+
+  final List<entity_ride.Ride> rides;
+  final List<entity_expense.Expense> expenses;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+
+    final monthRides = rides
+        .where((r) => r.date.isAfter(monthStart.subtract(const Duration(days: 1))) &&
+            r.date.isBefore(monthEnd.add(const Duration(days: 1))))
+        .toList();
+    final monthExpenses = expenses
+        .where((e) => e.date.isAfter(monthStart.subtract(const Duration(days: 1))) &&
+            e.date.isBefore(monthEnd.add(const Duration(days: 1))))
+        .toList();
+
+    final totalEarnings =
+        monthRides.fold<double>(0, (sum, r) => sum + r.earnings);
+    final totalExpenses =
+        monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final netProfit = totalEarnings - totalExpenses;
+    final totalKm =
+        monthRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
+    final totalMinutes =
+        monthRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
+    final avgPerRide = monthRides.isNotEmpty
+        ? totalEarnings / monthRides.length
+        : 0.0;
+
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CompactFinancialSummary(
+            earnings: totalEarnings,
+            expenses: totalExpenses,
+            netProfit: netProfit,
+          ),
+          const SizedBox(height: 8),
+          _CompactMetricsGrid(
+            rideCount: monthRides.length,
+            totalKm: totalKm,
+            totalHours: (totalMinutes / 60).roundToDouble(),
+            avgPerRide: avgPerRide,
+          ),
+          const SizedBox(height: 8),
+          if (rides.isNotEmpty) _CompactRecentRides(ride: rides.last),
+        ],
+      ),
+    );
+  }
+}
+
+/// Resumo financeiro compacto - horizontal layout
+class _CompactFinancialSummary extends StatelessWidget {
+  const _CompactFinancialSummary({
+    required this.earnings,
+    required this.expenses,
+    required this.netProfit,
+  });
+
+  final double earnings;
+  final double expenses;
+  final double netProfit;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -87,38 +143,39 @@ class _CompactFinancialSummary extends ConsumerWidget {
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w500,
                       ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _CompactSummaryItem(
-                label: 'Ganhos',
-                value: 'R\$ 0,00',
-                color: Theme.of(context).colorScheme.primary,
-                icon: Icons.trending_up,
-              ),
-              const SizedBox(width: 8),
-              _CompactSummaryItem(
-                label: 'Despesas',
-                value: 'R\$ 0,00',
-                color: Theme.of(context).colorScheme.error,
-                icon: Icons.trending_down,
-              ),
-              const SizedBox(width: 8),
-              _CompactSummaryItem(
-                label: 'Lucro',
-                value: 'R\$ 0,00',
-                color: Theme.of(context).colorScheme.tertiary,
-                icon: Icons.account_balance_wallet,
-                isHighlighted: true,
-              ),
-            ],
-          ),
-        ],  // Close Column's children list
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _CompactSummaryItem(
+                  label: 'Ganhos',
+                  value: earnings,
+                  color: Theme.of(context).colorScheme.primary,
+                  icon: Icons.trending_up,
+                ),
+                const SizedBox(width: 8),
+                _CompactSummaryItem(
+                  label: 'Despesas',
+                  value: expenses,
+                  color: Theme.of(context).colorScheme.error,
+                  icon: Icons.trending_down,
+                ),
+                const SizedBox(width: 8),
+                _CompactSummaryItem(
+                  label: 'Lucro',
+                  value: netProfit,
+                  color: Theme.of(context).colorScheme.tertiary,
+                  icon: Icons.account_balance_wallet,
+                  isHighlighted: true,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -133,7 +190,7 @@ class _CompactSummaryItem extends StatelessWidget {
   });
 
   final String label;
-  final String value;
+  final double value;
   final Color color;
   final IconData icon;
   final bool isHighlighted;
@@ -176,7 +233,7 @@ class _CompactSummaryItem extends StatelessWidget {
             const SizedBox(height: 2),
             Flexible(
               child: Text(
-                value,
+                value.toStringAsFixed(2).replaceAll('.', ','),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isHighlighted
@@ -194,13 +251,26 @@ class _CompactSummaryItem extends StatelessWidget {
 }
 
 /// Grid de métricas compacto
-class _CompactMetricsGrid extends ConsumerWidget {
+class _CompactMetricsGrid extends StatelessWidget {
+  const _CompactMetricsGrid({
+    required this.rideCount,
+    required this.totalKm,
+    required this.totalHours,
+    required this.avgPerRide,
+  });
+
+  final int rideCount;
+  final double totalKm;
+  final double totalHours;
+  final double avgPerRide;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         const minCardWidth = 140.0;
-        final crossAxisCount = (constraints.maxWidth / minCardWidth).floor().clamp(2, 4);
+        final crossAxisCount =
+            (constraints.maxWidth / minCardWidth).floor().clamp(2, 4);
 
         return GridView.count(
           shrinkWrap: true,
@@ -212,25 +282,25 @@ class _CompactMetricsGrid extends ConsumerWidget {
           children: [
             _CompactMetricCard(
               title: 'Corridas',
-              value: '0',
+              value: rideCount.toString(),
               icon: Icons.directions_car,
               color: Theme.of(context).colorScheme.primary,
             ),
             _CompactMetricCard(
               title: 'Km',
-              value: '0',
+              value: totalKm.toStringAsFixed(1),
               icon: Icons.route,
               color: Theme.of(context).colorScheme.secondary,
             ),
             _CompactMetricCard(
               title: 'Horas',
-              value: '0h',
+              value: totalHours.toStringAsFixed(1),
               icon: Icons.access_time,
               color: Theme.of(context).colorScheme.tertiary,
             ),
             _CompactMetricCard(
               title: 'Média/Corrida',
-              value: 'R\$ 0,00',
+              value: avgPerRide.toStringAsFixed(2),
               icon: Icons.analytics,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -297,9 +367,13 @@ class _CompactMetricCard extends StatelessWidget {
 }
 
 /// Últimas corridas compacto
-class _CompactRecentRides extends ConsumerWidget {
+class _CompactRecentRides extends StatelessWidget {
+  const _CompactRecentRides({this.ride});
+
+  final entity_ride.Ride? ride;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -314,9 +388,7 @@ class _CompactRecentRides extends ConsumerWidget {
                   ),
             ),
             TextButton(
-              onPressed: () {
-                // Navigate to rides page
-              },
+              onPressed: () => context.push('/rides'),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 0),
@@ -332,40 +404,66 @@ class _CompactRecentRides extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 6),
-        Card(
-          elevation: 0.5,
-          child: ListTile(
-            dense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            leading: CircleAvatar(
-              radius: 18,
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: Icon(
-                Icons.directions_car,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
+        if (ride != null)
+          Card(
+            elevation: 0.5,
+            child: ListTile(
+              dense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              leading: CircleAvatar(
+                radius: 18,
+                backgroundColor:
+                    Theme.of(context).colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.directions_car,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              title: Text(ride!.platform),
+              subtitle: Text(
+                '${ride!.formattedDate} • ${ride!.durationMinutes}min',
+              ),
+              trailing: Text(
+                ride!.earnings.toStringAsFixed(2).replaceAll('.', ','),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+              onTap: () => context.push('/rides/${ride!.id}'),
+            ),
+          )
+        else
+          Card(
+            elevation: 0.5,
+            child: ListTile(
+              dense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              leading: CircleAvatar(
+                radius: 18,
+                backgroundColor:
+                    Theme.of(context).colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.directions_car_outlined,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              title: Text(
+                'Nenhuma corrida registrada',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              subtitle: Text(
+                'Toque em + para adicionar',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
-            title: Text(
-              'Nenhuma corrida registrada',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            subtitle: Text(
-              'Toque em + para adicionar',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            trailing: Icon(
-              Icons.chevron_right,
-              size: 18,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            onTap: () {
-              // TODO: Navigate to rides page
-            },
           ),
-        ),
       ],
     );
   }

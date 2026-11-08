@@ -2,7 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../presentation/controllers/controllers.dart';
+import '../../../domain/entities/expense.dart' as entity_expense;
 
 class ExpenseFormPage extends ConsumerStatefulWidget {
   const ExpenseFormPage({super.key, this.expenseId});
@@ -17,6 +20,7 @@ class ExpenseFormPage extends ConsumerStatefulWidget {
 
 class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _uuid = const Uuid();
 
   // Controllers
   final _dateController = TextEditingController();
@@ -33,7 +37,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     super.initState();
     _dateController.text = _formatDate(_selectedDate);
     if (widget.isEditing) {
-      // TODO: Load existing expense data
+      _loadExistingExpense();
     }
   }
 
@@ -43,6 +47,28 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     _amountController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingExpense() async {
+    ref.listen<AsyncValue<List<entity_expense.Expense>>>(
+      expensesControllerProvider,
+      (_, next) {
+        next.whenData((expenses) {
+          final expense = expenses.firstWhere(
+            (e) => e.id == widget.expenseId,
+            orElse: () => throw Exception('Expense not found'),
+          );
+          setState(() {
+            _selectedDate = expense.date;
+            _dateController.text = _formatDate(expense.date);
+            _amountController.text = expense.amount.toString();
+            _descriptionController.text = expense.description ?? '';
+            _selectedCategory = expense.category;
+            _isRecurring = expense.isRecurring;
+          });
+        });
+      },
+    );
   }
 
   String _formatDate(DateTime date) {
@@ -64,10 +90,56 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     }
   }
 
-  void _save() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Save expense
-      context.pop();
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final amount = double.tryParse(
+            _amountController.text.replaceAll(',', '.')) ??
+        0.0;
+
+    final expense = entity_expense.Expense(
+      id: widget.expenseId ?? _uuid.v4(),
+      date: _selectedDate,
+      category: _selectedCategory,
+      amount: amount,
+      description: _descriptionController.text.isEmpty
+          ? null
+          : _descriptionController.text,
+      createdAt: widget.expenseId != null ? null : DateTime.now(),
+    );
+
+    final controller = ref.read(expensesControllerProvider.notifier);
+    if (widget.isEditing) {
+      await controller.edit(expense);
+    } else {
+      await controller.add(expense);
+    }
+
+    if (mounted) context.pop();
+  }
+
+  Future<void> _delete() async {
+    if (widget.expenseId == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir Despesa?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await ref.read(expensesControllerProvider.notifier).remove(widget.expenseId!);
+      if (mounted) context.pop();
     }
   }
 
@@ -80,9 +152,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
           if (widget.isEditing)
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              onPressed: () {
-                // TODO: Show delete confirmation
-              },
+              onPressed: _delete,
             ),
         ],
       ),
