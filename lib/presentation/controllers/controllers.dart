@@ -132,3 +132,46 @@ class ExpensesController
     super.dispose();
   }
 }
+
+// ===== SETTINGS =====
+final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
+  return SettingsRepositoryImpl(ref.watch(appDaoProvider));
+});
+
+final monthlyGoalProvider = FutureProvider<double>((ref) async {
+  final repository = ref.watch(settingsRepositoryProvider);
+  return repository.getMonthlyGoal();
+});
+
+final monthlyGoalControllerProvider =
+    StateNotifierProvider<MonthlyGoalController, AsyncValue<double>>((ref) {
+  return MonthlyGoalController(ref.watch(settingsRepositoryProvider));
+});
+
+class MonthlyGoalController extends StateNotifier<AsyncValue<double>> {
+  final SettingsRepository _repository;
+
+  MonthlyGoalController(this._repository) : super(const AsyncValue.loading()) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = const AsyncValue.loading();
+    try {
+      final goal = await _repository.getMonthlyGoal();
+      state = AsyncValue.data(goal);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> setGoal(double value) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.setMonthlyGoal(value);
+      state = AsyncValue.data(value);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}

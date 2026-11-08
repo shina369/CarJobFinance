@@ -187,3 +187,25 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         updatedAt: row.updatedAt,
       );
 }
+
+class SettingsRepositoryImpl implements SettingsRepository {
+  final AppDao dao;
+
+  SettingsRepositoryImpl(this.dao);
+
+  static const _monthlyGoalKey = 'monthly_goal';
+
+  @override
+  Future<double> getMonthlyGoal() async {
+    final value = await dao.getSetting(_monthlyGoalKey);
+    if (value != null) {
+      return double.tryParse(value) ?? 5000.0;
+    }
+    return 5000.0;
+  }
+
+  @override
+  Future<void> setMonthlyGoal(double value) async {
+    await dao.setSetting(_monthlyGoalKey, value.toString());
+  }
+}

@@ -30,3 +30,8 @@ abstract class ExpenseRepository {
   Future<Map<String, double>> expensesByCategory(
       DateTime start, DateTime end);
 }
+
+abstract class SettingsRepository {
+  Future<double> getMonthlyGoal();
+  Future<void> setMonthlyGoal(double value);
+}
