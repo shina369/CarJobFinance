@@ -38,10 +38,32 @@ class DashboardPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Erro: $error')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/rides/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Nova Corrida'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Nova Corrida (esquerda)
+            FloatingActionButton.extended(
+              heroTag: 'newRide',
+              onPressed: () => context.push('/rides/new'),
+              icon: const Icon(Icons.directions_car),
+              label: const Text('Nova Corrida'),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+            // Nova Despesa (direita)
+            FloatingActionButton.extended(
+              heroTag: 'newExpense',
+              onPressed: () => context.push('/expenses/new'),
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Nova Despesa'),
+              backgroundColor: Colors.orange.shade700,
+              foregroundColor: Colors.white,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -56,30 +78,44 @@ class _DashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
 
-    final monthRides = rides
-        .where((r) => r.date.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-            r.date.isBefore(monthEnd.add(const Duration(days: 1))))
+    final todayRides = rides
+        .where((r) => r.date.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
+            r.date.isBefore(todayEnd.add(const Duration(seconds: 1))))
         .toList();
-    final monthExpenses = expenses
-        .where((e) => e.date.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-            e.date.isBefore(monthEnd.add(const Duration(days: 1))))
+    final todayExpenses = expenses
+        .where((e) => e.date.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
+            e.date.isBefore(todayEnd.add(const Duration(seconds: 1))))
         .toList();
 
     final totalEarnings =
-        monthRides.fold<double>(0, (sum, r) => sum + r.earnings);
+        todayRides.fold<double>(0, (sum, r) => sum + r.earnings);
     final totalExpenses =
-        monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+        todayExpenses.fold<double>(0, (sum, e) => sum + e.amount);
     final netProfit = totalEarnings - totalExpenses;
     final totalKm =
-        monthRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
-    final totalMinutes =
-        monthRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
-    final avgPerRide = monthRides.isNotEmpty
-        ? totalEarnings / monthRides.length
-        : 0.0;
+        todayRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
+
+    // Month data
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 1).subtract(const Duration(seconds: 1));
+    final monthRides = rides
+        .where((r) => r.date.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
+            r.date.isBefore(monthEnd.add(const Duration(seconds: 1))))
+        .toList();
+    final monthExpenses = expenses
+        .where((e) => e.date.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
+            e.date.isBefore(monthEnd.add(const Duration(seconds: 1))))
+        .toList();
+    final monthEarnings = monthRides.fold<double>(0, (sum, r) => sum + r.earnings);
+    final monthExpensesTotal = monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+
+    // Format today's date: "Quinta-feira, 12/10/26"
+    final todayLabel =
+        '${_weekdayName(now.weekday)}, ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year.toString().substring(2)}';
+    final monthLabel = '${_monthName(now.month)} de ${now.year}';
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -91,19 +127,48 @@ class _DashboardContent extends StatelessWidget {
             earnings: totalEarnings,
             expenses: totalExpenses,
             netProfit: netProfit,
+            dateLabel: todayLabel,
+            rideCount: todayRides.length,
+            totalKm: totalKm,
+          ),
+          const SizedBox(height: 8),
+          // Resumo do Mês - only Ganhos and Despesas
+          _MonthSummaryCard(
+            earnings: monthEarnings,
+            expenses: monthExpensesTotal,
+            dateLabel: monthLabel,
           ),
           const SizedBox(height: 8),
           _CompactMetricsGrid(
-            rideCount: monthRides.length,
+            rideCount: todayRides.length,
             totalKm: totalKm,
-            totalHours: (totalMinutes / 60).roundToDouble(),
-            avgPerRide: avgPerRide,
           ),
           const SizedBox(height: 8),
           if (rides.isNotEmpty) _CompactRecentRides(ride: rides.last),
         ],
       ),
     );
+  }
+
+  String _monthName(int month) {
+    const names = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    return names[month - 1];
+  }
+
+  String _weekdayName(int weekday) {
+    const names = [
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+      'Domingo',
+    ];
+    return names[weekday - 1];
   }
 }
 
@@ -113,11 +178,111 @@ class _CompactFinancialSummary extends StatelessWidget {
     required this.earnings,
     required this.expenses,
     required this.netProfit,
+    required this.dateLabel,
+    required this.rideCount,
+    required this.totalKm,
   });
 
   final double earnings;
   final double expenses;
   final double netProfit;
+  final String dateLabel;
+  final int rideCount;
+  final double totalKm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Resumo do Dia',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                Text(
+                  dateLabel,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Lucro em destaque no topo
+            _CompactSummaryItem(
+              label: 'Lucro',
+              value: netProfit,
+              color: netProfit >= 0 ? Colors.green : Colors.red,
+              icon: Icons.account_balance_wallet,
+              isHighlighted: true,
+              fullWidth: true,
+            ),
+            const SizedBox(height: 12),
+            // Ganhos e Despesas lado a lado
+            Row(
+              children: [
+                _CompactSummaryItem(
+                  label: 'Ganhos',
+                  value: earnings,
+                  color: Theme.of(context).colorScheme.primary,
+                  icon: Icons.trending_up,
+                ),
+                const SizedBox(width: 8),
+                _CompactSummaryItem(
+                  label: 'Despesas',
+                  value: expenses,
+                  color: Theme.of(context).colorScheme.error,
+                  icon: Icons.trending_down,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Corridas e Km lado a lado
+            Row(
+              children: [
+                _CompactSummaryItem(
+                  label: 'Corridas',
+                  value: rideCount.toDouble(),
+                  color: Theme.of(context).colorScheme.secondary,
+                  icon: Icons.directions_car,
+                ),
+                const SizedBox(width: 8),
+                _CompactSummaryItem(
+                  label: 'Km',
+                  value: totalKm,
+                  color: Theme.of(context).colorScheme.tertiary,
+                  icon: Icons.route,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Resumo do Mês - apenas Ganhos e Despesas
+class _MonthSummaryCard extends StatelessWidget {
+  const _MonthSummaryCard({
+    required this.earnings,
+    required this.expenses,
+    required this.dateLabel,
+  });
+
+  final double earnings;
+  final double expenses;
+  final String dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +303,7 @@ class _CompactFinancialSummary extends StatelessWidget {
                       ),
                 ),
                 Text(
-                  'Este Mês',
+                  dateLabel,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w500,
@@ -147,17 +312,6 @@ class _CompactFinancialSummary extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            // Lucro em destaque no topo
-            _CompactSummaryItem(
-              label: 'Lucro',
-              value: netProfit,
-              color: netProfit >= 0 ? Colors.green : Colors.red,
-              icon: Icons.account_balance_wallet,
-              isHighlighted: true,
-              fullWidth: true,
-            ),
-            const SizedBox(height: 12),
-            // Ganhos e Despesas lado a lado
             Row(
               children: [
                 _CompactSummaryItem(
@@ -297,14 +451,10 @@ class _CompactMetricsGrid extends StatelessWidget {
   const _CompactMetricsGrid({
     required this.rideCount,
     required this.totalKm,
-    required this.totalHours,
-    required this.avgPerRide,
   });
 
   final int rideCount;
   final double totalKm;
-  final double totalHours;
-  final double avgPerRide;
 
   @override
   Widget build(BuildContext context) {
@@ -333,18 +483,6 @@ class _CompactMetricsGrid extends StatelessWidget {
               value: totalKm.toStringAsFixed(1),
               icon: Icons.route,
               color: Theme.of(context).colorScheme.secondary,
-            ),
-            _CompactMetricCard(
-              title: 'Horas',
-              value: totalHours.toStringAsFixed(1),
-              icon: Icons.access_time,
-              color: Theme.of(context).colorScheme.tertiary,
-            ),
-            _CompactMetricCard(
-              title: 'Média/Corrida',
-              value: avgPerRide.toStringAsFixed(2),
-              icon: Icons.analytics,
-              color: Theme.of(context).colorScheme.primary,
             ),
           ],
         );
