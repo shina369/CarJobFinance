@@ -1,6 +1,7 @@
 // Reports Page - Relatórios e exportação
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../presentation/controllers/controllers.dart';
 
@@ -369,7 +370,7 @@ class _ReportsContent extends ConsumerWidget {
   }
 
   String _formatCurrency(double value) {
-    return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+    return 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(value)}';
   }
 }
 

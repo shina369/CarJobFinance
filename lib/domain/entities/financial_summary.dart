@@ -1,5 +1,6 @@
 // Entidades de domínio - FinancialSummary (Resumo Financeiro)
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:intl/intl.dart';
 
 part 'financial_summary.freezed.dart';
 part 'financial_summary.g.dart';
@@ -25,11 +26,8 @@ class FinancialSummary with _$FinancialSummary {
   const FinancialSummary._();
 
   // Helpers
-  String get formattedNetProfit =>
-      'R\$ ${netProfit.toStringAsFixed(2).replaceAll('.', ',')}';
-  String get formattedTotalEarnings =>
-      'R\$ ${totalEarnings.toStringAsFixed(2).replaceAll('.', ',')}';
-  String get formattedTotalExpenses =>
-      'R\$ ${totalExpenses.toStringAsFixed(2).replaceAll('.', ',')}';
+  String get formattedNetProfit => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(netProfit)}';
+  String get formattedTotalEarnings => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalEarnings)}';
+  String get formattedTotalExpenses => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalExpenses)}';
   bool get isProfitable => netProfit >= 0;
 }

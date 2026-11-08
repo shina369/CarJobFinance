@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
@@ -112,6 +113,5 @@ class RideCard extends StatelessWidget {
 }
 
 extension on entity_ride.Ride {
-  String get formattedAmount =>
-      'R\$ ${earnings.toStringAsFixed(2).replaceAll('.', ',')}';
+  String get formattedAmount => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(earnings)}';
 }

@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../presentation/controllers/controllers.dart';
@@ -86,11 +88,12 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
     final controller = TextEditingController(text: _monthlyGoal.toStringAsFixed(2).replaceAll('.', ','));
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Definir Objetivo do Mês'),
-        content: const TextField(
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
             labelText: 'Valor do objetivo (R\$)',
             prefixText: 'R\$ ',
             border: OutlineInputBorder(),
@@ -98,7 +101,7 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           FilledButton(
@@ -107,7 +110,7 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
               if (value != null && value >= 0) {
                 setState(() => _monthlyGoal = value);
               }
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             child: const Text('Salvar'),
           ),
@@ -173,7 +176,7 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
             totalKm: totalKm,
           ),
           const SizedBox(height: 8),
-          // Resumo do Mês - only Ganhos and Despesas
+          // Resumo do Mês
           _MonthSummaryCard(
             earnings: monthEarnings,
             expenses: monthExpensesTotal,
@@ -182,7 +185,7 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
             onSetGoal: _showSetGoalDialog,
           ),
           const SizedBox(height: 8),
-          if (widget.rides.isNotEmpty) _CompactRecentRides(ride: widget.rides.last),
+          if (widget.rides.isNotEmpty) _CompactRecentRides(rides: widget.rides.take(2).toList()),
         ],
       ),
     );
@@ -208,6 +211,10 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
     ];
     return names[weekday - 1];
   }
+}
+
+String _formatCurrency(double value) {
+  return NumberFormat('#,##0.00', 'pt_BR').format(value);
 }
 
 /// Resumo financeiro compacto - horizontal layout
@@ -293,6 +300,7 @@ class _CompactFinancialSummary extends StatelessWidget {
                   value: rideCount.toDouble(),
                   color: Theme.of(context).colorScheme.secondary,
                   icon: Icons.directions_car,
+                  displayValue: NumberFormat('#,##0', 'pt_BR').format(rideCount),
                 ),
                 const SizedBox(width: 8),
                 _CompactSummaryItem(
@@ -338,34 +346,18 @@ class _MonthSummaryCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
+            Text(
                   'Resumo do Mês',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                TextButton.icon(
-                  onPressed: onSetGoal,
-                  icon: const Icon(Icons.flag_outlined, size: 18),
-                  label: const Text('Novo Objetivo'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 12),
             // Objetivo do mês em destaque (azul)
             _CompactSummaryItem(
               label: 'Objetivo do mês',
               value: monthlyGoal,
-              color: Colors.blue,
+              color: Colors.lightBlue[50]!,
               icon: Icons.flag,
               isHighlighted: true,
               fullWidth: true,
@@ -388,40 +380,31 @@ class _MonthSummaryCard extends ConsumerWidget {
                       Text(
                         '${goalProgress.toStringAsFixed(0)}%',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.blue,
+                              color: Colors.lightBlue[50]!,
                               fontWeight: FontWeight.bold,
                             ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: goalProgress / 100,
-                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-                    minHeight: 6,
-                    borderRadius: BorderRadius.circular(3),
+                  _ProgressBar(value: goalProgress / 100),
+                  const SizedBox(height: 12),
+                  // Botão Novo Objetivo abaixo do progresso
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: onSetGoal,
+                      icon: const Icon(Icons.flag_outlined, size: 18),
+                      label: const Text('Novo Objetivo'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.lightBlue[50]!,
+                        side: const BorderSide(color: Colors.blue),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                 ],
               ),
-            Row(
-              children: [
-                _CompactSummaryItem(
-                  label: 'Ganhos',
-                  value: earnings,
-                  color: Theme.of(context).colorScheme.primary,
-                  icon: Icons.trending_up,
-                ),
-                const SizedBox(width: 8),
-                _CompactSummaryItem(
-                  label: 'Despesas',
-                  value: expenses,
-                  color: Theme.of(context).colorScheme.error,
-                  icon: Icons.trending_down,
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -438,6 +421,7 @@ class _CompactSummaryItem extends StatelessWidget {
     required this.icon,
     this.isHighlighted = false,
     this.fullWidth = false,
+    this.displayValue,
   });
 
   final String label;
@@ -446,6 +430,7 @@ class _CompactSummaryItem extends StatelessWidget {
   final IconData icon;
   final bool isHighlighted;
   final bool fullWidth;
+  final String? displayValue;
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +459,7 @@ class _CompactSummaryItem extends StatelessWidget {
               ],
             ),
             Text(
-              value.toStringAsFixed(2).replaceAll('.', ','),
+              displayValue ?? _formatCurrency(value),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: color,
@@ -522,7 +507,7 @@ class _CompactSummaryItem extends StatelessWidget {
             const SizedBox(height: 2),
             Flexible(
               child: Text(
-                value.toStringAsFixed(2).replaceAll('.', ','),
+                displayValue ?? _formatCurrency(value),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isHighlighted
@@ -541,9 +526,9 @@ class _CompactSummaryItem extends StatelessWidget {
 
 /// Últimas corridas compacto
 class _CompactRecentRides extends StatelessWidget {
-  const _CompactRecentRides({this.ride});
+  const _CompactRecentRides({this.rides});
 
-  final entity_ride.Ride? ride;
+  final List<entity_ride.Ride>? rides;
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +540,7 @@ class _CompactRecentRides extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Última Corrida',
+              'Últimas Corridas',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -577,67 +562,148 @@ class _CompactRecentRides extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        if (ride != null)
-          Card(
-            elevation: 0.5,
-            child: ListTile(
-              dense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              leading: CircleAvatar(
-                radius: 18,
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.directions_car,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              title: Text(ride!.platform),
-              subtitle: Text(
-                '${ride!.formattedDate} • ${ride!.durationMinutes}min',
-              ),
-              trailing: Text(
-                ride!.earnings.toStringAsFixed(2).replaceAll('.', ','),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+        ...?rides?.map((ride) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Card(
+                elevation: 0.5,
+                child: ListTile(
+                  dense: true,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.directions_car,
+                      size: 18,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-              ),
-              onTap: () => context.push('/rides/${ride!.id}'),
-            ),
-          )
-        else
-          Card(
-            elevation: 0.5,
-            child: ListTile(
-              dense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              leading: CircleAvatar(
-                radius: 18,
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.directions_car_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  title: Text(ride.platform),
+                  subtitle: Text(
+                    '${ride.formattedDate} • ${ride.durationMinutes}min',
+                  ),
+                  trailing: Text(
+                    _formatCurrency(ride.earnings),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
+                  onTap: () => context.push('/rides/${ride.id}'),
                 ),
               ),
-              title: Text(
-                'Nenhuma corrida registrada',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              subtitle: Text(
-                'Toque em + para adicionar',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ),
+            )),
       ],
     );
   }
+}
+
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barWidth = constraints.maxWidth;
+        return SizedBox(
+          height: 36,
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: CustomPaint(
+                    painter: _BarProgressPainter(value: value),
+                    size: Size(barWidth, 10),
+                  ),
+                ),
+              ),
+              if (value > 0 && barWidth > 0)
+                Positioned(
+                  left: barWidth * value.clamp(0.0, 1.0),
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: SvgPicture.asset(
+                      'assets/icons/car.svg',
+                      width: 16,
+                      height: 16,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BarProgressPainter extends CustomPainter {
+  _BarProgressPainter({required this.value});
+
+  final double value;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width <= 0) return;
+
+    final trackPaint = Paint()
+      ..color = (Colors.lightBlue[50]!).withValues(alpha: 0.2)
+      ..style = PaintingStyle.fill;
+
+    final progressPaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
+    final radius = size.height / 2;
+    final barHeight = size.height;
+
+    // Track background
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, barHeight),
+        Radius.circular(radius),
+      ),
+      trackPaint,
+    );
+
+    // Progress fill
+    final progressWidth = size.width * value.clamp(0.0, 1.0);
+    if (progressWidth > 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, progressWidth, barHeight),
+          Radius.circular(radius),
+        ),
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BarProgressPainter oldDelegate) =>
+      oldDelegate.value != value;
 }
