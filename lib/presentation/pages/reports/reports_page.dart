@@ -73,56 +73,77 @@ class _PeriodDropdown extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(selectedReportPeriodProvider);
 
-    return PopupMenuButton<ReportPeriod>(
-      initialValue: selectedPeriod,
-      onSelected: (period) {
-        ref.read(selectedReportPeriodProvider.notifier).state = period;
-      },
-      itemBuilder: (context) => ReportPeriod.values.map((period) {
-        return PopupMenuItem<ReportPeriod>(
-          value: period,
-          child: Row(
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return OutlinedButton.icon(
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          label: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (selectedPeriod == period)
-                Icon(
-                  Icons.check,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                )
-              else
-                const SizedBox(width: 18),
-              const SizedBox(width: 12),
-              Text(period.label),
+              Icon(
+                Icons.date_range,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  selectedPeriod.label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
+          ),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+        );
+      },
+      menuChildren: ReportPeriod.values.map((period) {
+        return MenuItemButton(
+          onPressed: () {
+            ref.read(selectedReportPeriodProvider.notifier).state = period;
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                if (selectedPeriod == period)
+                  Icon(
+                    Icons.check,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  )
+                else
+                  const SizedBox(width: 20),
+                const SizedBox(width: 12),
+                Text(period.label),
+              ],
+            ),
           ),
         );
       }).toList(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.date_range,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              selectedPeriod.label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -192,9 +213,22 @@ class _ReportsContent extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Resumo Financeiro (${period.label})',
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Resumo Financeiro',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            TextSpan(
+                              text: '\n${period.label}',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _SummaryRow(

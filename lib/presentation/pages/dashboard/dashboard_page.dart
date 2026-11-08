@@ -146,7 +146,18 @@ class _CompactFinancialSummary extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            // Lucro em destaque no topo
+            _CompactSummaryItem(
+              label: 'Lucro',
+              value: netProfit,
+              color: netProfit >= 0 ? Colors.green : Colors.red,
+              icon: Icons.account_balance_wallet,
+              isHighlighted: true,
+              fullWidth: true,
+            ),
+            const SizedBox(height: 12),
+            // Ganhos e Despesas lado a lado
             Row(
               children: [
                 _CompactSummaryItem(
@@ -161,14 +172,6 @@ class _CompactFinancialSummary extends StatelessWidget {
                   value: expenses,
                   color: Theme.of(context).colorScheme.error,
                   icon: Icons.trending_down,
-                ),
-                const SizedBox(width: 8),
-                _CompactSummaryItem(
-                  label: 'Lucro',
-                  value: netProfit,
-                  color: Theme.of(context).colorScheme.tertiary,
-                  icon: Icons.account_balance_wallet,
-                  isHighlighted: true,
                 ),
               ],
             ),
@@ -187,6 +190,7 @@ class _CompactSummaryItem extends StatelessWidget {
     required this.color,
     required this.icon,
     this.isHighlighted = false,
+    this.fullWidth = false,
   });
 
   final String label;
@@ -194,9 +198,47 @@ class _CompactSummaryItem extends StatelessWidget {
   final Color color;
   final IconData icon;
   final bool isHighlighted;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
+    if (fullWidth) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+            Text(
+              value.toStringAsFixed(2).replaceAll('.', ','),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Compact version (side by side)
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -335,8 +377,8 @@ class _CompactMetricCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(height: 1),
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 2),
             Flexible(
               child: Text(
                 value,
