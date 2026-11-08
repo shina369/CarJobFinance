@@ -139,11 +139,6 @@ class _DashboardContent extends StatelessWidget {
             dateLabel: monthLabel,
           ),
           const SizedBox(height: 8),
-          _CompactMetricsGrid(
-            rideCount: todayRides.length,
-            totalKm: totalKm,
-          ),
-          const SizedBox(height: 8),
           if (rides.isNotEmpty) _CompactRecentRides(ride: rides.last),
         ],
       ),
@@ -436,106 +431,6 @@ class _CompactSummaryItem extends StatelessWidget {
                           ? color
                           : Theme.of(context).colorScheme.onSurface,
                     ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Grid de métricas compacto
-class _CompactMetricsGrid extends StatelessWidget {
-  const _CompactMetricsGrid({
-    required this.rideCount,
-    required this.totalKm,
-  });
-
-  final int rideCount;
-  final double totalKm;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const minCardWidth = 140.0;
-        final crossAxisCount =
-            (constraints.maxWidth / minCardWidth).floor().clamp(2, 4);
-
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 6,
-          mainAxisSpacing: 6,
-          childAspectRatio: 2.2,
-          children: [
-            _CompactMetricCard(
-              title: 'Corridas',
-              value: rideCount.toString(),
-              icon: Icons.directions_car,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            _CompactMetricCard(
-              title: 'Km',
-              value: totalKm.toStringAsFixed(1),
-              icon: Icons.route,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Card de métrica compacto
-class _CompactMetricCard extends StatelessWidget {
-  const _CompactMetricCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0.5,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 2),
-            Flexible(
-              child: Text(
-                value,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Flexible(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
