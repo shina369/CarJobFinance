@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../core/constants/app_constants.dart';
 
 class ExpenseFormPage extends ConsumerStatefulWidget {
@@ -93,7 +92,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
           padding: const EdgeInsets.all(16),
           children: [
             // Data
-            _SectionTitle('Data'),
+            const _SectionTitle('Data'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _dateController,
@@ -113,7 +112,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Categoria
-            _SectionTitle('Categoria'),
+            const _SectionTitle('Categoria'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _selectedCategory,
@@ -130,7 +129,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Valor
-            _SectionTitle('Valor'),
+            const _SectionTitle('Valor'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _amountController,
@@ -139,8 +138,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 prefixText: 'R\$ ',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Valor é obrigatório';
@@ -154,7 +152,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Descrição
-            _SectionTitle('Descrição (Opcional)'),
+            const _SectionTitle('Descrição (Opcional)'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _descriptionController,
@@ -168,7 +166,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Recorrente
-            _SectionTitle('Opções'),
+            const _SectionTitle('Opções'),
             const SizedBox(height: 8),
             SwitchListTile(
               title: const Text('Despesa Recorrente'),
@@ -195,9 +193,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
-                    child: Text(widget.isEditing
-                        ? 'Salvar Alterações'
-                        : 'Salvar Despesa'),
+                    child: Text(widget.isEditing ? 'Salvar Alterações' : 'Salvar Despesa'),
                   ),
                 ),
               ],
@@ -218,8 +214,8 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }

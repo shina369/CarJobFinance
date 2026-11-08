@@ -14,25 +14,6 @@ class ReportsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Período do Relatório
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Período do Relatório',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  _PeriodChips(),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Resumo do Período
           Card(
             child: Padding(
@@ -45,16 +26,10 @@ class ReportsPage extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  _SummaryRow(
-                      label: 'Total de Ganhos',
-                      value: 'R\$ 0,00',
-                      isPositive: true),
-                  _SummaryRow(
-                      label: 'Total de Despesas',
-                      value: 'R\$ 0,00',
-                      isPositive: false),
+                  const _SummaryRow(label: 'Total de Ganhos', value: 'R\$ 0,00', isPositive: true),
+                  const _SummaryRow(label: 'Total de Despesas', value: 'R\$ 0,00', isPositive: false),
                   const Divider(),
-                  _SummaryRow(
+                  const _SummaryRow(
                     label: 'Lucro Líquido',
                     value: 'R\$ 0,00',
                     isPositive: true,
@@ -78,12 +53,12 @@ class ReportsPage extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  _MetricRow(label: 'Corridas Realizadas', value: '0'),
-                  _MetricRow(label: 'Quilometragem Total', value: '0 km'),
-                  _MetricRow(label: 'Horas Trabalhadas', value: '0h'),
-                  _MetricRow(label: 'Média por km', value: 'R\$ 0,00/km'),
-                  _MetricRow(label: 'Média por hora', value: 'R\$ 0,00/h'),
-                  _MetricRow(label: 'Média por corrida', value: 'R\$ 0,00'),
+                  const _MetricRow(label: 'Corridas Realizadas', value: '0'),
+                  const _MetricRow(label: 'Quilometragem Total', value: '0 km'),
+                  const _MetricRow(label: 'Horas Trabalhadas', value: '0h'),
+                  const _MetricRow(label: 'Média por km', value: 'R\$ 0,00/km'),
+                  const _MetricRow(label: 'Média por hora', value: 'R\$ 0,00/h'),
+                  const _MetricRow(label: 'Média por corrida', value: 'R\$ 0,00'),
                 ],
               ),
             ),
@@ -144,6 +119,25 @@ class ReportsPage extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Filtros de Período
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Período do Relatório',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  _PeriodChips(),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -177,15 +171,15 @@ class _SummaryRow extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                ),
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -213,8 +207,8 @@ class _MetricRow extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

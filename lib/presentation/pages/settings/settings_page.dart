@@ -1,6 +1,7 @@
 // Settings Page - Configurações
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 
@@ -17,7 +18,7 @@ class SettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Aparência
-          _SectionHeader('Aparência'),
+          const _SectionHeader('Aparência'),
           Card(
             child: Column(
               children: [
@@ -55,7 +56,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Dados
-          _SectionHeader('Dados e Backup'),
+          const _SectionHeader('Dados e Backup'),
           Card(
             child: Column(
               children: [
@@ -78,8 +79,7 @@ class SettingsPage extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: const Text('Limpar Todos os Dados'),
-                  subtitle:
-                      const Text('Apaga corridas, despesas e configurações'),
+                  subtitle: const Text('Apaga corridas, despesas e configurações'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showClearDataDialog(context),
                 ),
@@ -89,7 +89,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Notificações
-          _SectionHeader('Notificações'),
+          const _SectionHeader('Notificações'),
           Card(
             child: Column(
               children: [
@@ -129,7 +129,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sobre
-          _SectionHeader('Sobre'),
+          const _SectionHeader('Sobre'),
           Card(
             child: Column(
               children: [
@@ -287,9 +287,9 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

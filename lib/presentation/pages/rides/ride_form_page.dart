@@ -117,7 +117,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
           padding: const EdgeInsets.all(16),
           children: [
             // Data e Hora
-            _SectionTitle('Data e Hora'),
+            const _SectionTitle('Data e Hora'),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -142,8 +142,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: TextEditingController(
-                      text:
-                          '${_selectedDate.hour.toString().padLeft(2, '0')}:${_selectedDate.minute.toString().padLeft(2, '0')}',
+                      text: '${_selectedDate.hour.toString().padLeft(2, '0')}:${_selectedDate.minute.toString().padLeft(2, '0')}',
                     ),
                     readOnly: true,
                     onTap: _pickTime,
@@ -158,10 +157,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Plataforma
-            _SectionTitle('Plataforma'),
+            const _SectionTitle('Plataforma'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedPlatform,
+              initialValue: _selectedPlatform,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.apps),
               ),
@@ -175,10 +174,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Tipo de Corrida
-            _SectionTitle('Tipo de Corrida'),
+            const _SectionTitle('Tipo de Corrida'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedRideType,
+              initialValue: _selectedRideType,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.star_outline),
               ),
@@ -192,7 +191,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Ganhos
-            _SectionTitle('Ganhos'),
+            const _SectionTitle('Ganhos'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _earningsController,
@@ -201,8 +200,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 prefixText: 'R\$ ',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Valor é obrigatório';
@@ -216,7 +214,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Distância e Duração
-            _SectionTitle('Distância e Duração'),
+            const _SectionTitle('Distância e Duração'),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -227,8 +225,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                       labelText: 'Distância (km)',
                       prefixIcon: Icon(Icons.straighten),
                     ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) return null;
                       final km = double.tryParse(value.replaceAll(',', '.'));
@@ -262,7 +259,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Origem e Destino
-            _SectionTitle('Origem e Destino (Opcional)'),
+            const _SectionTitle('Origem e Destino (Opcional)'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _originController,
@@ -294,9 +291,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
-                    child: Text(widget.isEditing
-                        ? 'Salvar Alterações'
-                        : 'Salvar Corrida'),
+                    child: Text(widget.isEditing ? 'Salvar Alterações' : 'Salvar Corrida'),
                   ),
                 ),
               ],
@@ -317,8 +312,8 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
