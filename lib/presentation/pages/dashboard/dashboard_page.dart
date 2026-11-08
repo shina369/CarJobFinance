@@ -137,6 +137,7 @@ class _DashboardContent extends StatelessWidget {
             earnings: monthEarnings,
             expenses: monthExpensesTotal,
             dateLabel: monthLabel,
+            monthlyGoal: 5000.0, // Meta mensal padrão: R$ 5.000
           ),
           const SizedBox(height: 8),
           if (rides.isNotEmpty) _CompactRecentRides(ride: rides.last),
@@ -273,14 +274,19 @@ class _MonthSummaryCard extends StatelessWidget {
     required this.earnings,
     required this.expenses,
     required this.dateLabel,
+    required this.monthlyGoal,
   });
 
   final double earnings;
   final double expenses;
   final String dateLabel;
+  final double monthlyGoal;
 
   @override
   Widget build(BuildContext context) {
+    final netProfit = earnings - expenses;
+    final goalProgress = monthlyGoal > 0 ? (netProfit / monthlyGoal * 100).clamp(0, 100) : 0.0;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -307,6 +313,50 @@ class _MonthSummaryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
+            // Objetivo do mês em destaque (azul)
+            _CompactSummaryItem(
+              label: 'Objetivo do mês',
+              value: monthlyGoal,
+              color: Colors.blue,
+              icon: Icons.flag,
+              isHighlighted: true,
+              fullWidth: true,
+            ),
+            const SizedBox(height: 12),
+            // Progresso do objetivo
+            if (monthlyGoal > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Progresso',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      Text(
+                        '${goalProgress.toStringAsFixed(0)}%',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  LinearProgressIndicator(
+                    value: goalProgress / 100,
+                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
             Row(
               children: [
                 _CompactSummaryItem(
