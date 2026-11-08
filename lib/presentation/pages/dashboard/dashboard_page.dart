@@ -69,11 +69,52 @@ class DashboardPage extends ConsumerWidget {
   }
 }
 
-class _DashboardContent extends StatelessWidget {
+class _DashboardContent extends ConsumerStatefulWidget {
   const _DashboardContent({required this.rides, required this.expenses});
 
   final List<entity_ride.Ride> rides;
   final List<entity_expense.Expense> expenses;
+
+  @override
+  ConsumerState<_DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends ConsumerState<_DashboardContent> {
+  double _monthlyGoal = 5000.0;
+
+  void _showSetGoalDialog() {
+    final controller = TextEditingController(text: _monthlyGoal.toStringAsFixed(2).replaceAll('.', ','));
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Definir Objetivo do Mês'),
+        content: const TextField(
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'Valor do objetivo (R\$)',
+            prefixText: 'R\$ ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.replaceAll(',', '.'));
+              if (value != null && value >= 0) {
+                setState(() => _monthlyGoal = value);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,11 +122,11 @@ class _DashboardContent extends StatelessWidget {
     final todayStart = DateTime(now.year, now.month, now.day);
     final todayEnd = todayStart.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
 
-    final todayRides = rides
+    final todayRides = widget.rides
         .where((r) => r.date.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
             r.date.isBefore(todayEnd.add(const Duration(seconds: 1))))
         .toList();
-    final todayExpenses = expenses
+    final todayExpenses = widget.expenses
         .where((e) => e.date.isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
             e.date.isBefore(todayEnd.add(const Duration(seconds: 1))))
         .toList();
@@ -101,11 +142,11 @@ class _DashboardContent extends StatelessWidget {
     // Month data
     final monthStart = DateTime(now.year, now.month, 1);
     final monthEnd = DateTime(now.year, now.month + 1, 1).subtract(const Duration(seconds: 1));
-    final monthRides = rides
+    final monthRides = widget.rides
         .where((r) => r.date.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
             r.date.isBefore(monthEnd.add(const Duration(seconds: 1))))
         .toList();
-    final monthExpenses = expenses
+    final monthExpenses = widget.expenses
         .where((e) => e.date.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
             e.date.isBefore(monthEnd.add(const Duration(seconds: 1))))
         .toList();
@@ -137,10 +178,11 @@ class _DashboardContent extends StatelessWidget {
             earnings: monthEarnings,
             expenses: monthExpensesTotal,
             dateLabel: monthLabel,
-            monthlyGoal: 5000.0, // Meta mensal padrão: R$ 5.000
+            monthlyGoal: _monthlyGoal,
+            onSetGoal: _showSetGoalDialog,
           ),
           const SizedBox(height: 8),
-          if (rides.isNotEmpty) _CompactRecentRides(ride: rides.last),
+          if (widget.rides.isNotEmpty) _CompactRecentRides(ride: widget.rides.last),
         ],
       ),
     );
@@ -269,21 +311,23 @@ class _CompactFinancialSummary extends StatelessWidget {
 }
 
 /// Resumo do Mês - apenas Ganhos e Despesas
-class _MonthSummaryCard extends StatelessWidget {
+class _MonthSummaryCard extends ConsumerWidget {
   const _MonthSummaryCard({
     required this.earnings,
     required this.expenses,
     required this.dateLabel,
     required this.monthlyGoal,
+    required this.onSetGoal,
   });
 
   final double earnings;
   final double expenses;
   final String dateLabel;
   final double monthlyGoal;
+  final VoidCallback onSetGoal;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final netProfit = earnings - expenses;
     final goalProgress = monthlyGoal > 0 ? (netProfit / monthlyGoal * 100).clamp(0, 100) : 0.0;
 
@@ -303,12 +347,16 @@ class _MonthSummaryCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                Text(
-                  dateLabel,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                TextButton.icon(
+                  onPressed: onSetGoal,
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                  label: const Text('Novo Objetivo'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ],
             ),
