@@ -93,9 +93,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = double.tryParse(
-            _amountController.text.replaceAll(',', '.')) ??
-        0.0;
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
 
     final expense = entity_expense.Expense(
       id: widget.expenseId ?? _uuid.v4(),
@@ -126,7 +125,9 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
         title: const Text('Excluir Despesa?'),
         content: const Text('Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -138,7 +139,9 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      await ref.read(expensesControllerProvider.notifier).remove(widget.expenseId!);
+      await ref
+          .read(expensesControllerProvider.notifier)
+          .remove(widget.expenseId!);
       if (mounted) context.pop();
     }
   }
@@ -208,7 +211,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 prefixText: 'R\$ ',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Valor é obrigatório';
@@ -263,7 +267,9 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
-                    child: Text(widget.isEditing ? 'Salvar Alterações' : 'Salvar Despesa'),
+                    child: Text(widget.isEditing
+                        ? 'Salvar Alterações'
+                        : 'Salvar Despesa'),
                   ),
                 ),
               ],
@@ -284,8 +290,8 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+            fontWeight: FontWeight.w600,
+          ),
     );
   }
 }

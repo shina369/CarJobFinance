@@ -26,8 +26,11 @@ class FinancialSummary with _$FinancialSummary {
   const FinancialSummary._();
 
   // Helpers
-  String get formattedNetProfit => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(netProfit)}';
-  String get formattedTotalEarnings => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalEarnings)}';
-  String get formattedTotalExpenses => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalExpenses)}';
+  String get formattedNetProfit =>
+      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(netProfit)}';
+  String get formattedTotalEarnings =>
+      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalEarnings)}';
+  String get formattedTotalExpenses =>
+      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalExpenses)}';
   bool get isProfitable => netProfit >= 0;
 }

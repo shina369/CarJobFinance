@@ -15,8 +15,7 @@ abstract class RideRepository {
   Future<double> totalDistance(DateTime start, DateTime end);
   Future<int> countTotal(DateTime start, DateTime end);
   Future<int> totalDurationMinutes(DateTime start, DateTime end);
-  Future<Map<String, double>> earningsByPlatform(
-      DateTime start, DateTime end);
+  Future<Map<String, double>> earningsByPlatform(DateTime start, DateTime end);
 }
 
 abstract class ExpenseRepository {
@@ -27,8 +26,7 @@ abstract class ExpenseRepository {
   Future<bool> update(Expense expense);
   Future<int> delete(String id);
   Future<double> totalByCategory(DateTime start, DateTime end);
-  Future<Map<String, double>> expensesByCategory(
-      DateTime start, DateTime end);
+  Future<Map<String, double>> expensesByCategory(DateTime start, DateTime end);
 }
 
 abstract class SettingsRepository {

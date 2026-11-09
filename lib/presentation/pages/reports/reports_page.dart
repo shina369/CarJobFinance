@@ -30,21 +30,27 @@ extension ReportPeriodExtension on ReportPeriod {
       case ReportPeriod.day:
         return DateTimeRange(
           start: today,
-          end: today.add(const Duration(days: 1)).subtract(const Duration(seconds: 1)),
+          end: today
+              .add(const Duration(days: 1))
+              .subtract(const Duration(seconds: 1)),
         );
       case ReportPeriod.week:
         final weekStart = today.subtract(Duration(days: today.weekday - 1));
         return DateTimeRange(
           start: weekStart,
-          end: weekStart.add(const Duration(days: 7)).subtract(const Duration(seconds: 1)),
+          end: weekStart
+              .add(const Duration(days: 7))
+              .subtract(const Duration(seconds: 1)),
         );
       case ReportPeriod.month:
         final monthStart = DateTime(now.year, now.month, 1);
-        final monthEnd = DateTime(now.year, now.month + 1, 1).subtract(const Duration(seconds: 1));
+        final monthEnd = DateTime(now.year, now.month + 1, 1)
+            .subtract(const Duration(seconds: 1));
         return DateTimeRange(start: monthStart, end: monthEnd);
       case ReportPeriod.year:
         final yearStart = DateTime(now.year, 1, 1);
-        final yearEnd = DateTime(now.year + 1, 1, 1).subtract(const Duration(seconds: 1));
+        final yearEnd =
+            DateTime(now.year + 1, 1, 1).subtract(const Duration(seconds: 1));
         return DateTimeRange(start: yearStart, end: yearEnd);
       case ReportPeriod.custom:
         return DateTimeRange(start: today, end: today);
@@ -53,7 +59,8 @@ extension ReportPeriodExtension on ReportPeriod {
 }
 
 // Provider para o período selecionado
-final selectedReportPeriodProvider = StateProvider<ReportPeriod>((ref) => ReportPeriod.month);
+final selectedReportPeriodProvider =
+    StateProvider<ReportPeriod>((ref) => ReportPeriod.month);
 
 class ReportsPage extends ConsumerWidget {
   const ReportsPage({super.key});
@@ -194,11 +201,15 @@ class _ReportsContent extends ConsumerWidget {
           }).toList();
 
           // Calculate summaries
-          final totalEarnings = filteredRides.fold<double>(0, (sum, r) => sum + r.earnings);
-          final totalExpenses = filteredExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+          final totalEarnings =
+              filteredRides.fold<double>(0, (sum, r) => sum + r.earnings);
+          final totalExpenses =
+              filteredExpenses.fold<double>(0, (sum, e) => sum + e.amount);
           final netProfit = totalEarnings - totalExpenses;
-          final totalKm = filteredRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
-          final totalMinutes = filteredRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
+          final totalKm =
+              filteredRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
+          final totalMinutes =
+              filteredRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -223,8 +234,13 @@ class _ReportsContent extends ConsumerWidget {
                             ),
                             TextSpan(
                               text: '\n${period.label}',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                     fontWeight: FontWeight.normal,
                                   ),
                             ),
@@ -294,7 +310,8 @@ class _ReportsContent extends ConsumerWidget {
                       _MetricRow(
                         label: 'Média por corrida',
                         value: filteredRides.isNotEmpty
-                            ? _formatCurrency(totalEarnings / filteredRides.length)
+                            ? _formatCurrency(
+                                totalEarnings / filteredRides.length)
                             : _formatCurrency(0),
                       ),
                     ],
@@ -321,7 +338,8 @@ class _ReportsContent extends ConsumerWidget {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         title: const Text('Exportar CSV'),
-                        subtitle: const Text('Planilha para Excel/Google Sheets'),
+                        subtitle:
+                            const Text('Planilha para Excel/Google Sheets'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           // TODO: Export CSV
@@ -334,7 +352,8 @@ class _ReportsContent extends ConsumerWidget {
                           color: Theme.of(context).colorScheme.error,
                         ),
                         title: const Text('Exportar PDF'),
-                        subtitle: const Text('Relatório formatado para impressão'),
+                        subtitle:
+                            const Text('Relatório formatado para impressão'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           // TODO: Export PDF
@@ -401,15 +420,15 @@ class _SummaryRow extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            ),
+                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                ),
           ),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
           ),
         ],
       ),
@@ -437,8 +456,8 @@ class _MetricRow extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),

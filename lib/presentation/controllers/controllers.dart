@@ -29,19 +29,22 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 
 // ===== RIDES =====
 final ridesControllerProvider =
-    StateNotifierProvider<RidesController, AsyncValue<List<entity_ride.Ride>>>((ref) {
+    StateNotifierProvider<RidesController, AsyncValue<List<entity_ride.Ride>>>(
+        (ref) {
   return RidesController(ref.watch(rideRepositoryProvider));
 });
 
-class RidesController extends StateNotifier<AsyncValue<List<entity_ride.Ride>>> {
+class RidesController
+    extends StateNotifier<AsyncValue<List<entity_ride.Ride>>> {
   final RideRepository _repository;
   StreamSubscription? _subscription;
 
   RidesController(this._repository) : super(const AsyncValue.loading()) {
     _subscription = _repository.watchAll().listen(
-      (rides) => state = AsyncValue.data(rides),
-      onError: (error) => state = AsyncValue.error(error, StackTrace.current),
-    );
+          (rides) => state = AsyncValue.data(rides),
+          onError: (error) =>
+              state = AsyncValue.error(error, StackTrace.current),
+        );
   }
 
   Future<void> add(entity_ride.Ride ride) async {
@@ -79,9 +82,8 @@ class RidesController extends StateNotifier<AsyncValue<List<entity_ride.Ride>>> 
 }
 
 // ===== EXPENSES =====
-final expensesControllerProvider =
-    StateNotifierProvider<ExpensesController, AsyncValue<List<entity_expense.Expense>>>(
-        (ref) {
+final expensesControllerProvider = StateNotifierProvider<ExpensesController,
+    AsyncValue<List<entity_expense.Expense>>>((ref) {
   return ExpensesController(ref.watch(expenseRepositoryProvider));
 });
 
@@ -90,13 +92,12 @@ class ExpensesController
   final ExpenseRepository _repository;
   StreamSubscription? _subscription;
 
-  ExpensesController(this._repository)
-      : super(const AsyncValue.loading()) {
+  ExpensesController(this._repository) : super(const AsyncValue.loading()) {
     _subscription = _repository.watchAll().listen(
-      (expenses) => state = AsyncValue.data(expenses),
-      onError: (error) =>
-          state = AsyncValue.error(error, StackTrace.current),
-    );
+          (expenses) => state = AsyncValue.data(expenses),
+          onError: (error) =>
+              state = AsyncValue.error(error, StackTrace.current),
+        );
   }
 
   Future<void> add(entity_expense.Expense expense) async {

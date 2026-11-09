@@ -56,7 +56,8 @@ class _RidesList extends StatelessWidget {
           children: [
             Icon(Icons.directions_car_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('Nenhuma corrida registrada', style: TextStyle(color: Colors.grey)),
+            Text('Nenhuma corrida registrada',
+                style: TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -113,5 +114,6 @@ class RideCard extends StatelessWidget {
 }
 
 extension on entity_ride.Ride {
-  String get formattedAmount => 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(earnings)}';
+  String get formattedAmount =>
+      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(earnings)}';
 }

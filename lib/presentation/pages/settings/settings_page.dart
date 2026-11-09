@@ -79,7 +79,8 @@ class SettingsPage extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: const Text('Limpar Todos os Dados'),
-                  subtitle: const Text('Apaga corridas, despesas e configurações'),
+                  subtitle:
+                      const Text('Apaga corridas, despesas e configurações'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showClearDataDialog(context),
                 ),
@@ -287,9 +288,9 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

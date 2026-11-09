@@ -124,12 +124,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final earnings = double.tryParse(
-            _earningsController.text.replaceAll(',', '.')) ??
-        0.0;
-    final distance = double.tryParse(
-            _distanceController.text.replaceAll(',', '.')) ??
-        0.0;
+    final earnings =
+        double.tryParse(_earningsController.text.replaceAll(',', '.')) ?? 0.0;
+    final distance =
+        double.tryParse(_distanceController.text.replaceAll(',', '.')) ?? 0.0;
     final duration = int.tryParse(_durationController.text) ?? 0;
 
     final ride = entity_ride.Ride(
@@ -140,12 +138,11 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
       distanceKm: distance,
       durationMinutes: duration,
       origin: _originController.text.isEmpty ? null : _originController.text,
-      destination:
-          _destinationController.text.isEmpty ? null : _destinationController.text,
-      rideType: _selectedRideType,
-      createdAt: widget.rideId != null
+      destination: _destinationController.text.isEmpty
           ? null
-          : DateTime.now(),
+          : _destinationController.text,
+      rideType: _selectedRideType,
+      createdAt: widget.rideId != null ? null : DateTime.now(),
     );
 
     final controller = ref.read(ridesControllerProvider.notifier);
@@ -166,7 +163,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
         title: const Text('Excluir Corrida?'),
         content: const Text('Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -316,8 +315,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                         const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) return null;
-                      final km =
-                          double.tryParse(value.replaceAll(',', '.'));
+                      final km = double.tryParse(value.replaceAll(',', '.'));
                       if (km == null || km > AppConstants.maxKmPerRide) {
                         return 'Distância inválida';
                       }

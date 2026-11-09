@@ -92,7 +92,8 @@ class GetFinancialSummaryUseCase
   @override
   Future<FinancialSummary> call(SummaryParams params) async {
     final earnings = await rideRepo.totalEarnings(params.start, params.end);
-    final expenses = await expenseRepo.totalByCategory(params.start, params.end);
+    final expenses =
+        await expenseRepo.totalByCategory(params.start, params.end);
     // totalByCategory returns a single total, not map — see repository impl
     final distance = await rideRepo.totalDistance(params.start, params.end);
     final count = await rideRepo.countTotal(params.start, params.end);

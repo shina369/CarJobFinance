@@ -55,7 +55,8 @@ class _ExpensesList extends StatelessWidget {
           children: [
             Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('Nenhuma despesa registrada', style: TextStyle(color: Colors.grey)),
+            Text('Nenhuma despesa registrada',
+                style: TextStyle(color: Colors.grey)),
           ],
         ),
       );

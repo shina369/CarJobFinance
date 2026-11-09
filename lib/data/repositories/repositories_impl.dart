@@ -111,9 +111,8 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   ExpenseRepositoryImpl(this.dao);
 
   @override
-  Stream<List<entity_expense.Expense>> watchAll() => dao
-      .watchAllExpenses()
-      .map((rows) => rows.map(_toEntity).toList());
+  Stream<List<entity_expense.Expense>> watchAll() =>
+      dao.watchAllExpenses().map((rows) => rows.map(_toEntity).toList());
 
   @override
   Future<List<entity_expense.Expense>> getAll() async {
