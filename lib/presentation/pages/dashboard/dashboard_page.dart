@@ -130,44 +130,37 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   Widget build(BuildContext context) {
     final today = _computeTodayData();
     final month = _computeMonthData();
-    // Limita largura máxima para não stretching em telas desktop
-    final maxWidth = MediaQuery.of(context).size.width > 480 ? 480.0 : MediaQuery.of(context).size.width;
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: LayoutBuilder(
-            builder: (ctx, c) => SizedBox.fromSize(
-              size: Size(c.maxWidth, c.maxHeight),
-              child: Column(
-                children: [
-                  // Today summary — compact strip (no Card)
-                  _todayCard(context, today),
-                  const SizedBox(height: 8),
-                  // Month summary card WITH embedded action buttons
-                  Flexible(
-                    child: _MonthPanel(
-                      earnings: month.earnings,
-                      expenses: month.expenses,
-                      netProfit: month.netProfit,
-                      label: month.label,
-                      goal: _localGoal,
-                      onSetGoal: _showSetGoalDialog,
-                      onNewRide: () => context.push('/rides/new'),
-                      onNewExpense: () => context.push('/expenses/new'),
-                    ),
-                  ),
-                  // Recent rides strip — only when there are rides
-                  if (widget.rides.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _recentRidesStrip(
-                        context, rides: widget.rides.take(2).toList()),
-                  ],
-                ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: LayoutBuilder(
+        builder: (ctx, c) => SizedBox.fromSize(
+          size: Size(c.maxWidth, c.maxHeight),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Today summary card
+              _todayCard(context, today),
+              const SizedBox(height: 12),
+              // Month summary card WITH embedded action buttons
+              Flexible(
+                child: _MonthPanel(
+                  earnings: month.earnings,
+                  expenses: month.expenses,
+                  netProfit: month.netProfit,
+                  label: month.label,
+                  goal: _localGoal,
+                  onSetGoal: _showSetGoalDialog,
+                  onNewRide: () => context.push('/rides/new'),
+                  onNewExpense: () => context.push('/expenses/new'),
+                ),
               ),
-            ),
+              // Recent rides strip — only when there are rides
+              if (widget.rides.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _recentRidesStrip(
+                    context, rides: widget.rides.take(2).toList()),
+              ],
+            ],
           ),
         ),
       ),
