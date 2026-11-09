@@ -1,4 +1,4 @@
-// Dashboard Page - Static layout, no scroll
+// Dashboard Page - Responsive layout with scroll
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -130,39 +130,34 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   Widget build(BuildContext context) {
     final today = _computeTodayData();
     final month = _computeMonthData();
-    return Padding(
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: LayoutBuilder(
-        builder: (ctx, c) => SizedBox.fromSize(
-          size: Size(c.maxWidth, c.maxHeight),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Today summary card
-              _todayCard(context, today),
-              const SizedBox(height: 12),
-              // Month summary card WITH embedded action buttons
-              Flexible(
-                child: _MonthPanel(
-                  earnings: month.earnings,
-                  expenses: month.expenses,
-                  netProfit: month.netProfit,
-                  label: month.label,
-                  goal: _localGoal,
-                  onSetGoal: _showSetGoalDialog,
-                  onNewRide: () => context.push('/rides/new'),
-                  onNewExpense: () => context.push('/expenses/new'),
-                ),
-              ),
-              // Recent rides strip — only when there are rides
-              if (widget.rides.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _recentRidesStrip(
-                    context, rides: widget.rides.take(2).toList()),
-              ],
-            ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Today summary card
+          _todayCard(context, today),
+          const SizedBox(height: 12),
+          // Month summary card WITH embedded action buttons
+          _MonthPanel(
+            earnings: month.earnings,
+            expenses: month.expenses,
+            netProfit: month.netProfit,
+            label: month.label,
+            goal: _localGoal,
+            onSetGoal: _showSetGoalDialog,
+            onNewRide: () => context.push('/rides/new'),
+            onNewExpense: () => context.push('/expenses/new'),
           ),
-        ),
+          // Recent rides strip — only when there are rides
+          if (widget.rides.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _recentRidesStrip(
+                context, rides: widget.rides.take(2).toList()),
+          ],
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
@@ -299,8 +294,9 @@ Widget _todayCard(BuildContext context, _TodayData t) {
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: (isPositive ? const Color(0xFF00C853) : const Color(0xFFD32F2F))
-              .withValues(alpha: 0.35),
+          color:
+              (isPositive ? const Color(0xFF00C853) : const Color(0xFFD32F2F))
+                  .withValues(alpha: 0.35),
           blurRadius: 16,
           offset: const Offset(0, 6),
         ),
@@ -319,7 +315,9 @@ Widget _todayCard(BuildContext context, _TodayData t) {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                isPositive ? Icons.account_balance_wallet : Icons.warning_amber_rounded,
+                isPositive
+                    ? Icons.account_balance_wallet
+                    : Icons.warning_amber_rounded,
                 size: 20,
                 color: Colors.white,
               ),
@@ -392,55 +390,62 @@ Widget _todayCard(BuildContext context, _TodayData t) {
         ),
         const SizedBox(height: 16),
         // Three metric pills in a row
-        Row(
-          children: [
-            _metricPill(
-              context,
-              icon: Icons.trending_up,
-              label: 'Ganhos',
-              value: _fmt(t.earnings),
-              bgColor: Colors.white.withValues(alpha: 0.2),
-              textColor: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            _metricPill(
-              context,
-              icon: Icons.money_off,
-              label: 'Despesas',
-              value: _fmt(t.expenses),
-              bgColor: Colors.black.withValues(alpha: 0.12),
-              textColor: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            _metricPill(
-              context,
-              icon: Icons.speed,
-              label: 'Km rodados',
-              value: _fmt(t.km),
-              bgColor: Colors.white.withValues(alpha: 0.2),
-              textColor: Colors.white,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (ctx, constraints) {
+            final pillWidth = (constraints.maxWidth - 16) / 3;
+            return Row(
+              children: [
+                _metricPill(
+                  context,
+                  icon: Icons.trending_up,
+                  label: 'Ganhos',
+                  value: _fmt(t.earnings),
+                  pillWidth: pillWidth,
+                ),
+                const SizedBox(width: 8),
+                _metricPill(
+                  context,
+                  icon: Icons.money_off,
+                  label: 'Despesas',
+                  value: _fmt(t.expenses),
+                  pillWidth: pillWidth,
+                ),
+                const SizedBox(width: 8),
+                _metricPill(
+                  context,
+                  icon: Icons.speed,
+                  label: 'Km rodados',
+                  value: _fmt(t.km),
+                  pillWidth: pillWidth,
+                ),
+              ],
+            );
+          },
         ),
       ],
     ),
   );
 }
 
+// ── METRIC PILL ───────────────────────────────────────────────
+
 Widget _metricPill(
   BuildContext context, {
   required IconData icon,
   required String label,
   required String value,
-  required Color bgColor,
-  required Color textColor,
+  required double pillWidth,
 }) {
   final ts = Theme.of(context).textTheme;
-  return Expanded(
+  final isExpense = label == 'Despesas';
+  return SizedBox(
+    width: pillWidth,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: isExpense
+            ? Colors.black.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -449,13 +454,14 @@ Widget _metricPill(
         children: [
           Row(
             children: [
-              Icon(icon, size: 13, color: textColor.withValues(alpha: 0.75)),
+              Icon(icon,
+                  size: 13, color: Colors.white.withValues(alpha: 0.75)),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   label,
                   style: ts.labelSmall?.copyWith(
-                    color: textColor.withValues(alpha: 0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     letterSpacing: 0.5,
                   ),
                   maxLines: 1,
@@ -468,7 +474,7 @@ Widget _metricPill(
           Text(
             value,
             style: ts.titleSmall?.copyWith(
-              color: textColor,
+              color: Colors.white,
               fontWeight: FontWeight.w700,
             ),
             maxLines: 1,
@@ -556,8 +562,9 @@ class _MonthPanel extends StatelessWidget {
                   color: netProfit >= 0
                       ? Colors.green.shade700
                       : Colors.red.shade700,
-                  icon:
-                      netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+                  icon: netProfit >= 0
+                      ? Icons.trending_up
+                      : Icons.trending_down,
                 ),
                 const SizedBox(height: 10),
                 // Goal + progress
@@ -597,8 +604,8 @@ class _MonthPanel extends StatelessWidget {
                 Center(
                   child: TextButton.icon(
                     onPressed: onSetGoal,
-                    icon:
-                        Icon(Icons.edit_outlined, size: 16, color: cs.primary),
+                    icon: Icon(Icons.edit_outlined,
+                        size: 16, color: cs.primary),
                     label: const Text('Alterar objetivo'),
                     style: TextButton.styleFrom(
                       foregroundColor: cs.primary,
@@ -689,8 +696,10 @@ class _ActionButton extends StatelessWidget {
 
 // ── RECENT RIDES COMPACT STRIP ─────────────────────────────────
 
-Widget _recentRidesStrip(BuildContext context,
-    {required List<entity_ride.Ride> rides}) {
+Widget _recentRidesStrip(
+  BuildContext context, {
+  required List<entity_ride.Ride> rides,
+}) {
   final cs = Theme.of(context).colorScheme;
   final ts = Theme.of(context).textTheme;
 
@@ -715,33 +724,36 @@ Widget _recentRidesStrip(BuildContext context,
         ],
       ),
       const SizedBox(height: 4),
-      ...rides.map((ride) => Padding(
-            padding: const EdgeInsets.only(bottom: 3),
-            child: ListTile(
-              dense: true,
-              visualDensity: VisualDensity.compact,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              leading: CircleAvatar(
-                radius: 16,
-                backgroundColor: cs.primaryContainer,
-                child: Icon(Icons.directions_car, size: 16, color: cs.primary),
-              ),
-              title: Text(ride.platform, style: ts.bodySmall),
-              subtitle: Text(
-                '${ride.formattedDate} · ${ride.durationMinutes}min',
-                style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-              ),
-              trailing: Text(
-                _fmt(ride.earnings),
-                style: ts.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.primary,
-                ),
-              ),
-              onTap: () => context.push('/rides/${ride.id}'),
+      ...rides.map(
+        (ride) => Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: ListTile(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            leading: CircleAvatar(
+              radius: 16,
+              backgroundColor: cs.primaryContainer,
+              child: Icon(Icons.directions_car,
+                  size: 16, color: cs.primary),
             ),
-          )),
+            title: Text(ride.platform, style: ts.bodySmall),
+            subtitle: Text(
+              '${ride.formattedDate} · ${ride.durationMinutes}min',
+              style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            trailing: Text(
+              _fmt(ride.earnings),
+              style: ts.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: cs.primary,
+              ),
+            ),
+            onTap: () => context.push('/rides/${ride.id}'),
+          ),
+        ),
+      ),
     ],
   );
 }
