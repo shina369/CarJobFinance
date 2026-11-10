@@ -182,14 +182,16 @@ void main() {
               'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.'),
           findsOneWidget,
         );
-        expect(find.byKey(const Key('country-card-PT')), findsOneWidget);
+        expect(find.byKey(const Key('country-dropdown')), findsOneWidget);
         expect(find.byKey(const Key('continue-button')), findsOneWidget);
 
         // =====================================================================
-        // STEP 2: Tap the Portugal card and Continue button
+        // STEP 2: Select Portugal from the dropdown and tap Continue
         // =====================================================================
-        await tester.tap(find.byKey(const Key('country-card-PT')));
+        await tester.tap(find.byKey(const Key('country-dropdown')));
         await tester.pump();
+        await tester.tap(find.byKey(const Key('country-option-PT')));
+        await tester.pumpAndSettle();
 
         final continueButton = find.byKey(const Key('continue-button'));
         await tester.tap(continueButton);

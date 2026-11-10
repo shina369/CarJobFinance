@@ -18,11 +18,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   String? _selectedCountryCode;
   bool _navigated = false;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
   void _checkAutoSkip() {
     // Schedules the auto-navigate timer at most once, when first observed configured.
     if (_navigated) return;
@@ -40,10 +35,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
-
-    // Auto-navigate check runs on first build (or first rebuild after the
-    // auto-skip message is shown), not in initState — Riverpod's ref is
-    // not available there.
     _checkAutoSkip();
 
     // If already configured, show brief message (auto-navigation scheduled above)
@@ -59,55 +50,170 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       );
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selectedCountry =
+        _selectedCountryCode != null
+            ? COUNTRIES.firstWhere((c) => c.code == _selectedCountryCode)
+            : null;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bem-vindo ao CarJobFinance'),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // App icon
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.directions_car_rounded,
+                      size: 40,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Title
+                  Text(
+                    'Bem-vindo ao CarJobFinance',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  // Subtitle
+                  Text(
+                    'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 36),
+                  // Country dropdown
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: DropdownButtonFormField<String>(
+                    key: const Key('country-dropdown'),
+                    decoration: InputDecoration(
+                      labelText: 'País',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      isDense: true,
+                    ),
+                    items: COUNTRIES
+                        .map((c) => DropdownMenuItem(
+                              key: Key('country-option-${c.code}'),
+                              value: c.code,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    flagEmojiFor(c.code),
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    c.namePt,
+                                    style: theme.textTheme.bodyLarge,
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                    initialValue: _selectedCountryCode,
+                    onChanged: (code) =>
+                        setState(() => _selectedCountryCode = code),
+                  )),
+                  // Selected country preview
+                  if (selectedCountry != null) ...[
+                    const SizedBox(height: 24),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: colorScheme.primary, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            flagEmojiFor(selectedCountry.code),
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  selectedCountry.namePt,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                                Text(
+                                  '${selectedCountry.currencySymbol} (${selectedCountry.currencyCode}) • ${selectedCountry.platforms.join(', ')}',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Continue button
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: 280,
+                    child: FilledButton(
+                      key: const Key('continue-button'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed:
+                          _selectedCountryCode != null ? _onContinuePressed : null,
+                      child: Text(
+                        'Continuar',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Country list
-            Expanded(
-              child: ListView.builder(
-                key: const Key('country-list'),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: COUNTRIES.length,
-                itemBuilder: (context, index) {
-                  final country = COUNTRIES[index];
-                  final isSelected = _selectedCountryCode == country.code;
-                  return _CountryCard(
-                    key: Key('country-card-${country.code}'),
-                    country: country,
-                    isSelected: isSelected,
-                    onTap: () => setState(() => _selectedCountryCode = country.code),
-                  );
-                },
-              ),
-            ),
-            // Continue button
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  key: const Key('continue-button'),
-                  onPressed: _selectedCountryCode != null ? _onContinuePressed : null,
-                  child: const Text('Continuar'),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -130,103 +236,26 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
-/// Internal country card widget
-class _CountryCard extends StatelessWidget {
-  const _CountryCard({
-    super.key,
-    required this.country,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final CountryEntry country;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  // Flag emoji mapping for each country code
-  static const Map<String, String> _flagEmojis = {
-    'BR': '🇧🇷',
-    'PT': '🇵🇹',
-    'MX': '🇲🇽',
-    'CO': '🇨🇴',
-    'CL': '🇨🇱',
-    'AR': '🇦🇷',
-    'ES': '🇪🇸',
-    'US': '🇺🇸',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final flag = _flagEmojis[country.code] ?? '🏳️';
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-          width: isSelected ? 3 : 1,
-        ),
-        color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : colorScheme.surface,
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              // Flag emoji
-              Text(
-                flag,
-                style: const TextStyle(fontSize: 48),
-              ),
-              const SizedBox(width: 16),
-              // Country info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      country.namePt,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${country.currencySymbol} (${country.currencyCode})',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Selection indicator
-              if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: colorScheme.primary,
-                  size: 28,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+/// Flag emoji for a country code, with a fallback.
+String flagEmojiFor(String countryCode) {
+  switch (countryCode) {
+    case 'BR':
+      return '🇧🇷';
+    case 'PT':
+      return '🇵🇹';
+    case 'MX':
+      return '🇲🇽';
+    case 'CO':
+      return '🇨🇴';
+    case 'CL':
+      return '🇨🇱';
+    case 'AR':
+      return '🇦🇷';
+    case 'ES':
+      return '🇪🇸';
+    case 'US':
+      return '🇺🇸';
+    default:
+      return '🏳️';
   }
 }

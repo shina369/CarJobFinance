@@ -66,30 +66,29 @@ void main() {
       await tester.pump(); // Use pump only, not pumpAndSettle, to avoid animation timeouts
     }
 
-    testWidgets('renders country list with 8 items', (WidgetTester tester) async {
+    testWidgets('renders country dropdown', (WidgetTester tester) async {
       await pumpOnboardingPage(tester);
 
-      // Verify first few country names are visible (ListView lazily renders)
-      // At least the first 3-4 should be visible without scrolling
-      expect(find.text('Brasil'), findsOneWidget);
-      expect(find.text('Portugal'), findsOneWidget);
-      expect(find.text('México'), findsOneWidget);
-
-      // Verify currency symbols are shown for visible items
-      expect(find.text('R\$ (BRL)'), findsOneWidget);
-      expect(find.text('€ (EUR)'), findsOneWidget);
-      expect(find.text('\$ (MXN)'), findsOneWidget);
+      final dropdown = find.byKey(const Key('country-dropdown'));
+      expect(dropdown, findsOneWidget);
     }, timeout: const Timeout(Duration(seconds: 10)));
 
-    testWidgets('tapping a country card highlights it', (WidgetTester tester) async {
+    testWidgets('selecting a country from the dropdown enables Continue',
+        (WidgetTester tester) async {
       await pumpOnboardingPage(tester);
 
-      // Tap on Brazil card (first one)
-      await tester.tap(find.byKey(const Key('country-card-BR')));
+      // Open the dropdown menu
+      await tester.tap(find.byKey(const Key('country-dropdown')));
       await tester.pump();
 
-      // Verify the card is selected (highlighted) - check for the check_circle icon
-      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+      // Select Portugal
+      await tester.tap(find.byKey(const Key('country-option-PT')));
+      await tester.pumpAndSettle();
+
+      // Continue button should now be enabled
+      final continueButton = find.byKey(const Key('continue-button'));
+      final buttonWidget = tester.widget<FilledButton>(continueButton);
+      expect(buttonWidget.onPressed, isNotNull);
     });
 
     testWidgets('Continue button disabled until a country is picked', (WidgetTester tester) async {
@@ -122,9 +121,11 @@ void main() {
 
       await pumpOnboardingPage(tester, router: router);
 
-      // Select Brazil
-      await tester.tap(find.byKey(const Key('country-card-BR')));
+      // Open the dropdown and select Portugal
+      await tester.tap(find.byKey(const Key('country-dropdown')));
       await tester.pump();
+      await tester.tap(find.byKey(const Key('country-option-PT')));
+      await tester.pumpAndSettle();
 
       // Continue button should now be enabled
       final continueButton = find.byKey(const Key('continue-button'));
