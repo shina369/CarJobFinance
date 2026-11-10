@@ -141,7 +141,6 @@ class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPl
   }
 
   /// Watches for changes to platforms for a given country code.
-  /// Returns a stream that emits the list of platforms whenever they change.
   Stream<List<String>> watchPlatformsFor(String countryCode) {
     final query = select(countryPlatforms)
       ..where((tbl) => tbl.countryCode.equals(countryCode))
