@@ -3,8 +3,8 @@ import 'package:carjobfinance/core/settings/country_data.dart';
 
 void main() {
   group('COUNTRIES', () {
-    test('contains exactly 8 entries', () {
-      expect(COUNTRIES.length, 8);
+    test('contains exactly 10 entries', () {
+      expect(COUNTRIES.length, 10);
     });
 
     test('Brazil entry has correct fields', () {
@@ -22,6 +22,24 @@ void main() {
       final pt = COUNTRIES.firstWhere((c) => c.code == 'PT');
       expect(pt.currencySymbol, '€');
       expect(pt.localeTag, 'pt_PT');
+    });
+
+    test('Indonesia entry uses IDR', () {
+      final id = COUNTRIES.firstWhere((c) => c.code == 'ID');
+      expect(id.namePt, 'Indonésia');
+      expect(id.currencyCode, 'IDR');
+      expect(id.currencySymbol, 'Rp');
+      expect(id.localeTag, 'id_ID');
+      expect(id.platforms, contains('Gojek'));
+    });
+
+    test('India entry uses INR', () {
+      final inEntry = COUNTRIES.firstWhere((c) => c.code == 'IN');
+      expect(inEntry.namePt, 'Índia');
+      expect(inEntry.currencyCode, 'INR');
+      expect(inEntry.currencySymbol, '₹');
+      expect(inEntry.localeTag, 'hi_IN');
+      expect(inEntry.platforms, contains('Ola'));
     });
 
     test('all codes are unique', () {

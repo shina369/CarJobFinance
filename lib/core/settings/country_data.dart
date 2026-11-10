@@ -99,4 +99,20 @@ const List<CountryEntry> COUNTRIES = [
     localeTag: 'en_US',
     platforms: ['Uber', 'Lyft', 'Yellow Cab', 'BlaBlaCar', 'Outro'],
   ),
+  CountryEntry(
+    code: 'ID',
+    namePt: 'Indonésia',
+    currencyCode: 'IDR',
+    currencySymbol: 'Rp',
+    localeTag: 'id_ID',
+    platforms: ['Uber', 'Gojek', 'Maxim', 'inDrive', 'Outro'],
+  ),
+  CountryEntry(
+    code: 'IN',
+    namePt: 'Índia',
+    currencyCode: 'INR',
+    currencySymbol: '₹',
+    localeTag: 'hi_IN',
+    platforms: ['Uber', 'Ola', 'inDrive', 'BlaBlaCar', 'Outro'],
+  ),
 ];

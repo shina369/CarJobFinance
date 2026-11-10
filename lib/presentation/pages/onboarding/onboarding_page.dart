@@ -255,6 +255,10 @@ String flagEmojiFor(String countryCode) {
       return '🇪🇸';
     case 'US':
       return '🇺🇸';
+    case 'ID':
+      return '🇮🇩';
+    case 'IN':
+      return '🇮🇳';
     default:
       return '🏳️';
   }
