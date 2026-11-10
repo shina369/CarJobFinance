@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
+import 'core/settings/app_settings_notifier.dart';
 import 'core/theme/app_theme.dart';
 
 final getIt = GetIt.instance;
@@ -14,6 +15,12 @@ void main() async {
 
   // Configurar dependências
   await setupDependencies();
+
+  // Create a temporary ProviderContainer to initialize settings before the app starts
+  // This ensures the router guard has the correct configured state on first render
+  final container = ProviderContainer();
+  await container.read(appSettingsProvider.notifier).initialize();
+  container.dispose();
 
   runApp(const ProviderScope(child: CarJobFinanceApp()));
 }

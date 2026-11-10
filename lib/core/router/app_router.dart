@@ -1,8 +1,11 @@
 // Configuração de navegação com GoRouter
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/settings/app_settings_notifier.dart';
 import '../../presentation/pages/dashboard/dashboard_page.dart';
 import '../../presentation/pages/rides/rides_page.dart';
 import '../../presentation/pages/rides/ride_form_page.dart';
@@ -10,113 +13,158 @@ import '../../presentation/pages/expenses/expenses_page.dart';
 import '../../presentation/pages/expenses/expense_form_page.dart';
 import '../../presentation/pages/reports/reports_page.dart';
 import '../../presentation/pages/settings/settings_page.dart';
+import '../../presentation/pages/onboarding/onboarding_page.dart';
+
+/// A [ChangeNotifier] that wraps a [StateNotifier] to provide [Listenable]
+/// compatibility for GoRouter's [refreshListenable].
+class _SettingsListenable extends ChangeNotifier {
+  _SettingsListenable(this._notifier) {
+    _subscription = _notifier.stream.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  final StateNotifier<AppSettings> _notifier;
+  late final StreamSubscription<AppSettings> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
 /// Provider do router
 final routerProvider = Provider<GoRouter>((ref) {
-  return _router;
+  // Build the router inside the provider so we can access ref for the redirect
+  final settingsListenable = _SettingsListenable(ref.read(appSettingsProvider.notifier));
+  // Ensure the listenable is disposed when the provider is disposed
+  ref.onDispose(settingsListenable.dispose);
+
+  return GoRouter(
+    initialLocation: '/',
+    routes: [
+      // Shell route com bottom navigation
+      ShellRoute(
+        builder: (context, state, child) {
+          return _MainShell(child: child);
+        },
+        routes: [
+          // Dashboard
+          GoRoute(
+            path: '/',
+            name: 'dashboard',
+            builder: (context, state) => const DashboardPage(),
+          ),
+
+          // Corridas
+          GoRoute(
+            path: '/rides',
+            name: 'rides',
+            builder: (context, state) => const RidesPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'ride-new',
+                builder: (context, state) => const RideFormPage(),
+              ),
+              GoRoute(
+                path: 'edit/:rideId',
+                name: 'ride-edit',
+                builder: (context, state) {
+                  final rideId = state.pathParameters['rideId']!;
+                  return RideFormPage(rideId: rideId);
+                },
+              ),
+              GoRoute(
+                path: ':rideId',
+                name: 'ride-detail',
+                builder: (context, state) {
+                  final rideId = state.pathParameters['rideId']!;
+                  return RideDetailPage(rideId: rideId);
+                },
+              ),
+            ],
+          ),
+
+          // Despesas
+          GoRoute(
+            path: '/expenses',
+            name: 'expenses',
+            builder: (context, state) => const ExpensesPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'expense-new',
+                builder: (context, state) => const ExpenseFormPage(),
+              ),
+              GoRoute(
+                path: 'edit/:expenseId',
+                name: 'expense-edit',
+                builder: (context, state) {
+                  final expenseId = state.pathParameters['expenseId']!;
+                  return ExpenseFormPage(expenseId: expenseId);
+                },
+              ),
+            ],
+          ),
+
+          // Relatórios
+          GoRoute(
+            path: '/reports',
+            name: 'reports',
+            builder: (context, state) => const ReportsPage(),
+          ),
+
+          // Configurações
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            builder: (context, state) => const SettingsPage(),
+          ),
+        ],
+      ),
+
+      // Rotas fora do shell (full screen)
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingPage(),
+      ),
+    ],
+
+    // Redirect to onboarding if not configured
+    redirect: (context, state) {
+      // Read settings synchronously from the provider container
+      final settings = ref.read(appSettingsProvider);
+      final isOnboarding = state.matchedLocation == '/onboarding';
+
+      if (!settings.configured && !isOnboarding) {
+        // Not configured and not on onboarding -> redirect to onboarding
+        return '/onboarding';
+      }
+
+      if (settings.configured && isOnboarding) {
+        // Already configured but on onboarding -> redirect to home
+        return '/';
+      }
+
+      // No redirect needed
+      return null;
+    },
+
+    // Refresh the router when settings change
+    refreshListenable: settingsListenable,
+
+    // Observers para analytics/logging
+    observers: [
+      // AnalyticsObserver(),
+    ],
+
+    // Error handling
+    errorBuilder: (context, state) => _ErrorPage(error: state.error),
+  );
 });
-
-/// Configuração principal do router
-final _router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    // Shell route com bottom navigation
-    ShellRoute(
-      builder: (context, state, child) {
-        return _MainShell(child: child);
-      },
-      routes: [
-        // Dashboard
-        GoRoute(
-          path: '/',
-          name: 'dashboard',
-          builder: (context, state) => const DashboardPage(),
-        ),
-
-        // Corridas
-        GoRoute(
-          path: '/rides',
-          name: 'rides',
-          builder: (context, state) => const RidesPage(),
-          routes: [
-            GoRoute(
-              path: 'new',
-              name: 'ride-new',
-              builder: (context, state) => const RideFormPage(),
-            ),
-            GoRoute(
-              path: 'edit/:rideId',
-              name: 'ride-edit',
-              builder: (context, state) {
-                final rideId = state.pathParameters['rideId']!;
-                return RideFormPage(rideId: rideId);
-              },
-            ),
-            GoRoute(
-              path: ':rideId',
-              name: 'ride-detail',
-              builder: (context, state) {
-                final rideId = state.pathParameters['rideId']!;
-                return RideDetailPage(rideId: rideId);
-              },
-            ),
-          ],
-        ),
-
-        // Despesas
-        GoRoute(
-          path: '/expenses',
-          name: 'expenses',
-          builder: (context, state) => const ExpensesPage(),
-          routes: [
-            GoRoute(
-              path: 'new',
-              name: 'expense-new',
-              builder: (context, state) => const ExpenseFormPage(),
-            ),
-            GoRoute(
-              path: 'edit/:expenseId',
-              name: 'expense-edit',
-              builder: (context, state) {
-                final expenseId = state.pathParameters['expenseId']!;
-                return ExpenseFormPage(expenseId: expenseId);
-              },
-            ),
-          ],
-        ),
-
-        // Relatórios
-        GoRoute(
-          path: '/reports',
-          name: 'reports',
-          builder: (context, state) => const ReportsPage(),
-        ),
-
-        // Configurações
-        GoRoute(
-          path: '/settings',
-          name: 'settings',
-          builder: (context, state) => const SettingsPage(),
-        ),
-      ],
-    ),
-
-    // Rotas fora do shell (full screen)
-    GoRoute(
-      path: '/onboarding',
-      name: 'onboarding',
-      builder: (context, state) => const OnboardingPage(),
-    ),
-  ],
-
-  // Observers para analytics/logging
-  observers: [
-    // AnalyticsObserver(),
-  ],
-
-  // Error handling
-  errorBuilder: (context, state) => _ErrorPage(error: state.error),
-);
 
 /// Shell com Bottom Navigation Bar
 class _MainShell extends ConsumerWidget {
@@ -241,21 +289,7 @@ class _ErrorPage extends StatelessWidget {
   }
 }
 
-/// Página placeholder para Onboarding (a ser implementada)
-class OnboardingPage extends StatelessWidget {
-  const OnboardingPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Onboarding - Em desenvolvimento'),
-      ),
-    );
-  }
-}
-
-/// Página placeholder para RideDetail (a ser implementada)
+/// Placeholder for RideDetailPage (to be implemented)
 class RideDetailPage extends StatelessWidget {
   const RideDetailPage({super.key, required this.rideId});
 
@@ -271,3 +305,4 @@ class RideDetailPage extends StatelessWidget {
     );
   }
 }
+

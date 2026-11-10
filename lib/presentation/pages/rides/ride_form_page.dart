@@ -33,9 +33,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   final _destinationController = TextEditingController();
 
   // State
-  String _selectedPlatform = AppConstants.supportedPlatforms.first;
+  String _selectedPlatform = '';
   String _selectedRideType = AppConstants.rideTypes.first;
   DateTime _selectedDate = DateTime.now();
+  bool _platformInitialized = false;
 
   @override
   void initState() {
@@ -43,6 +44,23 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     _dateController.text = _formatDate(_selectedDate);
     if (widget.isEditing) {
       _loadExistingRide();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize platform from settings once when dependencies change
+    if (!_platformInitialized) {
+      final settings = ref.read(appSettingsProvider);
+      final platforms = settings.platforms;
+      if (platforms.isNotEmpty) {
+        _selectedPlatform = platforms.first;
+      } else {
+        // Fallback to a sensible default if platforms list is somehow empty
+        _selectedPlatform = 'Uber';
+      }
+      _platformInitialized = true;
     }
   }
 
@@ -187,6 +205,12 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
     final currencySymbol = settings.currencySymbol;
+    final platforms = settings.platforms;
+
+    // Ensure the current platform is in the list (for editing rides from other countries)
+    final effectivePlatforms = platforms.contains(_selectedPlatform)
+        ? platforms
+        : [...platforms, _selectedPlatform];
 
     return Scaffold(
       appBar: AppBar(
@@ -253,7 +277,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.apps),
               ),
-              items: AppConstants.supportedPlatforms.map((platform) {
+              items: effectivePlatforms.map((platform) {
                 return DropdownMenuItem(value: platform, child: Text(platform));
               }).toList(),
               onChanged: (value) {
