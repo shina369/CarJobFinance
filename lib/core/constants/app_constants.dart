@@ -45,7 +45,12 @@ class AppConstants {
   ];
 
   // Currency
+  // @deprecated Use AppSettings.currencySymbol/currencyCode from locale_helper.dart instead
+  // These constants are kept for backward compatibility but should not be used in new code.
+  // Currency is now dynamic based on user's selected country (see AppSettings and LocalizedCurrency).
+  @Deprecated('Use AppSettings.currencySymbol from app_settings_notifier.dart')
   static const String currencySymbol = 'R\$';
+  @Deprecated('Use AppSettings.currencyCode from app_settings_notifier.dart')
   static const String currencyCode = 'BRL';
   static const int currencyDecimalDigits = 2;
 
