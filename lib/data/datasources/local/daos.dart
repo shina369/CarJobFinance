@@ -126,6 +126,13 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
     return rows.map((r) => r.platformName).toList();
   }
 
+  Stream<List<String>> watchPlatformsFor(String countryCode) {
+    final query = select(countryPlatforms)
+      ..where((tbl) => tbl.countryCode.equals(countryCode))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.platformName)]);
+    return query.watch().map((rows) => rows.map((r) => r.platformName).toList());
+  }
+
   // ===== AGGREGATIONS / RELATÓRIOS =====
 
   Future<double> getTotalEarnings(DateTime start, DateTime end) async {

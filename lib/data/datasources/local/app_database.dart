@@ -139,6 +139,15 @@ class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPl
     final rows = await query.get();
     return rows.map((r) => r.platformName).toList();
   }
+
+  /// Watches for changes to platforms for a given country code.
+  /// Returns a stream that emits the list of platforms whenever they change.
+  Stream<List<String>> watchPlatformsFor(String countryCode) {
+    final query = select(countryPlatforms)
+      ..where((tbl) => tbl.countryCode.equals(countryCode))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.platformName)]);
+    return query.watch().map((rows) => rows.map((r) => r.platformName).toList());
+  }
 }
 
 // Conexão
