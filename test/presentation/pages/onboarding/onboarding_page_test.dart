@@ -78,7 +78,7 @@ void main() {
       // Verify currency symbols are shown for visible items
       expect(find.text('R\$ (BRL)'), findsOneWidget);
       expect(find.text('€ (EUR)'), findsOneWidget);
-      expect(find.text('MX\$ (MXN)'), findsOneWidget);
+      expect(find.text('\$ (MXN)'), findsOneWidget);
     }, timeout: const Timeout(Duration(seconds: 10)));
 
     testWidgets('tapping a country card highlights it', (WidgetTester tester) async {
