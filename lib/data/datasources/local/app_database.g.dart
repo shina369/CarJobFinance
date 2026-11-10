@@ -1352,18 +1352,223 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $CountryPlatformsTable extends CountryPlatforms
+    with TableInfo<$CountryPlatformsTable, CountryPlatform> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CountryPlatformsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _countryCodeMeta =
+      const VerificationMeta('countryCode');
+  @override
+  late final GeneratedColumn<String> countryCode = GeneratedColumn<String>(
+      'country_code', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _platformNameMeta =
+      const VerificationMeta('platformName');
+  @override
+  late final GeneratedColumn<String> platformName = GeneratedColumn<String>(
+      'platform_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [countryCode, platformName];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'country_platforms';
+  @override
+  VerificationContext validateIntegrity(Insertable<CountryPlatform> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('country_code')) {
+      context.handle(
+          _countryCodeMeta,
+          countryCode.isAcceptableOrUnknown(
+              data['country_code']!, _countryCodeMeta));
+    } else if (isInserting) {
+      context.missing(_countryCodeMeta);
+    }
+    if (data.containsKey('platform_name')) {
+      context.handle(
+          _platformNameMeta,
+          platformName.isAcceptableOrUnknown(
+              data['platform_name']!, _platformNameMeta));
+    } else if (isInserting) {
+      context.missing(_platformNameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {countryCode, platformName};
+  @override
+  CountryPlatform map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CountryPlatform(
+      countryCode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}country_code'])!,
+      platformName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}platform_name'])!,
+    );
+  }
+
+  @override
+  $CountryPlatformsTable createAlias(String alias) {
+    return $CountryPlatformsTable(attachedDatabase, alias);
+  }
+}
+
+class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
+  final String countryCode;
+  final String platformName;
+  const CountryPlatform(
+      {required this.countryCode, required this.platformName});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['country_code'] = Variable<String>(countryCode);
+    map['platform_name'] = Variable<String>(platformName);
+    return map;
+  }
+
+  CountryPlatformsCompanion toCompanion(bool nullToAbsent) {
+    return CountryPlatformsCompanion(
+      countryCode: Value(countryCode),
+      platformName: Value(platformName),
+    );
+  }
+
+  factory CountryPlatform.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CountryPlatform(
+      countryCode: serializer.fromJson<String>(json['countryCode']),
+      platformName: serializer.fromJson<String>(json['platformName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'countryCode': serializer.toJson<String>(countryCode),
+      'platformName': serializer.toJson<String>(platformName),
+    };
+  }
+
+  CountryPlatform copyWith({String? countryCode, String? platformName}) =>
+      CountryPlatform(
+        countryCode: countryCode ?? this.countryCode,
+        platformName: platformName ?? this.platformName,
+      );
+  CountryPlatform copyWithCompanion(CountryPlatformsCompanion data) {
+    return CountryPlatform(
+      countryCode:
+          data.countryCode.present ? data.countryCode.value : this.countryCode,
+      platformName: data.platformName.present
+          ? data.platformName.value
+          : this.platformName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CountryPlatform(')
+          ..write('countryCode: $countryCode, ')
+          ..write('platformName: $platformName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(countryCode, platformName);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CountryPlatform &&
+          other.countryCode == this.countryCode &&
+          other.platformName == this.platformName);
+}
+
+class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
+  final Value<String> countryCode;
+  final Value<String> platformName;
+  final Value<int> rowid;
+  const CountryPlatformsCompanion({
+    this.countryCode = const Value.absent(),
+    this.platformName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CountryPlatformsCompanion.insert({
+    required String countryCode,
+    required String platformName,
+    this.rowid = const Value.absent(),
+  })  : countryCode = Value(countryCode),
+        platformName = Value(platformName);
+  static Insertable<CountryPlatform> custom({
+    Expression<String>? countryCode,
+    Expression<String>? platformName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (countryCode != null) 'country_code': countryCode,
+      if (platformName != null) 'platform_name': platformName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CountryPlatformsCompanion copyWith(
+      {Value<String>? countryCode,
+      Value<String>? platformName,
+      Value<int>? rowid}) {
+    return CountryPlatformsCompanion(
+      countryCode: countryCode ?? this.countryCode,
+      platformName: platformName ?? this.platformName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (countryCode.present) {
+      map['country_code'] = Variable<String>(countryCode.value);
+    }
+    if (platformName.present) {
+      map['platform_name'] = Variable<String>(platformName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CountryPlatformsCompanion(')
+          ..write('countryCode: $countryCode, ')
+          ..write('platformName: $platformName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RidesTable rides = $RidesTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $CountryPlatformsTable countryPlatforms =
+      $CountryPlatformsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [rides, expenses, settings];
+      [rides, expenses, settings, countryPlatforms];
 }
 
 typedef $$RidesTableCreateCompanionBuilder = RidesCompanion Function({
@@ -2014,6 +2219,136 @@ typedef $$SettingsTableProcessedTableManager = ProcessedTableManager<
     (Setting, BaseReferences<_$AppDatabase, $SettingsTable, Setting>),
     Setting,
     PrefetchHooks Function()>;
+typedef $$CountryPlatformsTableCreateCompanionBuilder
+    = CountryPlatformsCompanion Function({
+  required String countryCode,
+  required String platformName,
+  Value<int> rowid,
+});
+typedef $$CountryPlatformsTableUpdateCompanionBuilder
+    = CountryPlatformsCompanion Function({
+  Value<String> countryCode,
+  Value<String> platformName,
+  Value<int> rowid,
+});
+
+class $$CountryPlatformsTableFilterComposer
+    extends Composer<_$AppDatabase, $CountryPlatformsTable> {
+  $$CountryPlatformsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get countryCode => $composableBuilder(
+      column: $table.countryCode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get platformName => $composableBuilder(
+      column: $table.platformName, builder: (column) => ColumnFilters(column));
+}
+
+class $$CountryPlatformsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CountryPlatformsTable> {
+  $$CountryPlatformsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get countryCode => $composableBuilder(
+      column: $table.countryCode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get platformName => $composableBuilder(
+      column: $table.platformName,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$CountryPlatformsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CountryPlatformsTable> {
+  $$CountryPlatformsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get countryCode => $composableBuilder(
+      column: $table.countryCode, builder: (column) => column);
+
+  GeneratedColumn<String> get platformName => $composableBuilder(
+      column: $table.platformName, builder: (column) => column);
+}
+
+class $$CountryPlatformsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CountryPlatformsTable,
+    CountryPlatform,
+    $$CountryPlatformsTableFilterComposer,
+    $$CountryPlatformsTableOrderingComposer,
+    $$CountryPlatformsTableAnnotationComposer,
+    $$CountryPlatformsTableCreateCompanionBuilder,
+    $$CountryPlatformsTableUpdateCompanionBuilder,
+    (
+      CountryPlatform,
+      BaseReferences<_$AppDatabase, $CountryPlatformsTable, CountryPlatform>
+    ),
+    CountryPlatform,
+    PrefetchHooks Function()> {
+  $$CountryPlatformsTableTableManager(
+      _$AppDatabase db, $CountryPlatformsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CountryPlatformsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CountryPlatformsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CountryPlatformsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> countryCode = const Value.absent(),
+            Value<String> platformName = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CountryPlatformsCompanion(
+            countryCode: countryCode,
+            platformName: platformName,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String countryCode,
+            required String platformName,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CountryPlatformsCompanion.insert(
+            countryCode: countryCode,
+            platformName: platformName,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CountryPlatformsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CountryPlatformsTable,
+    CountryPlatform,
+    $$CountryPlatformsTableFilterComposer,
+    $$CountryPlatformsTableOrderingComposer,
+    $$CountryPlatformsTableAnnotationComposer,
+    $$CountryPlatformsTableCreateCompanionBuilder,
+    $$CountryPlatformsTableUpdateCompanionBuilder,
+    (
+      CountryPlatform,
+      BaseReferences<_$AppDatabase, $CountryPlatformsTable, CountryPlatform>
+    ),
+    CountryPlatform,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2024,4 +2359,11 @@ class $AppDatabaseManager {
       $$ExpensesTableTableManager(_db, _db.expenses);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$CountryPlatformsTableTableManager get countryPlatforms =>
+      $$CountryPlatformsTableTableManager(_db, _db.countryPlatforms);
+}
+
+mixin _$CountryPlatformsDaoMixin on DatabaseAccessor<AppDatabase> {
+  $CountryPlatformsTable get countryPlatforms =>
+      attachedDatabase.countryPlatforms;
 }

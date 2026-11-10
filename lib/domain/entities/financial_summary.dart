@@ -1,6 +1,6 @@
 // Entidades de domínio - FinancialSummary (Resumo Financeiro)
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:intl/intl.dart';
+import 'package:carjobfinance/core/settings/locale_helper.dart';
 
 part 'financial_summary.freezed.dart';
 part 'financial_summary.g.dart';
@@ -25,12 +25,15 @@ class FinancialSummary with _$FinancialSummary {
 
   const FinancialSummary._();
 
-  // Helpers
-  String get formattedNetProfit =>
-      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(netProfit)}';
+  // Helpers - use locale from AppSettings via formatCurrency
+  // Default to pt_BR for backward compatibility; presentation layer should override
+  /// @Deprecated Use `LocalizedCurrency.formatWithSettings` in the presentation
+  /// layer instead — these getters hardcode `pt_BR` and will show wrong
+  /// formatting to a user in a different country.
+  String get formattedNetProfit => formatCurrency(netProfit, localeTag: 'pt_BR');
   String get formattedTotalEarnings =>
-      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalEarnings)}';
+      formatCurrency(totalEarnings, localeTag: 'pt_BR');
   String get formattedTotalExpenses =>
-      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(totalExpenses)}';
+      formatCurrency(totalExpenses, localeTag: 'pt_BR');
   bool get isProfitable => netProfit >= 0;
 }

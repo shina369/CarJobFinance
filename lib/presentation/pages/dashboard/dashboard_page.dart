@@ -2,9 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 import '../../../domain/entities/expense.dart' as entity_expense;
@@ -87,6 +88,8 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   }
 
   void _showSetGoalDialog() {
+    final settings = ref.read(appSettingsProvider);
+    final symbol = settings.currencySymbol;
     final controller = TextEditingController(
       text: _localGoal.toStringAsFixed(2).replaceAll('.', ','),
     );
@@ -97,10 +100,10 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Valor do objetivo (R\$)',
-            prefixText: 'R\$ ',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'Valor do objetivo ($symbol)',
+            prefixText: '$symbol ',
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -128,6 +131,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final today = _computeTodayData();
     final month = _computeMonthData();
 
@@ -139,7 +143,48 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
           // Today summary card
           _todayCard(context, today),
           const SizedBox(height: 12),
-          // Month summary card WITH embedded action buttons
+          // Action buttons above month panel
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/rides/new'),
+                  icon: const Icon(Icons.directions_car, size: 18),
+                  label: const Text('Nova Corrida'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cs.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/expenses/new'),
+                  icon: const Icon(Icons.receipt_long, size: 18),
+                  label: const Text('Nova Despesa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Month summary card WITHOUT embedded action buttons
           _MonthPanel(
             earnings: month.earnings,
             expenses: month.expenses,
@@ -147,8 +192,6 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             label: month.label,
             goal: _localGoal,
             onSetGoal: _showSetGoalDialog,
-            onNewRide: () => context.push('/rides/new'),
-            onNewExpense: () => context.push('/expenses/new'),
           ),
           // Recent rides strip — only when there are rides
           if (widget.rides.isNotEmpty) ...[
@@ -365,28 +408,33 @@ Widget _todayCard(BuildContext context, _TodayData t) {
         ),
         const SizedBox(height: 14),
         // Big profit number
-        Row(
-          children: [
-            Text(
-              isPositive ? '+' : '',
-              style: ts.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Flexible(
-              child: Text(
-                _fmt(profit),
-                style: ts.displaySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
+        Consumer(
+          builder: (context, ref, _) {
+            final settings = ref.watch(appSettingsProvider);
+            return Row(
+              children: [
+                Text(
+                  isPositive ? '+' : '',
+                  style: ts.headlineSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+                Flexible(
+                  child: Text(
+                    LocalizedCurrency.formatWithSettings(profit, settings),
+                    style: ts.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 16),
         // Three metric pills in a row
@@ -395,27 +443,24 @@ Widget _todayCard(BuildContext context, _TodayData t) {
             final pillWidth = (constraints.maxWidth - 16) / 3;
             return Row(
               children: [
-                _metricPill(
-                  context,
+                _MetricPill(
                   icon: Icons.trending_up,
                   label: 'Ganhos',
-                  value: _fmt(t.earnings),
+                  value: t.earnings,
                   pillWidth: pillWidth,
                 ),
                 const SizedBox(width: 8),
-                _metricPill(
-                  context,
+                _MetricPill(
                   icon: Icons.money_off,
                   label: 'Despesas',
-                  value: _fmt(t.expenses),
+                  value: t.expenses,
                   pillWidth: pillWidth,
                 ),
                 const SizedBox(width: 8),
-                _metricPill(
-                  context,
+                _MetricPill(
                   icon: Icons.speed,
                   label: 'Km rodados',
-                  value: _fmt(t.km),
+                  value: t.km,
                   pillWidth: pillWidth,
                 ),
               ],
@@ -429,61 +474,71 @@ Widget _todayCard(BuildContext context, _TodayData t) {
 
 // ── METRIC PILL ───────────────────────────────────────────────
 
-Widget _metricPill(
-  BuildContext context, {
-  required IconData icon,
-  required String label,
-  required String value,
-  required double pillWidth,
-}) {
-  final ts = Theme.of(context).textTheme;
-  final isExpense = label == 'Despesas';
-  return SizedBox(
-    width: pillWidth,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: isExpense
-            ? Colors.black.withValues(alpha: 0.12)
-            : Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(icon,
-                  size: 13, color: Colors.white.withValues(alpha: 0.75)),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  label,
-                  style: ts.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    letterSpacing: 0.5,
+class _MetricPill extends ConsumerWidget {
+  const _MetricPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.pillWidth,
+  });
+
+  final IconData icon;
+  final String label;
+  final double value;
+  final double pillWidth;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
+    final ts = Theme.of(context).textTheme;
+    final isExpense = label == 'Despesas';
+    return SizedBox(
+      width: pillWidth,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: isExpense
+              ? Colors.black.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(icon,
+                    size: 13, color: Colors.white.withValues(alpha: 0.75)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: ts.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: ts.titleSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+              ],
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              LocalizedCurrency.formatWithSettings(value, settings),
+              style: ts.titleSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 // ── MONTH PANEL (card + embedded buttons) ─────────────────────
@@ -496,8 +551,6 @@ class _MonthPanel extends StatelessWidget {
     required this.label,
     required this.goal,
     required this.onSetGoal,
-    required this.onNewRide,
-    required this.onNewExpense,
   });
 
   final double earnings;
@@ -506,8 +559,6 @@ class _MonthPanel extends StatelessWidget {
   final String label;
   final double goal;
   final VoidCallback onSetGoal;
-  final VoidCallback onNewRide;
-  final VoidCallback onNewExpense;
 
   @override
   Widget build(BuildContext context) {
@@ -558,7 +609,7 @@ class _MonthPanel extends StatelessWidget {
                 // Profit line
                 _StatRow(
                   label: 'Lucro no mês',
-                  value: _fmt(netProfit),
+                  value: netProfit,
                   color: netProfit >= 0
                       ? Colors.green.shade700
                       : Colors.red.shade700,
@@ -570,48 +621,27 @@ class _MonthPanel extends StatelessWidget {
                 // Goal + progress
                 _StatRow(
                   label: 'Objetivo',
-                  value: _fmt(goal),
+                  value: goal,
                   color: cs.primary,
                   icon: Icons.flag,
                 ),
                 const SizedBox(height: 8),
                 _ProgressBar(value: progress / 100, color: progressColor),
-                const SizedBox(height: 12),
-                // Actions
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionButton(
-                        icon: Icons.directions_car,
-                        label: 'Nova Corrida',
-                        color: cs.primary,
-                        onTap: onNewRide,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ActionButton(
-                        icon: Icons.receipt_long,
-                        label: 'Nova Despesa',
-                        color: Colors.orange.shade700,
-                        onTap: onNewExpense,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 10),
                 // Edit goal link
                 Center(
-                  child: TextButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: onSetGoal,
                     icon: Icon(Icons.edit_outlined,
                         size: 16, color: cs.primary),
                     label: const Text('Alterar objetivo'),
-                    style: TextButton.styleFrom(
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: cs.primary,
+                      side: BorderSide(color: cs.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      textStyle: ts.labelSmall,
+                          horizontal: 16, vertical: 8),
+                      textStyle: ts.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -624,7 +654,7 @@ class _MonthPanel extends StatelessWidget {
   }
 }
 
-class _StatRow extends StatelessWidget {
+class _StatRow extends ConsumerWidget {
   const _StatRow({
     required this.label,
     required this.value,
@@ -633,12 +663,13 @@ class _StatRow extends StatelessWidget {
   });
 
   final String label;
-  final String value;
+  final double value;
   final Color color;
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
     final cs = Theme.of(context).colorScheme;
     final ts = Theme.of(context).textTheme;
     return Row(
@@ -653,43 +684,13 @@ class _StatRow extends StatelessWidget {
           ],
         ),
         Text(
-          value,
+          LocalizedCurrency.formatWithSettings(value, settings),
           style: ts.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
     );
   }
 }
@@ -743,12 +744,17 @@ Widget _recentRidesStrip(
               '${ride.formattedDate} · ${ride.durationMinutes}min',
               style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant),
             ),
-            trailing: Text(
-              _fmt(ride.earnings),
-              style: ts.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: cs.primary,
-              ),
+            trailing: Consumer(
+              builder: (context, ref, _) {
+                final settings = ref.watch(appSettingsProvider);
+                return Text(
+                  LocalizedCurrency.formatWithSettings(ride.earnings, settings),
+                  style: ts.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: cs.primary,
+                  ),
+                );
+              },
             ),
             onTap: () => context.push('/rides/${ride.id}'),
           ),
@@ -855,5 +861,3 @@ class _BarPainter extends CustomPainter {
   bool shouldRepaint(covariant _BarPainter old) =>
       old.value != value || old.color != color;
 }
-
-String _fmt(double v) => NumberFormat('#,##0.00', 'pt_BR').format(v);
