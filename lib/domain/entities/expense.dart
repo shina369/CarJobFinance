@@ -28,5 +28,9 @@ class Expense with _$Expense {
   // Helpers
   String get formattedDate =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  /// @Deprecated Use `LocalizedCurrency.formatWithSettings` in the presentation
+  /// layer instead — this getter hardcodes `pt_BR` and will show wrong
+  /// formatting to a user in a different country.
   String get formattedAmount => formatCurrency(amount, localeTag: 'pt_BR');
 }

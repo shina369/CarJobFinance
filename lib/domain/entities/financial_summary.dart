@@ -27,8 +27,13 @@ class FinancialSummary with _$FinancialSummary {
 
   // Helpers - use locale from AppSettings via formatCurrency
   // Default to pt_BR for backward compatibility; presentation layer should override
+  /// @Deprecated Use `LocalizedCurrency.formatWithSettings` in the presentation
+  /// layer instead — these getters hardcode `pt_BR` and will show wrong
+  /// formatting to a user in a different country.
   String get formattedNetProfit => formatCurrency(netProfit, localeTag: 'pt_BR');
-  String get formattedTotalEarnings => formatCurrency(totalEarnings, localeTag: 'pt_BR');
-  String get formattedTotalExpenses => formatCurrency(totalExpenses, localeTag: 'pt_BR');
+  String get formattedTotalEarnings =>
+      formatCurrency(totalEarnings, localeTag: 'pt_BR');
+  String get formattedTotalExpenses =>
+      formatCurrency(totalExpenses, localeTag: 'pt_BR');
   bool get isProfitable => netProfit >= 0;
 }
