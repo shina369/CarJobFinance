@@ -128,6 +128,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final today = _computeTodayData();
     final month = _computeMonthData();
 
@@ -139,7 +140,48 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
           // Today summary card
           _todayCard(context, today),
           const SizedBox(height: 12),
-          // Month summary card WITH embedded action buttons
+          // Action buttons above month panel
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/rides/new'),
+                  icon: const Icon(Icons.directions_car, size: 18),
+                  label: const Text('Nova Corrida'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cs.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/expenses/new'),
+                  icon: const Icon(Icons.receipt_long, size: 18),
+                  label: const Text('Nova Despesa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Month summary card WITHOUT embedded action buttons
           _MonthPanel(
             earnings: month.earnings,
             expenses: month.expenses,
@@ -147,8 +189,6 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             label: month.label,
             goal: _localGoal,
             onSetGoal: _showSetGoalDialog,
-            onNewRide: () => context.push('/rides/new'),
-            onNewExpense: () => context.push('/expenses/new'),
           ),
           // Recent rides strip — only when there are rides
           if (widget.rides.isNotEmpty) ...[
@@ -496,8 +536,6 @@ class _MonthPanel extends StatelessWidget {
     required this.label,
     required this.goal,
     required this.onSetGoal,
-    required this.onNewRide,
-    required this.onNewExpense,
   });
 
   final double earnings;
@@ -506,8 +544,6 @@ class _MonthPanel extends StatelessWidget {
   final String label;
   final double goal;
   final VoidCallback onSetGoal;
-  final VoidCallback onNewRide;
-  final VoidCallback onNewExpense;
 
   @override
   Widget build(BuildContext context) {
@@ -576,42 +612,21 @@ class _MonthPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 _ProgressBar(value: progress / 100, color: progressColor),
-                const SizedBox(height: 12),
-                // Actions
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionButton(
-                        icon: Icons.directions_car,
-                        label: 'Nova Corrida',
-                        color: cs.primary,
-                        onTap: onNewRide,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ActionButton(
-                        icon: Icons.receipt_long,
-                        label: 'Nova Despesa',
-                        color: Colors.orange.shade700,
-                        onTap: onNewExpense,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 10),
                 // Edit goal link
                 Center(
-                  child: TextButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: onSetGoal,
                     icon: Icon(Icons.edit_outlined,
                         size: 16, color: cs.primary),
                     label: const Text('Alterar objetivo'),
-                    style: TextButton.styleFrom(
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: cs.primary,
+                      side: BorderSide(color: cs.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      textStyle: ts.labelSmall,
+                          horizontal: 16, vertical: 8),
+                      textStyle: ts.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -660,36 +675,6 @@ class _StatRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
     );
   }
 }
