@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/app_database.dart' as db;
 import '../../data/datasources/local/daos.dart';
+import '../../data/datasources/local/app_database.dart';
 import '../../data/repositories/repositories_impl.dart';
 import '../../domain/entities/ride.dart' as entity_ride;
 import '../../domain/entities/expense.dart' as entity_expense;
@@ -17,6 +18,10 @@ final appDatabaseProvider = Provider<db.AppDatabase>((ref) {
 
 final appDaoProvider = Provider<AppDao>((ref) {
   return AppDao(ref.watch(appDatabaseProvider));
+});
+
+final countryPlatformsDaoProvider = Provider<CountryPlatformsDao>((ref) {
+  return ref.watch(appDatabaseProvider).countryPlatformsDao;
 });
 
 final rideRepositoryProvider = Provider<RideRepository>((ref) {

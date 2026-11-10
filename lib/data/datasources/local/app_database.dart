@@ -80,29 +80,32 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+          await _seedCountryPlatforms();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from == 1 && to == 2) {
-            // Create the country_platforms table
             await m.createTable(countryPlatforms);
-
-            // Seed initial data from COUNTRIES constant
-            for (final country in COUNTRIES) {
-              for (final platform in country.platforms) {
-                await into(countryPlatforms).insert(
-                  CountryPlatformsCompanion.insert(
-                    countryCode: country.code,
-                    platformName: platform,
-                  ),
-                );
-              }
-            }
+            await _seedCountryPlatforms();
           }
         },
       );
 
   /// DAO for accessing country-platform mappings.
   CountryPlatformsDao get countryPlatformsDao => CountryPlatformsDao(this);
+
+  /// Seeds the country_platforms table with platforms from COUNTRIES.
+  Future<void> _seedCountryPlatforms() async {
+    for (final country in COUNTRIES) {
+      for (final platform in country.platforms) {
+        await into(countryPlatforms).insert(
+          CountryPlatformsCompanion.insert(
+            countryCode: country.code,
+            platformName: platform,
+          ),
+        );
+      }
+    }
+  }
 }
 
 /// DAO for accessing country-platform mappings.
