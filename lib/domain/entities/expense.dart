@@ -1,6 +1,6 @@
 // Entidades de domínio - Expense (Despesa)
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:intl/intl.dart';
+import 'package:carjobfinance/core/settings/locale_helper.dart';
 
 part 'expense.freezed.dart';
 part 'expense.g.dart';
@@ -28,6 +28,5 @@ class Expense with _$Expense {
   // Helpers
   String get formattedDate =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  String get formattedAmount =>
-      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(amount)}';
+  String get formattedAmount => formatCurrency(amount, localeTag: 'pt_BR');
 }

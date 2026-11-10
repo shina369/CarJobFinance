@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 
@@ -79,13 +80,16 @@ class _RidesList extends StatelessWidget {
   }
 }
 
-class RideCard extends StatelessWidget {
+class RideCard extends ConsumerWidget {
   const RideCard({super.key, required this.ride});
 
   final entity_ride.Ride ride;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
+    final formattedAmount = LocalizedCurrency.formatWithSettings(ride.earnings, settings);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -101,7 +105,7 @@ class RideCard extends StatelessWidget {
           '${ride.formattedDate} • ${ride.durationMinutes}min • ${ride.distanceKm.toStringAsFixed(1)} km',
         ),
         trailing: Text(
-          ride.formattedAmount,
+          formattedAmount,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -111,9 +115,4 @@ class RideCard extends StatelessWidget {
       ),
     );
   }
-}
-
-extension on entity_ride.Ride {
-  String get formattedAmount =>
-      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(earnings)}';
 }

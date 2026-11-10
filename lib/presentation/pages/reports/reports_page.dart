@@ -1,8 +1,9 @@
 // Reports Page - Relatórios e exportação
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 
 enum ReportPeriod { day, week, month, year, custom }
@@ -184,6 +185,7 @@ class _ReportsContent extends ConsumerWidget {
     final period = ref.watch(selectedReportPeriodProvider);
     final ridesAsync = ref.watch(ridesControllerProvider);
     final expensesAsync = ref.watch(expensesControllerProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     return ridesAsync.when(
       data: (rides) => expensesAsync.when(
@@ -210,6 +212,9 @@ class _ReportsContent extends ConsumerWidget {
               filteredRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
           final totalMinutes =
               filteredRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
+
+          // Format currency using settings
+          String fmt(double v) => LocalizedCurrency.formatWithSettings(v, settings);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -250,18 +255,18 @@ class _ReportsContent extends ConsumerWidget {
                       const SizedBox(height: 16),
                       _SummaryRow(
                         label: 'Total de Ganhos',
-                        value: _formatCurrency(totalEarnings),
+                        value: fmt(totalEarnings),
                         isPositive: true,
                       ),
                       _SummaryRow(
                         label: 'Total de Despesas',
-                        value: _formatCurrency(totalExpenses),
+                        value: fmt(totalExpenses),
                         isPositive: false,
                       ),
                       const Divider(),
                       _SummaryRow(
                         label: 'Lucro Líquido',
-                        value: _formatCurrency(netProfit),
+                        value: fmt(netProfit),
                         isPositive: netProfit >= 0,
                         isTotal: true,
                       ),
@@ -298,21 +303,20 @@ class _ReportsContent extends ConsumerWidget {
                       _MetricRow(
                         label: 'Média por km',
                         value: totalKm > 0
-                            ? '${_formatCurrency(totalEarnings / totalKm)}/km'
-                            : '${_formatCurrency(0)}/km',
+                            ? '${fmt(totalEarnings / totalKm)}/km'
+                            : '${fmt(0)}/km',
                       ),
                       _MetricRow(
                         label: 'Média por hora',
                         value: totalMinutes > 0
-                            ? '${_formatCurrency(totalEarnings / (totalMinutes / 60))}/h'
-                            : '${_formatCurrency(0)}/h',
+                            ? '${fmt(totalEarnings / (totalMinutes / 60))}/h'
+                            : '${fmt(0)}/h',
                       ),
                       _MetricRow(
                         label: 'Média por corrida',
                         value: filteredRides.isNotEmpty
-                            ? _formatCurrency(
-                                totalEarnings / filteredRides.length)
-                            : _formatCurrency(0),
+                            ? fmt(totalEarnings / filteredRides.length)
+                            : fmt(0),
                       ),
                     ],
                   ),
@@ -386,10 +390,6 @@ class _ReportsContent extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro ao carregar corridas: $e')),
     );
-  }
-
-  String _formatCurrency(double value) {
-    return 'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(value)}';
   }
 }
 

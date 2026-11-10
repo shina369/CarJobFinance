@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/settings/app_settings_notifier.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 
@@ -184,6 +185,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(appSettingsProvider);
+    final currencySymbol = settings.currencySymbol;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Editar Corrida' : 'Nova Corrida'),
@@ -280,10 +284,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _earningsController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Valor ganho',
-                prefixText: 'R\$ ',
-                prefixIcon: Icon(Icons.attach_money),
+                prefixText: '$currencySymbol ',
+                prefixIcon: const Icon(Icons.attach_money),
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),

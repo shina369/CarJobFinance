@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -148,6 +150,9 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(appSettingsProvider);
+    final currencySymbol = settings.currencySymbol;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Editar Despesa' : 'Nova Despesa'),
@@ -206,10 +211,10 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Valor',
-                prefixText: 'R\$ ',
-                prefixIcon: Icon(Icons.attach_money),
+                prefixText: '$currencySymbol ',
+                prefixIcon: const Icon(Icons.attach_money),
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
