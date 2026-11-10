@@ -5,7 +5,7 @@ import 'app_database.dart';
 
 part 'daos.g.dart';
 
-@DriftAccessor(tables: [Rides, Expenses, Settings])
+@DriftAccessor(tables: [Rides, Expenses, Settings, CountryPlatforms])
 class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
   AppDao(super.db);
 
@@ -95,6 +95,35 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
   Future<Map<String, String>> getAllSettings() async {
     final rows = await select(settings).get();
     return {for (var row in rows) row.key: row.value};
+  }
+
+  // ===== COUNTRY PLATFORMS =====
+
+  Future<void> upsertCountryPlatforms(String countryCode, List<String> platforms) async {
+    await transaction(() async {
+      // Delete existing platforms for this country
+      await (delete(countryPlatforms)
+            ..where((tbl) => tbl.countryCode.equals(countryCode)))
+          .go();
+
+      // Insert new platforms
+      for (final platform in platforms) {
+        await into(countryPlatforms).insert(
+          CountryPlatformsCompanion.insert(
+            countryCode: countryCode,
+            platformName: platform,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<String>> getPlatformsFor(String countryCode) async {
+    final query = select(countryPlatforms)
+      ..where((tbl) => tbl.countryCode.equals(countryCode))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.platformName)]);
+    final rows = await query.get();
+    return rows.map((r) => r.platformName).toList();
   }
 
   // ===== AGGREGATIONS / RELATÓRIOS =====

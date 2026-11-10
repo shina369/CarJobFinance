@@ -7,4 +7,6 @@ mixin _$AppDaoMixin on DatabaseAccessor<AppDatabase> {
   $RidesTable get rides => attachedDatabase.rides;
   $ExpensesTable get expenses => attachedDatabase.expenses;
   $SettingsTable get settings => attachedDatabase.settings;
+  $CountryPlatformsTable get countryPlatforms =>
+      attachedDatabase.countryPlatforms;
 }
