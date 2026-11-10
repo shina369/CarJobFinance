@@ -21,19 +21,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   void initState() {
     super.initState();
-    // Check if already configured on first build
-    _checkAutoSkip();
   }
 
   void _checkAutoSkip() {
+    // Schedules the auto-navigate timer at most once, when first observed configured.
+    if (_navigated) return;
     final settings = ref.read(appSettingsProvider);
-    debugPrint('OnboardingPage: _checkAutoSkip called, configured = ${settings.configured}');
     if (settings.configured) {
-      // Show message and auto-navigate after 800ms
+      _navigated = true;
       Future.delayed(const Duration(milliseconds: 800), () {
-        debugPrint('OnboardingPage: Auto-navigate timer fired');
-        if (mounted && !_navigated) {
-          _navigated = true;
+        if (mounted) {
           context.go('/');
         }
       });
@@ -44,7 +41,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
 
-    // If already configured, show brief message (auto-navigation handled in initState)
+    // Auto-navigate check runs on first build (or first rebuild after the
+    // auto-skip message is shown), not in initState — Riverpod's ref is
+    // not available there.
+    _checkAutoSkip();
+
+    // If already configured, show brief message (auto-navigation scheduled above)
     if (settings.configured) {
       return const Scaffold(
         body: Center(
@@ -114,11 +116,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _onContinuePressed() async {
     if (_selectedCountryCode == null) return;
 
-    // Call setCountry on the notifier (cast to access the method)
-    final notifier = ref.read(appSettingsProvider.notifier);
-    if (notifier is AppSettingsNotifier) {
-      await notifier.setCountry(_selectedCountryCode!);
-    }
+    // Call setCountry on the notifier
+    await ref.read(appSettingsProvider.notifier).setCountry(_selectedCountryCode!);
+
+    // Mark the manual navigation so the auto-skip timer (scheduled by the
+    // rebuild that follows setCountry's state change) can't double-fire
+    _navigated = true;
 
     // Navigate to home after successful country selection
     if (mounted) {

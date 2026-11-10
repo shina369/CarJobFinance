@@ -4,14 +4,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
+import 'package:carjobfinance/data/datasources/local/app_database.dart' show CountryPlatformsDao;
+import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart';
 
-/// Mock notifier for testing that doesn't require DAOs
-/// Extends AppSettingsNotifier using the test constructor
+/// Dummy DAOs used to satisfy the non-nullable fields of the real
+/// [AppSettingsNotifier]; the mock overrides [setCountry] so these are
+/// never actually called by the onboarding tests.
+class _FakeAppDao implements AppDao {
+  @override
+  noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('FakeAppDao');
+}
+
+class _FakeCountryPlatformsDao implements CountryPlatformsDao {
+  @override
+  noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('FakeCountryPlatformsDao');
+}
+
+/// Mock notifier for testing that doesn't touch a real database.
+/// Only [setCountry] is overridden — the page's Continue button is the
+/// sole DAO-backed method the onboarding tests exercise.
 class _MockAppSettingsNotifier extends AppSettingsNotifier {
-  _MockAppSettingsNotifier(AppSettings initialState) : super.test(null, null) {
-    state = initialState;
-  }
+  _MockAppSettingsNotifier(AppSettings initialState)
+      : super.forTesting(_FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
 
   @override
   Future<void> setCountry(String countryCode) async {
