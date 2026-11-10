@@ -15,7 +15,9 @@ void main() {
       expect(br.localeTag, 'pt_BR');
       expect(br.platforms, contains('Uber'));
       expect(br.platforms, contains('99'));
-      expect(br.platforms, contains('InDrive'));
+      expect(br.platforms, contains('inDrive'));
+      expect(br.platforms, contains('Taxi'));
+      expect(br.platforms, contains('Transfer'));
     });
 
     test('Portugal entry uses EUR', () {
@@ -45,6 +47,13 @@ void main() {
     test('all codes are unique', () {
       final codes = COUNTRIES.map((c) => c.code).toList();
       expect(codes.toSet().length, codes.length);
+    });
+
+    test('every country includes Taxi and Transfer', () {
+      for (final c in COUNTRIES) {
+        expect(c.platforms, contains('Taxi'), reason: '${c.code} missing Taxi');
+        expect(c.platforms, contains('Transfer'), reason: '${c.code} missing Transfer');
+      }
     });
   });
 }

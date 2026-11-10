@@ -95,18 +95,16 @@ void main() {
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
-        // Verify Portugal platforms are in the dropdown menu (overlay)
-        // PT platforms: ['Uber', 'Bolt', 'inDrive', 'BlaBlaCar', 'Outro']
-        // After opening dropdown, the menu items appear in an overlay
+        // PT platforms: ['Uber', 'Bolt', 'IzzyMove', 'Taxi', 'Transfer']
         expect(find.text('Uber'), findsWidgets); // At least one (button + menu item)
         expect(find.text('Bolt'), findsOneWidget); // Only in menu
-        expect(find.text('inDrive'), findsOneWidget); // Only in menu
-        expect(find.text('BlaBlaCar'), findsOneWidget); // Only in menu
-        expect(find.text('Outro'), findsOneWidget); // Only in menu
+        expect(find.text('IzzyMove'), findsOneWidget); // Only in menu
+        expect(find.text('Taxi'), findsOneWidget); // Only in menu
+        expect(find.text('Transfer'), findsOneWidget); // Only in menu
 
         // Verify Brazil-specific platforms are NOT present
         expect(find.text('99'), findsNothing);
-        expect(find.text('InDrive'), findsNothing); // Note: BR uses 'InDrive', PT uses 'inDrive'
+        expect(find.text('Maxim'), findsNothing);
       },
     );
 
@@ -124,17 +122,18 @@ void main() {
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
-        // Verify Brazil platforms are in the dropdown menu
-        // BR platforms: ['Uber', '99', 'InDrive', 'BlaBlaCar', 'Outro']
+        // BR platforms: ['Uber', '99', 'inDrive', 'Maxim', 'POP Move',
+        //               'Garupa', 'Urbano Norte', 'Mubis', 'Taxi', 'Transfer']
         expect(find.text('Uber'), findsWidgets); // At least one (button + menu item)
         expect(find.text('99'), findsOneWidget); // Only in menu
-        expect(find.text('InDrive'), findsOneWidget); // Only in menu
-        expect(find.text('BlaBlaCar'), findsOneWidget); // Only in menu
-        expect(find.text('Outro'), findsOneWidget); // Only in menu
+        expect(find.text('inDrive'), findsOneWidget); // Only in menu
+        expect(find.text('Maxim'), findsOneWidget); // Only in menu
+        expect(find.text('Taxi'), findsOneWidget); // Only in menu
+        expect(find.text('Transfer'), findsOneWidget); // Only in menu
 
         // Verify Portugal-specific platforms are NOT present
         expect(find.text('Bolt'), findsNothing);
-        expect(find.text('inDrive'), findsNothing); // Note: BR uses 'InDrive', PT uses 'inDrive'
+        expect(find.text('IzzyMove'), findsNothing);
       },
     );
   });

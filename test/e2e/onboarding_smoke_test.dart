@@ -245,7 +245,7 @@ void main() {
             .toList();
 
         // Check that all 5 Portugal platforms are present
-        for (final platform in ['Uber', 'Bolt', 'inDrive', 'BlaBlaCar', 'Outro']) {
+        for (final platform in ['Uber', 'Bolt', 'IzzyMove', 'Taxi', 'Transfer']) {
           expect(dropdownTexts, contains(platform),
               reason: 'Dropdown should contain Portugal platform: $platform');
         }

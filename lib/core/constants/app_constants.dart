@@ -11,10 +11,14 @@ class AppConstants {
   static const int databaseVersion = 1;
 
   // Platforms
+  // @deprecated Platform lists are now country-aware — see COUNTRIES in
+  // core/settings/country_data.dart and AppSettings.platforms. This constant
+  // is kept only for backward compatibility and should not be used in new code.
+  @Deprecated('Use AppSettings.platforms from app_settings_notifier.dart')
   static const List<String> supportedPlatforms = [
     'Uber',
     '99',
-    'InDrive',
+    'inDrive',
     'Cabify',
     'BlaBlaCar',
     'Outro',
