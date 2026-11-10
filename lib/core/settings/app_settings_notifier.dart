@@ -93,16 +93,34 @@ class AppSettings {
 
 /// StateNotifier managing app settings with country-aware state.
 class AppSettingsNotifier extends StateNotifier<AppSettings> {
-  final AppDao _dao;
-  final CountryPlatformsDao _countryPlatformsDao;
+  final AppDao? _dao;
+  final CountryPlatformsDao? _countryPlatformsDao;
 
-  AppSettingsNotifier(this._dao, this._countryPlatformsDao)
-      : super(AppSettings.defaultBrazil());
+  AppSettingsNotifier(AppDao dao, CountryPlatformsDao countryPlatformsDao)
+      : _dao = dao,
+        _countryPlatformsDao = countryPlatformsDao,
+        super(AppSettings.defaultBrazil());
+
+  /// Creates a mock notifier for testing purposes.
+  /// This bypasses the DAO requirements and uses the provided initial state.
+  @visibleForTesting
+  factory AppSettingsNotifier.forTesting(AppSettings initialState) {
+    final notifier = AppSettingsNotifier.test(null, null);
+    notifier.state = initialState;
+    return notifier;
+  }
+
+  /// Internal constructor for testing that accepts null DAOs.
+  @visibleForTesting
+  AppSettingsNotifier.test(AppDao? dao, CountryPlatformsDao? countryPlatformsDao)
+      : _dao = dao,
+        _countryPlatformsDao = countryPlatformsDao,
+        super(AppSettings.defaultBrazil());
 
   /// Initializes settings by reading the stored country preference.
   /// Falls back to Brazil defaults if no preference is stored.
   Future<void> initialize() async {
-    final storedCountryCode = await _dao.getSetting('app_country');
+    final storedCountryCode = await _dao!.getSetting('app_country');
     if (storedCountryCode == null) {
       // No stored preference - keep Brazil defaults with configured = false
       state = AppSettings.defaultBrazil();
@@ -119,7 +137,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
       (c) => c.code == countryCode,
       orElse: () => COUNTRIES.firstWhere((c) => c.code == 'BR'),
     );
-    final platforms = await _countryPlatformsDao.getPlatformsFor(countryCode);
+    final platforms = await _countryPlatformsDao!.getPlatformsFor(countryCode);
     state = AppSettings.fromCountry(countryEntry, platforms);
   }
 
@@ -132,16 +150,16 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     );
 
     // Persist the choice
-    await _dao.setSetting('app_country', countryCode);
+    await _dao!.setSetting('app_country', countryCode);
 
     // Load platforms and update state
-    final platforms = await _countryPlatformsDao.getPlatformsFor(countryCode);
+    final platforms = await _countryPlatformsDao!.getPlatformsFor(countryCode);
     state = AppSettings.fromCountry(countryEntry, platforms);
   }
 
   /// Resets to Brazil defaults and clears the stored preference.
   Future<void> resetToDefault() async {
-    await _dao.deleteSetting('app_country');
+    await _dao!.deleteSetting('app_country');
     state = AppSettings.defaultBrazil();
   }
 }
@@ -152,7 +170,7 @@ final countryPlatformsDaoProvider = Provider<CountryPlatformsDao>(
 );
 
 /// Riverpod provider for AppSettingsNotifier.
-final appSettingsProvider = StateNotifierProvider<AppSettingsNotifier, AppSettings>(
+final appSettingsProvider = StateNotifierProvider<StateNotifier<AppSettings>, AppSettings>(
   (ref) => AppSettingsNotifier(
     ref.watch(appDaoProviderForSettings),
     ref.watch(countryPlatformsDaoProvider),
