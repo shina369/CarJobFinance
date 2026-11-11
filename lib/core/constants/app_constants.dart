@@ -20,8 +20,6 @@ class AppConstants {
     '99',
     'inDrive',
     'Cabify',
-    'BlaBlaCar',
-    'Outro',
   ];
 
   // Ride Types

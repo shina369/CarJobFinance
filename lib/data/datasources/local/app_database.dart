@@ -9,6 +9,12 @@ import '../../../core/settings/country_data.dart';
 
 part 'app_database.g.dart';
 
+/// Retired platform names that should be purged from older databases on
+/// initialize(). COUNTRIES no longer lists them, but pre-existing rows
+/// (seeded before the cutover) may remain in the table.
+// ignore: constant_identifier_names
+const Set<String> OBSOLETE_PLATFORM_NAMES = {'BlaBlaCar', 'Outro'};
+
 // Tabelas
 class Rides extends Table {
   TextColumn get id => text()();
@@ -132,6 +138,16 @@ class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPl
         );
       }
     });
+  }
+
+  /// Deletes rows whose platform name is in the given set, across all
+  /// countries. Used to purge retired platform names (e.g. 'BlaBlaCar',
+  /// 'Outro') that remain in older databases.
+  Future<void> deleteObsoletePlatforms(Set<String> obsoleteNames) async {
+    if (obsoleteNames.isEmpty) return;
+    final query = delete(countryPlatforms)
+      ..where((tbl) => tbl.platformName.isIn(obsoleteNames));
+    await query.go();
   }
 
   /// Returns all platforms for a given country code, ordered alphabetically.

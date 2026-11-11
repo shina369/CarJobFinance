@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
+import '../../../data/datasources/local/app_database.dart'
+    show OBSOLETE_PLATFORM_NAMES;
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 
@@ -211,11 +213,15 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     // Platforms from COUNTRIES are the source of truth; the DB-seeded
     // (settings.platforms) list and the ride being edited are merged in so
     // nothing the user previously picked disappears from the dropdown.
+    // Retired names (BlaBlaCar, Outro) are filtered out of the merge.
     final countryPlatforms = COUNTRIES
         .where((c) => c.code == settings.countryCode)
         .expand((c) => c.platforms)
         .toSet();
-    final effectivePlatforms = countryPlatforms.union(dbPlatforms.toSet())
+    final merged = countryPlatforms.union(dbPlatforms.toSet());
+    final effectivePlatforms = merged
+        .where((p) => !OBSOLETE_PLATFORM_NAMES.contains(p))
+        .toSet()
       ..add(_selectedPlatform);
 
     return Scaffold(

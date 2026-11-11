@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
 import 'package:carjobfinance/data/datasources/local/daos.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart';
-
 /// Immutable value object holding the current app settings state.
 @immutable
 class AppSettings {
@@ -129,6 +128,10 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
       countryEntry.code,
       countryEntry.platforms,
     );
+
+    // Purge retired platform names from the table. COUNTRIES no longer
+    // lists them, but older DBs still hold rows seeded before the change.
+    await _countryPlatformsDao.deleteObsoletePlatforms(OBSOLETE_PLATFORM_NAMES);
 
     if (storedCountryCode == null) {
       // No stored preference - keep Brazil defaults with configured = false
