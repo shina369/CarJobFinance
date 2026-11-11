@@ -33,7 +33,9 @@ class PlatformsPage extends ConsumerWidget {
         children: [
           if (active.isEmpty && inactive.isEmpty)
             Expanded(
-              child: Center(child: Text(tr('platforms.none'), style: Theme.of(context).textTheme.bodyMedium)),
+              child: Center(
+                  child: Text(tr('platforms.none'),
+                      style: Theme.of(context).textTheme.bodyMedium)),
             )
           else
             Expanded(
@@ -70,7 +72,10 @@ class PlatformsPage extends ConsumerWidget {
                       child: Text(
                         tr('platforms.inactive'),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.5),
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -97,9 +102,8 @@ class PlatformsPage extends ConsumerWidget {
 
   void _showAddDialog(BuildContext context, WidgetRef ref,
       String Function(String) tr, AppPlatformsPref platforms) {
-    final existingNames = platforms.platforms
-        .map((p) => p.name.toLowerCase())
-        .toSet();
+    final existingNames =
+        platforms.platforms.map((p) => p.name.toLowerCase()).toSet();
     final inactiveBuiltins = platforms.inactiveBuiltinNames;
     final newCtrl = TextEditingController();
 
@@ -109,8 +113,8 @@ class PlatformsPage extends ConsumerWidget {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
             final entered = newCtrl.text.trim();
-            final isDuplicate =
-                entered.isNotEmpty && existingNames.contains(entered.toLowerCase());
+            final isDuplicate = entered.isNotEmpty &&
+                existingNames.contains(entered.toLowerCase());
 
             return AlertDialog(
               title: Text(tr('platforms.add')),
@@ -157,6 +161,7 @@ class PlatformsPage extends ConsumerWidget {
                   TextField(
                     controller: newCtrl,
                     autofocus: inactiveBuiltins.isEmpty,
+                    onChanged: (_) => setModalState(() {}),
                     decoration: InputDecoration(
                       labelText: tr('platforms.newName'),
                       hintText: tr('platforms.namePlaceholder'),
@@ -168,8 +173,8 @@ class PlatformsPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                       isDense: true,
                     ),
                   ),
@@ -223,7 +228,10 @@ class _PlatformTile extends ConsumerWidget {
         ),
       ),
       title: Text(platform.name),
-      subtitle: platform.isCustom ? Text(tr('platforms.custom'), style: const TextStyle(fontSize: 11, color: Colors.grey)) : null,
+      subtitle: platform.isCustom
+          ? Text(tr('platforms.custom'),
+              style: const TextStyle(fontSize: 11, color: Colors.grey))
+          : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -235,37 +243,38 @@ class _PlatformTile extends ConsumerWidget {
             ),
           Switch(
             value: platform.isActive,
-            onChanged: (active) =>
-                ref.read(platformsProvider.notifier).togglePlatform(platform.name, active),
+            onChanged: (active) => ref
+                .read(platformsProvider.notifier)
+                .togglePlatform(platform.name, active),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(
-      BuildContext context, WidgetRef ref, String Function(String) tr, String name) {
+  void _confirmDelete(BuildContext context, WidgetRef ref,
+      String Function(String) tr, String name) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-            title: Text(tr('platforms.deleteCustomConfirm')),
-            content: Text(tr('platforms.deleteCustomMsg')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(tr('dash.cancel')),
-              ),
-              FilledButton(
-                style:
-                    FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
-                onPressed: () {
-                  ref.read(platformsProvider.notifier).removeCustomPlatform(name);
-                  Navigator.pop(ctx);
-                },
-                child: Text(tr('platforms.delete')),
-              ),
-            ],
+        title: Text(tr('platforms.deleteCustomConfirm')),
+        content: Text(tr('platforms.deleteCustomMsg')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr('dash.cancel')),
           ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () {
+              ref.read(platformsProvider.notifier).removeCustomPlatform(name);
+              Navigator.pop(ctx);
+            },
+            child: Text(tr('platforms.delete')),
+          ),
+        ],
+      ),
     );
   }
 }

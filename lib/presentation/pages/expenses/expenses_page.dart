@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -82,13 +84,14 @@ class _ExpensesList extends StatelessWidget {
   }
 }
 
-class ExpenseCard extends StatelessWidget {
+class ExpenseCard extends ConsumerWidget {
   const ExpenseCard({super.key, required this.expense});
 
   final entity_expense.Expense expense;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(currency_pkg.appCurrencyProvider);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -102,7 +105,7 @@ class ExpenseCard extends StatelessWidget {
         title: Text(expense.category),
         subtitle: Text(expense.formattedDate),
         trailing: Text(
-          expense.formattedAmount,
+          LocalizedCurrency.formatFor(expense.amount, currency),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.error,

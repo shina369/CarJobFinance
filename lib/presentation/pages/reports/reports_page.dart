@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
-import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 
@@ -191,7 +191,7 @@ class _ReportsContent extends ConsumerWidget {
     final period = ref.watch(selectedReportPeriodProvider);
     final ridesAsync = ref.watch(ridesControllerProvider);
     final expensesAsync = ref.watch(expensesControllerProvider);
-    final settings = ref.watch(appSettingsProvider);
+    final currency = ref.watch(currency_pkg.appCurrencyProvider);
     final lang = ref.watch(appLanguageProvider);
 
     return ridesAsync.when(
@@ -220,9 +220,7 @@ class _ReportsContent extends ConsumerWidget {
           final totalMinutes =
               filteredRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
 
-          // Format currency using settings
-          String fmt(double v) =>
-              LocalizedCurrency.formatWithSettings(v, settings);
+          String fmt(double v) => LocalizedCurrency.formatFor(v, currency);
 
           return ListView(
             padding: const EdgeInsets.all(16),

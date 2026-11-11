@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/strings.dart';
-import '../../../core/settings/app_settings_notifier.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -152,9 +152,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(appSettingsProvider);
     final lang = ref.watch(appLanguageProvider);
-    final currencySymbol = settings.currencySymbol;
+    final currencySymbol = ref.watch(currency_pkg.appCurrencyProvider).symbol;
 
     return Scaffold(
       appBar: AppBar(

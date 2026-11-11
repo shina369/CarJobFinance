@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
-import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
@@ -94,9 +94,9 @@ class RideCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsProvider);
+    final currency = ref.watch(currency_pkg.appCurrencyProvider);
     final formattedAmount =
-        LocalizedCurrency.formatWithSettings(ride.earnings, settings);
+        LocalizedCurrency.formatFor(ride.earnings, currency);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

@@ -57,10 +57,11 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize platform from settings once when dependencies change
+    // Initialize platform once, preferring the user's active list.
     if (!_platformInitialized) {
-      final settings = ref.read(appSettingsProvider);
-      final platforms = settings.platforms;
+      final active = ref.read(activePlatformsProvider);
+      final platforms =
+          active.isNotEmpty ? active : ref.read(appSettingsProvider).platforms;
       if (platforms.isNotEmpty) {
         _selectedPlatform = platforms.first;
       } else {
@@ -214,26 +215,28 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     final settings = ref.watch(appSettingsProvider);
     final lang = ref.watch(appLanguageProvider);
     final currency = ref.watch(currency_pkg.appCurrencyProvider);
-    final dbPlatforms = settings.platforms;
-    // Platforms from COUNTRIES are the source of truth; the DB-seeded
-    // (settings.platforms) list and the ride being edited are merged in so
-    // nothing the user previously picked disappears from the dropdown.
-    // Retired names (BlaBlaCar, Outro) are filtered out of the merge.
-    final countryPlatforms = COUNTRIES
+    final activePlatforms = ref.watch(activePlatformsProvider);
+    // The Platforms page is the source of truth: only active platforms are
+    // offered. While the active list hasn't loaded yet (or the user
+    // deactivated everything), fall back to the built-in + DB-seeded lists
+    // so the dropdown is never empty.
+    final fallbackPlatforms = COUNTRIES
         .where((c) => c.code == settings.countryCode)
         .expand((c) => c.platforms)
-        .toSet();
-    final activePlatforms = ref.watch(activePlatformsProvider);
-    // If the user has customised platforms (i.e. not empty), use their
-    // active list; otherwise fall back to the full built-in set.
-    final effectiveBase = activePlatforms.isNotEmpty
-        ? activePlatforms.toSet()
-        : countryPlatforms;
-    final merged = effectiveBase.union(dbPlatforms.toSet());
-    final effectivePlatforms = merged
-        .where((p) => !OBSOLETE_PLATFORM_NAMES.contains(p))
         .toSet()
-      ..add(_selectedPlatform);
+        .union(settings.platforms.toSet());
+    final effectivePlatforms = (activePlatforms.isNotEmpty
+            ? activePlatforms.toSet()
+            : fallbackPlatforms)
+        .where((p) => !OBSOLETE_PLATFORM_NAMES.contains(p))
+        .toSet();
+    if (widget.isEditing && _selectedPlatform.isNotEmpty) {
+      // Keep the edited ride's platform selectable even if deactivated.
+      effectivePlatforms.add(_selectedPlatform);
+    } else if (effectivePlatforms.isNotEmpty &&
+        !effectivePlatforms.contains(_selectedPlatform)) {
+      _selectedPlatform = effectivePlatforms.first;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -298,6 +301,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             _SectionTitle(lang.tr('rides.sectionPlatform')),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
+              // Recreate the field when the option list changes so the
+              // selection never points at a removed item.
+              key: ValueKey('platform-${effectivePlatforms.join('|')}'),
               initialValue: _selectedPlatform,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.apps),
