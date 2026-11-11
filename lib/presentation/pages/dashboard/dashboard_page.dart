@@ -248,7 +248,8 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
 
     return _TodayData(
       earnings: todayRides.fold<double>(0, (s, r) => s + r.earnings),
-      expenses: todayExpenses.fold<double>(0, (s, e) => s + e.amount),
+      expenses: todayExpenses.fold<double>(0, (s, e) => s + e.amount) +
+          todayRides.fold<double>(0, (s, r) => s + r.commissionAmount),
       rides: todayRides.length,
       km: todayRides.fold<double>(0, (s, r) => s + r.distanceKm),
       label: DateFormat('EEEE, dd/MM/yy', locale.toString()).format(now),
@@ -274,7 +275,8 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
     final langTag = locale.toString();
     return _MonthData(
       earnings: monthRides.fold<double>(0, (s, r) => s + r.earnings),
-      expenses: monthExpenses.fold<double>(0, (s, e) => s + e.amount),
+      expenses: monthExpenses.fold<double>(0, (s, e) => s + e.amount) +
+          monthRides.fold<double>(0, (s, r) => s + r.commissionAmount),
       label: DateFormat('MMMM yyyy', langTag).format(now),
     );
   }

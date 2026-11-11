@@ -130,8 +130,25 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
               name: r.platformName,
               isActive: r.isActive,
               isCustom: r.isCustom,
+              commissionType: r.commissionType,
+              commissionValue: r.commissionValue,
             ))
         .toList();
+  }
+
+  /// Sets (or clears, with nulls) the commission config of a platform row.
+  Future<void> setCommission(String countryCode, String platform,
+      String? commissionType, double? commissionValue) async {
+    await (update(countryPlatforms)
+          ..where(
+            (tbl) =>
+                tbl.countryCode.equals(countryCode) &
+                tbl.platformName.equals(platform),
+          ))
+        .write(CountryPlatformsCompanion(
+      commissionType: Value(commissionType),
+      commissionValue: Value(commissionValue),
+    ));
   }
 
   /// Toggles the [isActive] flag for a single platform row.

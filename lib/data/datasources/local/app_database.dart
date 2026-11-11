@@ -28,6 +28,15 @@ class Rides extends Table {
   TextColumn get origin => text().nullable()();
   TextColumn get destination => text().nullable()();
   TextColumn get rideType => text()();
+
+  /// Snapshot of the platform commission at save time (v4+): the type
+  /// ('percent' | 'fixed'), the configured value, and the computed amount
+  /// deducted from [earnings]. Null type/value = no commission.
+  TextColumn get commissionType => text().nullable()();
+  RealColumn get commissionValue => real().nullable()();
+  RealColumn get commissionAmount =>
+      real().withDefault(const Constant(0.0))();
+
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime().nullable()();
@@ -77,6 +86,11 @@ class CountryPlatforms extends Table {
   /// can be toggled but never deleted; customs can be removed entirely.
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
+  /// Platform commission config (v4+): 'percent' | 'fixed' and the value.
+  /// Null = no commission configured.
+  TextColumn get commissionType => text().nullable()();
+  RealColumn get commissionValue => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {countryCode, platformName};
 }
@@ -90,11 +104,15 @@ class PlatformState {
     required this.name,
     required this.isActive,
     required this.isCustom,
+    this.commissionType,
+    this.commissionValue,
   });
 
   final String name;
   final bool isActive;
   final bool isCustom;
+  final String? commissionType;
+  final double? commissionValue;
 
   @override
   bool operator ==(Object other) =>
@@ -103,14 +121,18 @@ class PlatformState {
           runtimeType == other.runtimeType &&
           name == other.name &&
           isActive == other.isActive &&
-          isCustom == other.isCustom;
+          isCustom == other.isCustom &&
+          commissionType == other.commissionType &&
+          commissionValue == other.commissionValue;
 
   @override
-  int get hashCode => Object.hash(name, isActive, isCustom);
+  int get hashCode =>
+      Object.hash(name, isActive, isCustom, commissionType, commissionValue);
 
   @override
   String toString() =>
-      'PlatformState($name, active: $isActive, custom: $isCustom)';
+      'PlatformState($name, active: $isActive, custom: $isCustom, '
+      'commission: $commissionType/$commissionValue)';
 }
 
 // Database
@@ -123,7 +145,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -132,11 +154,13 @@ class AppDatabase extends _$AppDatabase {
           await _seedCountryPlatforms();
         },
         onUpgrade: (Migrator m, int from, int to) async {
-          if (from == 1 && to == 2) {
+          // Stepwise so any older version chains through every upgrade
+          // (e.g. 1 -> 4 runs the v2, v3 and v4 blocks).
+          if (from < 2) {
             await m.createTable(countryPlatforms);
             await _seedCountryPlatforms();
           }
-          if (from == 2 && to == 3) {
+          if (from < 3) {
             // v3: add per-row activation + custom flags to
             // country_platforms. Additive only; existing rows default
             // to active / not-custom.
@@ -147,6 +171,26 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'ALTER TABLE country_platforms '
               'ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0',
+            );
+          }
+          if (from < 4) {
+            // v4: platform commission config + per-ride commission
+            // snapshot. Additive only; old rides carry amount 0.
+            await customStatement(
+              'ALTER TABLE country_platforms ADD COLUMN commission_type TEXT',
+            );
+            await customStatement(
+              'ALTER TABLE country_platforms ADD COLUMN commission_value REAL',
+            );
+            await customStatement(
+              'ALTER TABLE rides ADD COLUMN commission_type TEXT',
+            );
+            await customStatement(
+              'ALTER TABLE rides ADD COLUMN commission_value REAL',
+            );
+            await customStatement(
+              'ALTER TABLE rides '
+              'ADD COLUMN commission_amount REAL NOT NULL DEFAULT 0.0',
             );
           }
         },
@@ -198,6 +242,8 @@ class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPl
             platformName: Value(platform),
             isActive: Value(existing?.isActive ?? true),
             isCustom: Value(existing?.isCustom ?? false),
+            commissionType: Value(existing?.commissionType),
+            commissionValue: Value(existing?.commissionValue),
           ),
         );
       }
@@ -226,6 +272,8 @@ class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPl
               name: r.platformName,
               isActive: r.isActive,
               isCustom: r.isCustom,
+              commissionType: r.commissionType,
+              commissionValue: r.commissionValue,
             ))
         .toList();
   }

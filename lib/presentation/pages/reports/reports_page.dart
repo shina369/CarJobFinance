@@ -212,8 +212,11 @@ class _ReportsContent extends ConsumerWidget {
           // Calculate summaries
           final totalEarnings =
               filteredRides.fold<double>(0, (sum, r) => sum + r.earnings);
-          final totalExpenses =
+          final totalCommissions = filteredRides.fold<double>(
+              0, (sum, r) => sum + r.commissionAmount);
+          final otherExpenses =
               filteredExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+          final totalExpenses = otherExpenses + totalCommissions;
           final netProfit = totalEarnings - totalExpenses;
           final totalKm =
               filteredRides.fold<double>(0, (sum, r) => sum + r.distanceKm);
@@ -264,6 +267,18 @@ class _ReportsContent extends ConsumerWidget {
                         value: fmt(totalEarnings),
                         isPositive: true,
                       ),
+                      if (totalCommissions > 0) ...[
+                        _SummaryRow(
+                          label: lang.tr('reports.commissions'),
+                          value: fmt(totalCommissions),
+                          isPositive: false,
+                        ),
+                        _SummaryRow(
+                          label: lang.tr('reports.otherExpenses'),
+                          value: fmt(otherExpenses),
+                          isPositive: false,
+                        ),
+                      ],
                       _SummaryRow(
                         label: lang.tr('reports.totalExpenses'),
                         value: fmt(totalExpenses),

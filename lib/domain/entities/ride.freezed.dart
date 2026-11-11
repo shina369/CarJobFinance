@@ -29,6 +29,9 @@ mixin _$Ride {
   String? get origin => throw _privateConstructorUsedError;
   String? get destination => throw _privateConstructorUsedError;
   String get rideType => throw _privateConstructorUsedError;
+  String? get commissionType => throw _privateConstructorUsedError;
+  double? get commissionValue => throw _privateConstructorUsedError;
+  double get commissionAmount => throw _privateConstructorUsedError;
   bool get isSynced => throw _privateConstructorUsedError;
   DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
@@ -53,6 +56,9 @@ abstract class $RideCopyWith<$Res> {
       String? origin,
       String? destination,
       String rideType,
+      String? commissionType,
+      double? commissionValue,
+      double commissionAmount,
       bool isSynced,
       DateTime? createdAt,
       DateTime? updatedAt});
@@ -80,6 +86,9 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     Object? origin = freezed,
     Object? destination = freezed,
     Object? rideType = null,
+    Object? commissionType = freezed,
+    Object? commissionValue = freezed,
+    Object? commissionAmount = null,
     Object? isSynced = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
@@ -121,6 +130,18 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
           ? _value.rideType
           : rideType // ignore: cast_nullable_to_non_nullable
               as String,
+      commissionType: freezed == commissionType
+          ? _value.commissionType
+          : commissionType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      commissionValue: freezed == commissionValue
+          ? _value.commissionValue
+          : commissionValue // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commissionAmount: null == commissionAmount
+          ? _value.commissionAmount
+          : commissionAmount // ignore: cast_nullable_to_non_nullable
+              as double,
       isSynced: null == isSynced
           ? _value.isSynced
           : isSynced // ignore: cast_nullable_to_non_nullable
@@ -154,6 +175,9 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
       String? origin,
       String? destination,
       String rideType,
+      String? commissionType,
+      double? commissionValue,
+      double commissionAmount,
       bool isSynced,
       DateTime? createdAt,
       DateTime? updatedAt});
@@ -178,6 +202,9 @@ class __$$RideImplCopyWithImpl<$Res>
     Object? origin = freezed,
     Object? destination = freezed,
     Object? rideType = null,
+    Object? commissionType = freezed,
+    Object? commissionValue = freezed,
+    Object? commissionAmount = null,
     Object? isSynced = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
@@ -219,6 +246,18 @@ class __$$RideImplCopyWithImpl<$Res>
           ? _value.rideType
           : rideType // ignore: cast_nullable_to_non_nullable
               as String,
+      commissionType: freezed == commissionType
+          ? _value.commissionType
+          : commissionType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      commissionValue: freezed == commissionValue
+          ? _value.commissionValue
+          : commissionValue // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commissionAmount: null == commissionAmount
+          ? _value.commissionAmount
+          : commissionAmount // ignore: cast_nullable_to_non_nullable
+              as double,
       isSynced: null == isSynced
           ? _value.isSynced
           : isSynced // ignore: cast_nullable_to_non_nullable
@@ -248,6 +287,9 @@ class _$RideImpl extends _Ride {
       this.origin,
       this.destination,
       required this.rideType,
+      this.commissionType,
+      this.commissionValue,
+      this.commissionAmount = 0.0,
       this.isSynced = false,
       this.createdAt,
       this.updatedAt})
@@ -275,6 +317,13 @@ class _$RideImpl extends _Ride {
   @override
   final String rideType;
   @override
+  final String? commissionType;
+  @override
+  final double? commissionValue;
+  @override
+  @JsonKey()
+  final double commissionAmount;
+  @override
   @JsonKey()
   final bool isSynced;
   @override
@@ -284,7 +333,7 @@ class _$RideImpl extends _Ride {
 
   @override
   String toString() {
-    return 'Ride(id: $id, date: $date, platform: $platform, earnings: $earnings, distanceKm: $distanceKm, durationMinutes: $durationMinutes, origin: $origin, destination: $destination, rideType: $rideType, isSynced: $isSynced, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Ride(id: $id, date: $date, platform: $platform, earnings: $earnings, distanceKm: $distanceKm, durationMinutes: $durationMinutes, origin: $origin, destination: $destination, rideType: $rideType, commissionType: $commissionType, commissionValue: $commissionValue, commissionAmount: $commissionAmount, isSynced: $isSynced, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -307,6 +356,12 @@ class _$RideImpl extends _Ride {
                 other.destination == destination) &&
             (identical(other.rideType, rideType) ||
                 other.rideType == rideType) &&
+            (identical(other.commissionType, commissionType) ||
+                other.commissionType == commissionType) &&
+            (identical(other.commissionValue, commissionValue) ||
+                other.commissionValue == commissionValue) &&
+            (identical(other.commissionAmount, commissionAmount) ||
+                other.commissionAmount == commissionAmount) &&
             (identical(other.isSynced, isSynced) ||
                 other.isSynced == isSynced) &&
             (identical(other.createdAt, createdAt) ||
@@ -328,6 +383,9 @@ class _$RideImpl extends _Ride {
       origin,
       destination,
       rideType,
+      commissionType,
+      commissionValue,
+      commissionAmount,
       isSynced,
       createdAt,
       updatedAt);
@@ -357,6 +415,9 @@ abstract class _Ride extends Ride {
       final String? origin,
       final String? destination,
       required final String rideType,
+      final String? commissionType,
+      final double? commissionValue,
+      final double commissionAmount,
       final bool isSynced,
       final DateTime? createdAt,
       final DateTime? updatedAt}) = _$RideImpl;
@@ -382,6 +443,12 @@ abstract class _Ride extends Ride {
   String? get destination;
   @override
   String get rideType;
+  @override
+  String? get commissionType;
+  @override
+  double? get commissionValue;
+  @override
+  double get commissionAmount;
   @override
   bool get isSynced;
   @override

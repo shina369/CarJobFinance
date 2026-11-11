@@ -19,6 +19,17 @@ class ExpensesPage extends ConsumerWidget {
     final expensesState = ref.watch(expensesControllerProvider);
     final lang = ref.watch(appLanguageProvider);
 
+    // Platform commissions are virtual expenses, aggregated live from the
+    // rides' commission snapshots (not editable expense records).
+    final rides = ref.watch(ridesControllerProvider).valueOrNull ?? [];
+    final commissionByPlatform = <String, double>{};
+    for (final ride in rides) {
+      if (ride.commissionAmount > 0) {
+        commissionByPlatform[ride.platform] =
+            (commissionByPlatform[ride.platform] ?? 0) + ride.commissionAmount;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.tr('expenses.title')),
@@ -34,7 +45,11 @@ class ExpensesPage extends ConsumerWidget {
         ],
       ),
       body: expensesState.when(
-        data: (expenses) => _ExpensesList(expenses: expenses, lang: lang),
+        data: (expenses) => _ExpensesList(
+          expenses: expenses,
+          commissionByPlatform: commissionByPlatform,
+          lang: lang,
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
             child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
@@ -49,14 +64,22 @@ class ExpensesPage extends ConsumerWidget {
 }
 
 class _ExpensesList extends StatelessWidget {
-  const _ExpensesList({required this.expenses, required this.lang});
+  const _ExpensesList({
+    required this.expenses,
+    required this.commissionByPlatform,
+    required this.lang,
+  });
 
   final List<entity_expense.Expense> expenses;
+
+  /// Total ride commission per platform, computed from the rides.
+  final Map<String, double> commissionByPlatform;
+
   final AppLanguage lang;
 
   @override
   Widget build(BuildContext context) {
-    if (expenses.isEmpty) {
+    if (expenses.isEmpty && commissionByPlatform.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -73,12 +96,125 @@ class _ExpensesList extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () async {},
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: expenses.length,
-        itemBuilder: (context, index) {
-          return ExpenseCard(expense: expenses[index]);
-        },
+        children: [
+          if (commissionByPlatform.isNotEmpty) ...[
+            CommissionSummaryCard(
+              commissionByPlatform: commissionByPlatform,
+              lang: lang,
+            ),
+            const SizedBox(height: 24),
+            if (expenses.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8, left: 4),
+                child: Text(
+                  lang.tr('expenses.others'),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+          ],
+          ...expenses.map((e) => ExpenseCard(expense: e)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Aggregated "platform commissions" section: per-platform totals computed
+/// live from the rides' commission snapshots. Not editable records.
+class CommissionSummaryCard extends ConsumerWidget {
+  const CommissionSummaryCard({
+    super.key,
+    required this.commissionByPlatform,
+    required this.lang,
+  });
+
+  final Map<String, double> commissionByPlatform;
+  final AppLanguage lang;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(currency_pkg.appCurrencyProvider);
+    String fmt(double v) => LocalizedCurrency.formatFor(v, currency);
+    final platforms = commissionByPlatform.keys.toList()..sort();
+    final total =
+        commissionByPlatform.values.fold<double>(0, (sum, v) => sum + v);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.percent,
+                    size: 18, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    lang.tr('expenses.commissionSection'),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              lang.tr('expenses.commissionAuto'),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            ...platforms.map(
+              (platform) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(platform,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      fmt(commissionByPlatform[platform]!),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  lang.tr('expenses.commissionTotal'),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  fmt(total),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

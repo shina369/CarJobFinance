@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/finance/commission.dart';
 import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
+import '../../../core/settings/locale_helper.dart';
 import '../../../data/datasources/local/app_database.dart'
     show OBSOLETE_PLATFORM_NAMES;
 import '../../../presentation/controllers/controllers.dart';
@@ -44,6 +46,13 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   String _selectedRideType = AppConstants.rideTypes.first;
   DateTime _selectedDate = DateTime.now();
   bool _platformInitialized = false;
+
+  // Commission snapshot of the ride being edited. While the platform is
+  // unchanged, the saved snapshot wins over the current platform config
+  // so editing a ride never silently recalculates its commission.
+  String _loadedPlatform = '';
+  String? _loadedCommissionType;
+  double? _loadedCommissionValue;
 
   @override
   void initState() {
@@ -105,10 +114,26 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             _destinationController.text = ride.destination ?? '';
             _selectedPlatform = ride.platform;
             _selectedRideType = ride.rideType;
+            _loadedPlatform = ride.platform;
+            _loadedCommissionType = ride.commissionType;
+            _loadedCommissionValue = ride.commissionValue;
           });
         });
       },
     );
+  }
+
+  /// Commission config in effect for [platform]: the loaded snapshot when
+  /// editing without changing the platform, the current platform config
+  /// otherwise.
+  (String?, double?) _commissionConfigFor(String platform) {
+    if (widget.isEditing &&
+        _loadedPlatform.isNotEmpty &&
+        platform == _loadedPlatform) {
+      return (_loadedCommissionType, _loadedCommissionValue);
+    }
+    final info = ref.read(platformsProvider).byName(platform);
+    return (info?.commissionType, info?.commissionValue);
   }
 
   String _formatDate(DateTime date) {
@@ -156,6 +181,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     final distance =
         double.tryParse(_distanceController.text.replaceAll(',', '.')) ?? 0.0;
     final duration = int.tryParse(_durationController.text) ?? 0;
+    final (commissionType, commissionValue) =
+        _commissionConfigFor(_selectedPlatform);
 
     final ride = entity_ride.Ride(
       id: widget.rideId ?? _uuid.v4(),
@@ -169,6 +196,10 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
           ? null
           : _destinationController.text,
       rideType: _selectedRideType,
+      commissionType: commissionType,
+      commissionValue: commissionValue,
+      commissionAmount:
+          commissionAmountFor(earnings, commissionType, commissionValue),
       createdAt: widget.rideId != null ? null : DateTime.now(),
     );
 
@@ -215,6 +246,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
     final settings = ref.watch(appSettingsProvider);
     final lang = ref.watch(appLanguageProvider);
     final currency = ref.watch(currency_pkg.appCurrencyProvider);
+    // Watched (not just read) so the commission summary reacts to config
+    // changes made on the Platforms page.
+    ref.watch(platformsProvider);
     final activePlatforms = ref.watch(activePlatformsProvider);
     // The Platforms page is the source of truth: only active platforms are
     // offered. While the active list hasn't loaded yet (or the user
@@ -346,6 +380,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => setState(() {}),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return lang.tr('rides.validateRequired',
@@ -358,6 +393,70 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 return null;
               },
             ),
+            Builder(builder: (context) {
+              final gross = double.tryParse(
+                      _earningsController.text.replaceAll(',', '.')) ??
+                  0.0;
+              final (type, value) = _commissionConfigFor(_selectedPlatform);
+              final commission = commissionAmountFor(gross, type, value);
+              if (gross <= 0 || commission <= 0) {
+                return const SizedBox.shrink();
+              }
+              String fmt(double v) => LocalizedCurrency.formatFor(v, currency);
+              final style = Theme.of(context).textTheme.bodySmall;
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(lang.tr('rides.grossValue'), style: style),
+                          Text(fmt(gross), style: style),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(lang.tr('rides.commission'), style: style),
+                          Text(
+                            '- ${fmt(commission)}',
+                            style: style?.copyWith(
+                                color: Theme.of(context).colorScheme.error),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            lang.tr('rides.netValue'),
+                            style: style?.copyWith(
+                                fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            fmt(gross - commission),
+                            style: style?.copyWith(
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 24),
 
             // Distância e Duração

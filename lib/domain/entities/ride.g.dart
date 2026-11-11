@@ -16,6 +16,9 @@ _$RideImpl _$$RideImplFromJson(Map<String, dynamic> json) => _$RideImpl(
       origin: json['origin'] as String?,
       destination: json['destination'] as String?,
       rideType: json['rideType'] as String,
+      commissionType: json['commissionType'] as String?,
+      commissionValue: (json['commissionValue'] as num?)?.toDouble(),
+      commissionAmount: (json['commissionAmount'] as num?)?.toDouble() ?? 0.0,
       isSynced: json['isSynced'] as bool? ?? false,
       createdAt: json['createdAt'] == null
           ? null
@@ -36,6 +39,9 @@ Map<String, dynamic> _$$RideImplToJson(_$RideImpl instance) =>
       'origin': instance.origin,
       'destination': instance.destination,
       'rideType': instance.rideType,
+      'commissionType': instance.commissionType,
+      'commissionValue': instance.commissionValue,
+      'commissionAmount': instance.commissionAmount,
       'isSynced': instance.isSynced,
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),

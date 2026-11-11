@@ -18,11 +18,21 @@ class AppPlatformInfo {
     required this.name,
     required this.isActive,
     required this.isCustom,
+    this.commissionType,
+    this.commissionValue,
   });
 
   final String name;
   final bool isActive;
   final bool isCustom;
+
+  /// Commission config: 'percent' | 'fixed' (see core/finance/commission).
+  /// Null = no commission configured.
+  final String? commissionType;
+  final double? commissionValue;
+
+  bool get hasCommission =>
+      commissionType != null && (commissionValue ?? 0) > 0;
 
   @override
   bool operator ==(Object other) =>
@@ -31,14 +41,18 @@ class AppPlatformInfo {
           runtimeType == other.runtimeType &&
           name == other.name &&
           isActive == other.isActive &&
-          isCustom == other.isCustom;
+          isCustom == other.isCustom &&
+          commissionType == other.commissionType &&
+          commissionValue == other.commissionValue;
 
   @override
-  int get hashCode => Object.hash(name, isActive, isCustom);
+  int get hashCode =>
+      Object.hash(name, isActive, isCustom, commissionType, commissionValue);
 
   @override
   String toString() =>
-      'AppPlatformInfo($name, active: $isActive, custom: $isCustom)';
+      'AppPlatformInfo($name, active: $isActive, custom: $isCustom, '
+      'commission: $commissionType/$commissionValue)';
 }
 
 /// Full state of the user's platform list for the current country.
@@ -68,6 +82,14 @@ class AppPlatformsPref {
       .where((p) => !p.isCustom && !p.isActive)
       .map((p) => p.name)
       .toList();
+
+  /// The platform row for [name], or null when unknown.
+  AppPlatformInfo? byName(String name) {
+    for (final p in platforms) {
+      if (p.name == name) return p;
+    }
+    return null;
+  }
 }
 
 /// Provider for the platforms DAO.
@@ -110,6 +132,8 @@ class PlatformsNotifier extends StateNotifier<AppPlatformsPref> {
                   name: r.name,
                   isActive: r.isActive,
                   isCustom: r.isCustom,
+                  commissionType: r.commissionType,
+                  commissionValue: r.commissionValue,
                 ))
             .toList();
     state = AppPlatformsPref(countryCode: state.countryCode, platforms: list);
@@ -123,8 +147,39 @@ class PlatformsNotifier extends StateNotifier<AppPlatformsPref> {
     state = AppPlatformsPref(
       countryCode: state.countryCode,
       platforms: state.platforms
-          .map((p) =>
-              p.name == name ? AppPlatformInfo(name: p.name, isActive: active, isCustom: p.isCustom) : p)
+          .map((p) => p.name == name
+              ? AppPlatformInfo(
+                  name: p.name,
+                  isActive: active,
+                  isCustom: p.isCustom,
+                  commissionType: p.commissionType,
+                  commissionValue: p.commissionValue,
+                )
+              : p)
+          .toList(),
+    );
+  }
+
+  /// Set (or clear, with nulls) the commission of a platform. Persists
+  /// immediately.
+  Future<void> setCommission(
+      String name, String? commissionType, double? commissionValue) async {
+    if (_disposed) return;
+    await _dao.setCommission(
+        state.countryCode, name, commissionType, commissionValue);
+    if (_disposed) return;
+    state = AppPlatformsPref(
+      countryCode: state.countryCode,
+      platforms: state.platforms
+          .map((p) => p.name == name
+              ? AppPlatformInfo(
+                  name: p.name,
+                  isActive: p.isActive,
+                  isCustom: p.isCustom,
+                  commissionType: commissionType,
+                  commissionValue: commissionValue,
+                )
+              : p)
           .toList(),
     );
   }

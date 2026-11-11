@@ -16,6 +16,9 @@ class Ride with _$Ride {
     String? origin,
     String? destination,
     required String rideType,
+    String? commissionType,
+    double? commissionValue,
+    @Default(0.0) double commissionAmount,
     @Default(false) bool isSynced,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -26,6 +29,9 @@ class Ride with _$Ride {
   const Ride._();
 
   // Helpers
+  /// Gross earnings minus the platform commission snapshot.
+  double get netEarnings => earnings - commissionAmount;
+  bool get hasCommission => commissionAmount > 0;
   double get earningsPerKm => distanceKm > 0 ? earnings / distanceKm : 0;
   double get earningsPerHour =>
       durationMinutes > 0 ? (earnings / durationMinutes) * 60 : 0;

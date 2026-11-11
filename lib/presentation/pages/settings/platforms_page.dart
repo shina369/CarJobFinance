@@ -4,9 +4,14 @@
 // (case-insensitive, against both built-ins and existing customs).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/finance/commission.dart';
+import '../../../core/l10n/currencies.dart';
+import '../../../core/l10n/currency_provider.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
+import '../../../core/settings/locale_helper.dart';
+import '../../controllers/controllers.dart' show rideRepositoryProvider;
 
 class PlatformsPage extends ConsumerWidget {
   const PlatformsPage({super.key});
@@ -218,6 +223,16 @@ class _PlatformTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef _) {
+    final currency = ref.watch(appCurrencyProvider);
+    final subtitleParts = <String>[
+      if (platform.isCustom) tr('platforms.custom'),
+      if (platform.hasCommission)
+        ref.watch(appLanguageProvider).tr(
+          'platforms.commissionLabel',
+          args: {'value': _commissionText(platform, currency)},
+        ),
+    ];
+
     return ListTile(
       leading: CircleAvatar(
         radius: 18,
@@ -228,13 +243,24 @@ class _PlatformTile extends ConsumerWidget {
         ),
       ),
       title: Text(platform.name),
-      subtitle: platform.isCustom
-          ? Text(tr('platforms.custom'),
-              style: const TextStyle(fontSize: 11, color: Colors.grey))
-          : null,
+      subtitle: subtitleParts.isEmpty
+          ? null
+          : Text(subtitleParts.join(' • '),
+              style: const TextStyle(fontSize: 11, color: Colors.grey)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: Icon(
+              Icons.percent,
+              size: 20,
+              color: platform.hasCommission
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: tr('platforms.commissionSet'),
+            onPressed: () => _showCommissionDialog(context),
+          ),
           if (platform.isCustom)
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
@@ -250,6 +276,168 @@ class _PlatformTile extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  static String _commissionText(AppPlatformInfo p, AppCurrency currency) {
+    final value = p.commissionValue ?? 0;
+    if (p.commissionType == kCommissionPercent) {
+      return '${_trimNumber(value)}%';
+    }
+    return LocalizedCurrency.formatFor(value, currency);
+  }
+
+  static String _trimNumber(double v) =>
+      v % 1 == 0 ? v.toStringAsFixed(0) : v.toString();
+
+  void _showCommissionDialog(BuildContext context) {
+    final lang = ref.read(appLanguageProvider);
+    final currency = ref.read(appCurrencyProvider);
+    var type = platform.commissionType ?? kCommissionPercent;
+    final valueCtrl = TextEditingController(
+      text: platform.commissionValue != null
+          ? _trimNumber(platform.commissionValue!)
+          : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final parsed =
+              double.tryParse(valueCtrl.text.trim().replaceAll(',', '.'));
+          final isValid = parsed != null &&
+              parsed > 0 &&
+              (type != kCommissionPercent || parsed <= 100);
+
+          return AlertDialog(
+            title: Text('${lang.tr('platforms.commission')} — ${platform.name}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(
+                      value: kCommissionPercent,
+                      label: Text(lang.tr('platforms.commissionPercent')),
+                    ),
+                    ButtonSegment(
+                      value: kCommissionFixed,
+                      label: Text(lang.tr('platforms.commissionFixed')),
+                    ),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (selection) =>
+                      setModalState(() => type = selection.first),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: valueCtrl,
+                  autofocus: true,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) => setModalState(() {}),
+                  decoration: InputDecoration(
+                    labelText: lang.tr('platforms.commissionValue'),
+                    prefixText: type == kCommissionFixed
+                        ? '${currency.symbol} '
+                        : null,
+                    suffixText: type == kCommissionPercent ? '%' : null,
+                    filled: true,
+                    fillColor:
+                        Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              if (platform.hasCommission)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _applyCommission(context, null, null);
+                  },
+                  child: Text(
+                    lang.tr('platforms.commissionRemove'),
+                    style:
+                        TextStyle(color: Theme.of(ctx).colorScheme.error),
+                  ),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(tr('dash.cancel')),
+              ),
+              FilledButton(
+                onPressed: isValid
+                    ? () {
+                        Navigator.pop(ctx);
+                        _applyCommission(context, type, parsed);
+                      }
+                    : null,
+                child: Text(lang.tr('platforms.commissionSet')),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Persists the new commission config, then — if this platform already
+  /// has recorded rides — asks whether to recalculate their snapshots or
+  /// apply the change only to new rides.
+  Future<void> _applyCommission(
+      BuildContext context, String? type, double? value) async {
+    final lang = ref.read(appLanguageProvider);
+    await ref
+        .read(platformsProvider.notifier)
+        .setCommission(platform.name, type, value);
+
+    final repository = ref.read(rideRepositoryProvider);
+    final rides = (await repository.getAll())
+        .where((r) => r.platform == platform.name)
+        .toList();
+    if (rides.isEmpty || !context.mounted) return;
+
+    final applyAll = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(lang.tr('platforms.commissionApplyTitle')),
+        content: Text(lang.tr(
+          'platforms.commissionApplyMsg',
+          args: {
+            'platform': platform.name,
+            'count': '${rides.length}',
+          },
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(lang.tr('platforms.commissionOnlyNew')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(lang.tr('platforms.commissionApplyAll')),
+          ),
+        ],
+      ),
+    );
+    if (applyAll != true) return;
+
+    for (final ride in rides) {
+      await repository.update(ride.copyWith(
+        commissionType: type,
+        commissionValue: value,
+        commissionAmount: commissionAmountFor(ride.earnings, type, value),
+      ));
+    }
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref,

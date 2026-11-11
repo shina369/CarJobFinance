@@ -59,6 +59,26 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
   late final GeneratedColumn<String> rideType = GeneratedColumn<String>(
       'ride_type', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _commissionTypeMeta =
+      const VerificationMeta('commissionType');
+  @override
+  late final GeneratedColumn<String> commissionType = GeneratedColumn<String>(
+      'commission_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _commissionValueMeta =
+      const VerificationMeta('commissionValue');
+  @override
+  late final GeneratedColumn<double> commissionValue = GeneratedColumn<double>(
+      'commission_value', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _commissionAmountMeta =
+      const VerificationMeta('commissionAmount');
+  @override
+  late final GeneratedColumn<double> commissionAmount = GeneratedColumn<double>(
+      'commission_amount', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
   static const VerificationMeta _isSyncedMeta =
       const VerificationMeta('isSynced');
   @override
@@ -92,6 +112,9 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         origin,
         destination,
         rideType,
+        commissionType,
+        commissionValue,
+        commissionAmount,
         isSynced,
         createdAt,
         updatedAt
@@ -161,6 +184,24 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     } else if (isInserting) {
       context.missing(_rideTypeMeta);
     }
+    if (data.containsKey('commission_type')) {
+      context.handle(
+          _commissionTypeMeta,
+          commissionType.isAcceptableOrUnknown(
+              data['commission_type']!, _commissionTypeMeta));
+    }
+    if (data.containsKey('commission_value')) {
+      context.handle(
+          _commissionValueMeta,
+          commissionValue.isAcceptableOrUnknown(
+              data['commission_value']!, _commissionValueMeta));
+    }
+    if (data.containsKey('commission_amount')) {
+      context.handle(
+          _commissionAmountMeta,
+          commissionAmount.isAcceptableOrUnknown(
+              data['commission_amount']!, _commissionAmountMeta));
+    }
     if (data.containsKey('is_synced')) {
       context.handle(_isSyncedMeta,
           isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta));
@@ -202,6 +243,12 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
           .read(DriftSqlType.string, data['${effectivePrefix}destination']),
       rideType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}ride_type'])!,
+      commissionType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}commission_type']),
+      commissionValue: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}commission_value']),
+      commissionAmount: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}commission_amount'])!,
       isSynced: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_synced'])!,
       createdAt: attachedDatabase.typeMapping
@@ -227,6 +274,13 @@ class Ride extends DataClass implements Insertable<Ride> {
   final String? origin;
   final String? destination;
   final String rideType;
+
+  /// Snapshot of the platform commission at save time (v4+): the type
+  /// ('percent' | 'fixed'), the configured value, and the computed amount
+  /// deducted from [earnings]. Null type/value = no commission.
+  final String? commissionType;
+  final double? commissionValue;
+  final double commissionAmount;
   final bool isSynced;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -240,6 +294,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       this.origin,
       this.destination,
       required this.rideType,
+      this.commissionType,
+      this.commissionValue,
+      required this.commissionAmount,
       required this.isSynced,
       required this.createdAt,
       this.updatedAt});
@@ -259,6 +316,13 @@ class Ride extends DataClass implements Insertable<Ride> {
       map['destination'] = Variable<String>(destination);
     }
     map['ride_type'] = Variable<String>(rideType);
+    if (!nullToAbsent || commissionType != null) {
+      map['commission_type'] = Variable<String>(commissionType);
+    }
+    if (!nullToAbsent || commissionValue != null) {
+      map['commission_value'] = Variable<double>(commissionValue);
+    }
+    map['commission_amount'] = Variable<double>(commissionAmount);
     map['is_synced'] = Variable<bool>(isSynced);
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || updatedAt != null) {
@@ -281,6 +345,13 @@ class Ride extends DataClass implements Insertable<Ride> {
           ? const Value.absent()
           : Value(destination),
       rideType: Value(rideType),
+      commissionType: commissionType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionType),
+      commissionValue: commissionValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionValue),
+      commissionAmount: Value(commissionAmount),
       isSynced: Value(isSynced),
       createdAt: Value(createdAt),
       updatedAt: updatedAt == null && nullToAbsent
@@ -302,6 +373,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       origin: serializer.fromJson<String?>(json['origin']),
       destination: serializer.fromJson<String?>(json['destination']),
       rideType: serializer.fromJson<String>(json['rideType']),
+      commissionType: serializer.fromJson<String?>(json['commissionType']),
+      commissionValue: serializer.fromJson<double?>(json['commissionValue']),
+      commissionAmount: serializer.fromJson<double>(json['commissionAmount']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
@@ -320,6 +394,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       'origin': serializer.toJson<String?>(origin),
       'destination': serializer.toJson<String?>(destination),
       'rideType': serializer.toJson<String>(rideType),
+      'commissionType': serializer.toJson<String?>(commissionType),
+      'commissionValue': serializer.toJson<double?>(commissionValue),
+      'commissionAmount': serializer.toJson<double>(commissionAmount),
       'isSynced': serializer.toJson<bool>(isSynced),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
@@ -336,6 +413,9 @@ class Ride extends DataClass implements Insertable<Ride> {
           Value<String?> origin = const Value.absent(),
           Value<String?> destination = const Value.absent(),
           String? rideType,
+          Value<String?> commissionType = const Value.absent(),
+          Value<double?> commissionValue = const Value.absent(),
+          double? commissionAmount,
           bool? isSynced,
           DateTime? createdAt,
           Value<DateTime?> updatedAt = const Value.absent()}) =>
@@ -349,6 +429,12 @@ class Ride extends DataClass implements Insertable<Ride> {
         origin: origin.present ? origin.value : this.origin,
         destination: destination.present ? destination.value : this.destination,
         rideType: rideType ?? this.rideType,
+        commissionType:
+            commissionType.present ? commissionType.value : this.commissionType,
+        commissionValue: commissionValue.present
+            ? commissionValue.value
+            : this.commissionValue,
+        commissionAmount: commissionAmount ?? this.commissionAmount,
         isSynced: isSynced ?? this.isSynced,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
@@ -368,6 +454,15 @@ class Ride extends DataClass implements Insertable<Ride> {
       destination:
           data.destination.present ? data.destination.value : this.destination,
       rideType: data.rideType.present ? data.rideType.value : this.rideType,
+      commissionType: data.commissionType.present
+          ? data.commissionType.value
+          : this.commissionType,
+      commissionValue: data.commissionValue.present
+          ? data.commissionValue.value
+          : this.commissionValue,
+      commissionAmount: data.commissionAmount.present
+          ? data.commissionAmount.value
+          : this.commissionAmount,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -386,6 +481,9 @@ class Ride extends DataClass implements Insertable<Ride> {
           ..write('origin: $origin, ')
           ..write('destination: $destination, ')
           ..write('rideType: $rideType, ')
+          ..write('commissionType: $commissionType, ')
+          ..write('commissionValue: $commissionValue, ')
+          ..write('commissionAmount: $commissionAmount, ')
           ..write('isSynced: $isSynced, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -404,6 +502,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       origin,
       destination,
       rideType,
+      commissionType,
+      commissionValue,
+      commissionAmount,
       isSynced,
       createdAt,
       updatedAt);
@@ -420,6 +521,9 @@ class Ride extends DataClass implements Insertable<Ride> {
           other.origin == this.origin &&
           other.destination == this.destination &&
           other.rideType == this.rideType &&
+          other.commissionType == this.commissionType &&
+          other.commissionValue == this.commissionValue &&
+          other.commissionAmount == this.commissionAmount &&
           other.isSynced == this.isSynced &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -435,6 +539,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
   final Value<String?> origin;
   final Value<String?> destination;
   final Value<String> rideType;
+  final Value<String?> commissionType;
+  final Value<double?> commissionValue;
+  final Value<double> commissionAmount;
   final Value<bool> isSynced;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
@@ -449,6 +556,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.origin = const Value.absent(),
     this.destination = const Value.absent(),
     this.rideType = const Value.absent(),
+    this.commissionType = const Value.absent(),
+    this.commissionValue = const Value.absent(),
+    this.commissionAmount = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -464,6 +574,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.origin = const Value.absent(),
     this.destination = const Value.absent(),
     required String rideType,
+    this.commissionType = const Value.absent(),
+    this.commissionValue = const Value.absent(),
+    this.commissionAmount = const Value.absent(),
     this.isSynced = const Value.absent(),
     required DateTime createdAt,
     this.updatedAt = const Value.absent(),
@@ -486,6 +599,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Expression<String>? origin,
     Expression<String>? destination,
     Expression<String>? rideType,
+    Expression<String>? commissionType,
+    Expression<double>? commissionValue,
+    Expression<double>? commissionAmount,
     Expression<bool>? isSynced,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -501,6 +617,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       if (origin != null) 'origin': origin,
       if (destination != null) 'destination': destination,
       if (rideType != null) 'ride_type': rideType,
+      if (commissionType != null) 'commission_type': commissionType,
+      if (commissionValue != null) 'commission_value': commissionValue,
+      if (commissionAmount != null) 'commission_amount': commissionAmount,
       if (isSynced != null) 'is_synced': isSynced,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -518,6 +637,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       Value<String?>? origin,
       Value<String?>? destination,
       Value<String>? rideType,
+      Value<String?>? commissionType,
+      Value<double?>? commissionValue,
+      Value<double>? commissionAmount,
       Value<bool>? isSynced,
       Value<DateTime>? createdAt,
       Value<DateTime?>? updatedAt,
@@ -532,6 +654,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       origin: origin ?? this.origin,
       destination: destination ?? this.destination,
       rideType: rideType ?? this.rideType,
+      commissionType: commissionType ?? this.commissionType,
+      commissionValue: commissionValue ?? this.commissionValue,
+      commissionAmount: commissionAmount ?? this.commissionAmount,
       isSynced: isSynced ?? this.isSynced,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -569,6 +694,15 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     if (rideType.present) {
       map['ride_type'] = Variable<String>(rideType.value);
     }
+    if (commissionType.present) {
+      map['commission_type'] = Variable<String>(commissionType.value);
+    }
+    if (commissionValue.present) {
+      map['commission_value'] = Variable<double>(commissionValue.value);
+    }
+    if (commissionAmount.present) {
+      map['commission_amount'] = Variable<double>(commissionAmount.value);
+    }
     if (isSynced.present) {
       map['is_synced'] = Variable<bool>(isSynced.value);
     }
@@ -596,6 +730,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
           ..write('origin: $origin, ')
           ..write('destination: $destination, ')
           ..write('rideType: $rideType, ')
+          ..write('commissionType: $commissionType, ')
+          ..write('commissionValue: $commissionValue, ')
+          ..write('commissionAmount: $commissionAmount, ')
           ..write('isSynced: $isSynced, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1390,9 +1527,27 @@ class $CountryPlatformsTable extends CountryPlatforms
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_custom" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _commissionTypeMeta =
+      const VerificationMeta('commissionType');
   @override
-  List<GeneratedColumn> get $columns =>
-      [countryCode, platformName, isActive, isCustom];
+  late final GeneratedColumn<String> commissionType = GeneratedColumn<String>(
+      'commission_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _commissionValueMeta =
+      const VerificationMeta('commissionValue');
+  @override
+  late final GeneratedColumn<double> commissionValue = GeneratedColumn<double>(
+      'commission_value', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        countryCode,
+        platformName,
+        isActive,
+        isCustom,
+        commissionType,
+        commissionValue
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1427,6 +1582,18 @@ class $CountryPlatformsTable extends CountryPlatforms
       context.handle(_isCustomMeta,
           isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta));
     }
+    if (data.containsKey('commission_type')) {
+      context.handle(
+          _commissionTypeMeta,
+          commissionType.isAcceptableOrUnknown(
+              data['commission_type']!, _commissionTypeMeta));
+    }
+    if (data.containsKey('commission_value')) {
+      context.handle(
+          _commissionValueMeta,
+          commissionValue.isAcceptableOrUnknown(
+              data['commission_value']!, _commissionValueMeta));
+    }
     return context;
   }
 
@@ -1444,6 +1611,10 @@ class $CountryPlatformsTable extends CountryPlatforms
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       isCustom: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_custom'])!,
+      commissionType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}commission_type']),
+      commissionValue: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}commission_value']),
     );
   }
 
@@ -1465,11 +1636,18 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
   /// Marks user-created platforms (v3+). Built-ins (isCustom = false)
   /// can be toggled but never deleted; customs can be removed entirely.
   final bool isCustom;
+
+  /// Platform commission config (v4+): 'percent' | 'fixed' and the value.
+  /// Null = no commission configured.
+  final String? commissionType;
+  final double? commissionValue;
   const CountryPlatform(
       {required this.countryCode,
       required this.platformName,
       required this.isActive,
-      required this.isCustom});
+      required this.isCustom,
+      this.commissionType,
+      this.commissionValue});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1477,6 +1655,12 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
     map['platform_name'] = Variable<String>(platformName);
     map['is_active'] = Variable<bool>(isActive);
     map['is_custom'] = Variable<bool>(isCustom);
+    if (!nullToAbsent || commissionType != null) {
+      map['commission_type'] = Variable<String>(commissionType);
+    }
+    if (!nullToAbsent || commissionValue != null) {
+      map['commission_value'] = Variable<double>(commissionValue);
+    }
     return map;
   }
 
@@ -1486,6 +1670,12 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
       platformName: Value(platformName),
       isActive: Value(isActive),
       isCustom: Value(isCustom),
+      commissionType: commissionType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionType),
+      commissionValue: commissionValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionValue),
     );
   }
 
@@ -1497,6 +1687,8 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
       platformName: serializer.fromJson<String>(json['platformName']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      commissionType: serializer.fromJson<String?>(json['commissionType']),
+      commissionValue: serializer.fromJson<double?>(json['commissionValue']),
     );
   }
   @override
@@ -1507,6 +1699,8 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
       'platformName': serializer.toJson<String>(platformName),
       'isActive': serializer.toJson<bool>(isActive),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'commissionType': serializer.toJson<String?>(commissionType),
+      'commissionValue': serializer.toJson<double?>(commissionValue),
     };
   }
 
@@ -1514,12 +1708,19 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
           {String? countryCode,
           String? platformName,
           bool? isActive,
-          bool? isCustom}) =>
+          bool? isCustom,
+          Value<String?> commissionType = const Value.absent(),
+          Value<double?> commissionValue = const Value.absent()}) =>
       CountryPlatform(
         countryCode: countryCode ?? this.countryCode,
         platformName: platformName ?? this.platformName,
         isActive: isActive ?? this.isActive,
         isCustom: isCustom ?? this.isCustom,
+        commissionType:
+            commissionType.present ? commissionType.value : this.commissionType,
+        commissionValue: commissionValue.present
+            ? commissionValue.value
+            : this.commissionValue,
       );
   CountryPlatform copyWithCompanion(CountryPlatformsCompanion data) {
     return CountryPlatform(
@@ -1530,6 +1731,12 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
           : this.platformName,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      commissionType: data.commissionType.present
+          ? data.commissionType.value
+          : this.commissionType,
+      commissionValue: data.commissionValue.present
+          ? data.commissionValue.value
+          : this.commissionValue,
     );
   }
 
@@ -1539,14 +1746,16 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
           ..write('countryCode: $countryCode, ')
           ..write('platformName: $platformName, ')
           ..write('isActive: $isActive, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('commissionType: $commissionType, ')
+          ..write('commissionValue: $commissionValue')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(countryCode, platformName, isActive, isCustom);
+  int get hashCode => Object.hash(countryCode, platformName, isActive, isCustom,
+      commissionType, commissionValue);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1554,7 +1763,9 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
           other.countryCode == this.countryCode &&
           other.platformName == this.platformName &&
           other.isActive == this.isActive &&
-          other.isCustom == this.isCustom);
+          other.isCustom == this.isCustom &&
+          other.commissionType == this.commissionType &&
+          other.commissionValue == this.commissionValue);
 }
 
 class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
@@ -1562,12 +1773,16 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
   final Value<String> platformName;
   final Value<bool> isActive;
   final Value<bool> isCustom;
+  final Value<String?> commissionType;
+  final Value<double?> commissionValue;
   final Value<int> rowid;
   const CountryPlatformsCompanion({
     this.countryCode = const Value.absent(),
     this.platformName = const Value.absent(),
     this.isActive = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.commissionType = const Value.absent(),
+    this.commissionValue = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CountryPlatformsCompanion.insert({
@@ -1575,6 +1790,8 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
     required String platformName,
     this.isActive = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.commissionType = const Value.absent(),
+    this.commissionValue = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : countryCode = Value(countryCode),
         platformName = Value(platformName);
@@ -1583,6 +1800,8 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
     Expression<String>? platformName,
     Expression<bool>? isActive,
     Expression<bool>? isCustom,
+    Expression<String>? commissionType,
+    Expression<double>? commissionValue,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1590,6 +1809,8 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
       if (platformName != null) 'platform_name': platformName,
       if (isActive != null) 'is_active': isActive,
       if (isCustom != null) 'is_custom': isCustom,
+      if (commissionType != null) 'commission_type': commissionType,
+      if (commissionValue != null) 'commission_value': commissionValue,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1599,12 +1820,16 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
       Value<String>? platformName,
       Value<bool>? isActive,
       Value<bool>? isCustom,
+      Value<String?>? commissionType,
+      Value<double?>? commissionValue,
       Value<int>? rowid}) {
     return CountryPlatformsCompanion(
       countryCode: countryCode ?? this.countryCode,
       platformName: platformName ?? this.platformName,
       isActive: isActive ?? this.isActive,
       isCustom: isCustom ?? this.isCustom,
+      commissionType: commissionType ?? this.commissionType,
+      commissionValue: commissionValue ?? this.commissionValue,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1624,6 +1849,12 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (commissionType.present) {
+      map['commission_type'] = Variable<String>(commissionType.value);
+    }
+    if (commissionValue.present) {
+      map['commission_value'] = Variable<double>(commissionValue.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1637,6 +1868,8 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
           ..write('platformName: $platformName, ')
           ..write('isActive: $isActive, ')
           ..write('isCustom: $isCustom, ')
+          ..write('commissionType: $commissionType, ')
+          ..write('commissionValue: $commissionValue, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1669,6 +1902,9 @@ typedef $$RidesTableCreateCompanionBuilder = RidesCompanion Function({
   Value<String?> origin,
   Value<String?> destination,
   required String rideType,
+  Value<String?> commissionType,
+  Value<double?> commissionValue,
+  Value<double> commissionAmount,
   Value<bool> isSynced,
   required DateTime createdAt,
   Value<DateTime?> updatedAt,
@@ -1684,6 +1920,9 @@ typedef $$RidesTableUpdateCompanionBuilder = RidesCompanion Function({
   Value<String?> origin,
   Value<String?> destination,
   Value<String> rideType,
+  Value<String?> commissionType,
+  Value<double?> commissionValue,
+  Value<double> commissionAmount,
   Value<bool> isSynced,
   Value<DateTime> createdAt,
   Value<DateTime?> updatedAt,
@@ -1725,6 +1964,18 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<String> get rideType => $composableBuilder(
       column: $table.rideType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get commissionType => $composableBuilder(
+      column: $table.commissionType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get commissionAmount => $composableBuilder(
+      column: $table.commissionAmount,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isSynced => $composableBuilder(
       column: $table.isSynced, builder: (column) => ColumnFilters(column));
@@ -1773,6 +2024,18 @@ class $$RidesTableOrderingComposer
   ColumnOrderings<String> get rideType => $composableBuilder(
       column: $table.rideType, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get commissionType => $composableBuilder(
+      column: $table.commissionType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get commissionAmount => $composableBuilder(
+      column: $table.commissionAmount,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isSynced => $composableBuilder(
       column: $table.isSynced, builder: (column) => ColumnOrderings(column));
 
@@ -1819,6 +2082,15 @@ class $$RidesTableAnnotationComposer
   GeneratedColumn<String> get rideType =>
       $composableBuilder(column: $table.rideType, builder: (column) => column);
 
+  GeneratedColumn<String> get commissionType => $composableBuilder(
+      column: $table.commissionType, builder: (column) => column);
+
+  GeneratedColumn<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue, builder: (column) => column);
+
+  GeneratedColumn<double> get commissionAmount => $composableBuilder(
+      column: $table.commissionAmount, builder: (column) => column);
+
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
 
@@ -1861,6 +2133,9 @@ class $$RidesTableTableManager extends RootTableManager<
             Value<String?> origin = const Value.absent(),
             Value<String?> destination = const Value.absent(),
             Value<String> rideType = const Value.absent(),
+            Value<String?> commissionType = const Value.absent(),
+            Value<double?> commissionValue = const Value.absent(),
+            Value<double> commissionAmount = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime?> updatedAt = const Value.absent(),
@@ -1876,6 +2151,9 @@ class $$RidesTableTableManager extends RootTableManager<
             origin: origin,
             destination: destination,
             rideType: rideType,
+            commissionType: commissionType,
+            commissionValue: commissionValue,
+            commissionAmount: commissionAmount,
             isSynced: isSynced,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -1891,6 +2169,9 @@ class $$RidesTableTableManager extends RootTableManager<
             Value<String?> origin = const Value.absent(),
             Value<String?> destination = const Value.absent(),
             required String rideType,
+            Value<String?> commissionType = const Value.absent(),
+            Value<double?> commissionValue = const Value.absent(),
+            Value<double> commissionAmount = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             required DateTime createdAt,
             Value<DateTime?> updatedAt = const Value.absent(),
@@ -1906,6 +2187,9 @@ class $$RidesTableTableManager extends RootTableManager<
             origin: origin,
             destination: destination,
             rideType: rideType,
+            commissionType: commissionType,
+            commissionValue: commissionValue,
+            commissionAmount: commissionAmount,
             isSynced: isSynced,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -2313,6 +2597,8 @@ typedef $$CountryPlatformsTableCreateCompanionBuilder
   required String platformName,
   Value<bool> isActive,
   Value<bool> isCustom,
+  Value<String?> commissionType,
+  Value<double?> commissionValue,
   Value<int> rowid,
 });
 typedef $$CountryPlatformsTableUpdateCompanionBuilder
@@ -2321,6 +2607,8 @@ typedef $$CountryPlatformsTableUpdateCompanionBuilder
   Value<String> platformName,
   Value<bool> isActive,
   Value<bool> isCustom,
+  Value<String?> commissionType,
+  Value<double?> commissionValue,
   Value<int> rowid,
 });
 
@@ -2344,6 +2632,14 @@ class $$CountryPlatformsTableFilterComposer
 
   ColumnFilters<bool> get isCustom => $composableBuilder(
       column: $table.isCustom, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get commissionType => $composableBuilder(
+      column: $table.commissionType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$CountryPlatformsTableOrderingComposer
@@ -2367,6 +2663,14 @@ class $$CountryPlatformsTableOrderingComposer
 
   ColumnOrderings<bool> get isCustom => $composableBuilder(
       column: $table.isCustom, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get commissionType => $composableBuilder(
+      column: $table.commissionType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$CountryPlatformsTableAnnotationComposer
@@ -2389,6 +2693,12 @@ class $$CountryPlatformsTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumn<String> get commissionType => $composableBuilder(
+      column: $table.commissionType, builder: (column) => column);
+
+  GeneratedColumn<double> get commissionValue => $composableBuilder(
+      column: $table.commissionValue, builder: (column) => column);
 }
 
 class $$CountryPlatformsTableTableManager extends RootTableManager<
@@ -2422,6 +2732,8 @@ class $$CountryPlatformsTableTableManager extends RootTableManager<
             Value<String> platformName = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<bool> isCustom = const Value.absent(),
+            Value<String?> commissionType = const Value.absent(),
+            Value<double?> commissionValue = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountryPlatformsCompanion(
@@ -2429,6 +2741,8 @@ class $$CountryPlatformsTableTableManager extends RootTableManager<
             platformName: platformName,
             isActive: isActive,
             isCustom: isCustom,
+            commissionType: commissionType,
+            commissionValue: commissionValue,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2436,6 +2750,8 @@ class $$CountryPlatformsTableTableManager extends RootTableManager<
             required String platformName,
             Value<bool> isActive = const Value.absent(),
             Value<bool> isCustom = const Value.absent(),
+            Value<String?> commissionType = const Value.absent(),
+            Value<double?> commissionValue = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountryPlatformsCompanion.insert(
@@ -2443,6 +2759,8 @@ class $$CountryPlatformsTableTableManager extends RootTableManager<
             platformName: platformName,
             isActive: isActive,
             isCustom: isCustom,
+            commissionType: commissionType,
+            commissionValue: commissionValue,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
