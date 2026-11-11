@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/country_data.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 
@@ -205,12 +206,17 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
     final currencySymbol = settings.currencySymbol;
-    final platforms = settings.platforms;
+    final dbPlatforms = settings.platforms;
 
-    // Ensure the current platform is in the list (for editing rides from other countries)
-    final effectivePlatforms = platforms.contains(_selectedPlatform)
-        ? platforms
-        : [...platforms, _selectedPlatform];
+    // Platforms from COUNTRIES are the source of truth; the DB-seeded
+    // (settings.platforms) list and the ride being edited are merged in so
+    // nothing the user previously picked disappears from the dropdown.
+    final countryPlatforms = COUNTRIES
+        .where((c) => c.code == settings.countryCode)
+        .expand((c) => c.platforms)
+        .toSet();
+    final effectivePlatforms = countryPlatforms.union(dbPlatforms.toSet())
+      ..add(_selectedPlatform);
 
     return Scaffold(
       appBar: AppBar(

@@ -116,6 +116,20 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   /// Falls back to Brazil defaults if no preference is stored.
   Future<void> initialize() async {
     final storedCountryCode = await _dao.getSetting('app_country');
+    final countryCode = storedCountryCode ?? 'BR';
+
+    // Re-seed the country's platform list so app updates that change the
+    // COUNTRIES constant reach the table without a schema bump. Upserts are
+    // idempotent.
+    final countryEntry = COUNTRIES.firstWhere(
+      (c) => c.code == countryCode,
+      orElse: () => COUNTRIES.firstWhere((c) => c.code == 'BR'),
+    );
+    await _countryPlatformsDao.upsertCountryPlatforms(
+      countryEntry.code,
+      countryEntry.platforms,
+    );
+
     if (storedCountryCode == null) {
       // No stored preference - keep Brazil defaults with configured = false
       state = AppSettings.defaultBrazil();
