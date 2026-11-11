@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/language_provider.dart';
+import '../../core/l10n/strings.dart';
 import '../../core/settings/app_settings_notifier.dart';
 import '../../presentation/pages/dashboard/dashboard_page.dart';
 import '../../presentation/pages/rides/rides_page.dart';
@@ -37,7 +39,8 @@ class _SettingsListenable extends ChangeNotifier {
 /// Provider do router
 final routerProvider = Provider<GoRouter>((ref) {
   // Build the router inside the provider so we can access ref for the redirect
-  final settingsListenable = _SettingsListenable(ref.read(appSettingsProvider.notifier));
+  final settingsListenable =
+      _SettingsListenable(ref.read(appSettingsProvider.notifier));
   // Ensure the listenable is disposed when the provider is disposed
   ref.onDispose(settingsListenable.dispose);
 
@@ -189,69 +192,75 @@ class _MainShell extends ConsumerWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              context.go('/');
-              break;
-            case 1:
-              context.go('/rides');
-              break;
-            case 2:
-              context.go('/expenses');
-              break;
-            case 3:
-              context.go('/reports');
-              break;
-            case 4:
-              context.go('/settings');
-              break;
-          }
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final lang = ref.watch(appLanguageProvider);
+          return NavigationBar(
+            selectedIndex: currentIndex,
+            onDestinationSelected: (index) {
+              switch (index) {
+                case 0:
+                  context.go('/');
+                  break;
+                case 1:
+                  context.go('/rides');
+                  break;
+                case 2:
+                  context.go('/expenses');
+                  break;
+                case 3:
+                  context.go('/reports');
+                  break;
+                case 4:
+                  context.go('/settings');
+                  break;
+              }
+            },
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: lang.tr('nav.home'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.directions_car_outlined),
+                selectedIcon: const Icon(Icons.directions_car),
+                label: lang.tr('nav.rides'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.receipt_long_outlined),
+                selectedIcon: const Icon(Icons.receipt_long),
+                label: lang.tr('nav.expenses'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.bar_chart_outlined),
+                selectedIcon: const Icon(Icons.bar_chart),
+                label: lang.tr('nav.reports'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: lang.tr('nav.settings'),
+              ),
+            ],
+          );
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.directions_car_outlined),
-            selectedIcon: Icon(Icons.directions_car),
-            label: 'Corridas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Despesas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Relatórios',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Config',
-          ),
-        ],
       ),
     );
   }
 }
 
 /// Página de erro genérica
-class _ErrorPage extends StatelessWidget {
+class _ErrorPage extends ConsumerWidget {
   const _ErrorPage({required this.error});
 
   final Exception? error;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Erro')),
+      appBar: AppBar(title: Text(lang.tr('error.title'))),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -265,13 +274,13 @@ class _ErrorPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Ops! Algo deu errado',
+                lang.tr('error.body'),
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                error?.toString() ?? 'Erro desconhecido',
+                error?.toString() ?? lang.tr('error.unknown'),
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -279,7 +288,7 @@ class _ErrorPage extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () => context.go('/'),
                 icon: const Icon(Icons.home),
-                label: const Text('Voltar ao Início'),
+                label: Text(lang.tr('error.backHome')),
               ),
             ],
           ),
@@ -290,19 +299,22 @@ class _ErrorPage extends StatelessWidget {
 }
 
 /// Placeholder for RideDetailPage (to be implemented)
-class RideDetailPage extends StatelessWidget {
+class RideDetailPage extends ConsumerWidget {
   const RideDetailPage({super.key, required this.rideId});
 
   final String rideId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes da Corrida')),
+      appBar: AppBar(title: Text(lang.tr('rides.details'))),
       body: Center(
-        child: Text('Detalhes da corrida $rideId - Em desenvolvimento'),
+        child: Text(
+          lang.tr('rides.detailsWip', args: {'id': rideId}),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
 }
-

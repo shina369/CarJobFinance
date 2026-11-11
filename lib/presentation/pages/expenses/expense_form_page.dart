@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
@@ -120,21 +122,22 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
 
   Future<void> _delete() async {
     if (widget.expenseId == null) return;
+    final lang = ref.read(appLanguageProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Excluir Despesa?'),
-        content: const Text('Esta ação não pode ser desfeita.'),
+        title: Text(lang.tr('expenses.deleteTitle')),
+        content: Text(lang.tr('expenses.deleteMsg')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+              child: Text(lang.tr('dash.cancel'))),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Excluir'),
+            child: Text(lang.tr('rides.delete')),
           ),
         ],
       ),
@@ -150,11 +153,14 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
+    final lang = ref.watch(appLanguageProvider);
     final currencySymbol = settings.currencySymbol;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Editar Despesa' : 'Nova Despesa'),
+        title: Text(widget.isEditing
+            ? lang.tr('expenses.edit')
+            : lang.tr('expenses.new')),
         actions: [
           if (widget.isEditing)
             IconButton(
@@ -169,19 +175,20 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
           padding: const EdgeInsets.all(16),
           children: [
             // Data
-            const _SectionTitle('Data'),
+            _SectionTitle(lang.tr('expenses.sectionData')),
             const SizedBox(height: 8),
             TextFormField(
               controller: _dateController,
               readOnly: true,
               onTap: _pickDate,
-              decoration: const InputDecoration(
-                labelText: 'Data',
-                prefixIcon: Icon(Icons.calendar_today),
+              decoration: InputDecoration(
+                labelText: lang.tr('expenses.fieldData'),
+                prefixIcon: const Icon(Icons.calendar_today),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Data é obrigatória';
+                  return lang.tr('expenses.validateRequired',
+                      args: {'field': lang.tr('expenses.fieldData')});
                 }
                 return null;
               },
@@ -189,7 +196,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Categoria
-            const _SectionTitle('Categoria'),
+            _SectionTitle(lang.tr('expenses.sectionCategory')),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _selectedCategory,
@@ -206,12 +213,12 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Valor
-            const _SectionTitle('Valor'),
+            _SectionTitle(lang.tr('expenses.sectionValue')),
             const SizedBox(height: 8),
             TextFormField(
               controller: _amountController,
               decoration: InputDecoration(
-                labelText: 'Valor',
+                labelText: lang.tr('expenses.fieldValor'),
                 prefixText: '$currencySymbol ',
                 prefixIcon: const Icon(Icons.attach_money),
               ),
@@ -219,10 +226,11 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                   const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Valor é obrigatório';
+                  return lang.tr('expenses.validateRequired',
+                      args: {'field': lang.tr('expenses.fieldValor')});
                 }
                 if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                  return 'Valor inválido';
+                  return lang.tr('expenses.validateInvalid');
                 }
                 return null;
               },
@@ -230,25 +238,25 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             const SizedBox(height: 24),
 
             // Descrição
-            const _SectionTitle('Descrição (Opcional)'),
+            _SectionTitle(lang.tr('expenses.sectionDesc')),
             const SizedBox(height: 8),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                prefixIcon: Icon(Icons.description_outlined),
-                hintText: 'Ex: Abastecimento completo',
+              decoration: InputDecoration(
+                labelText: lang.tr('expenses.fieldDesc'),
+                prefixIcon: const Icon(Icons.description_outlined),
+                hintText: lang.tr('expenses.hintDesc'),
               ),
               maxLines: 3,
             ),
             const SizedBox(height: 24),
 
             // Recorrente
-            const _SectionTitle('Opções'),
+            _SectionTitle(lang.tr('expenses.sectionOptions')),
             const SizedBox(height: 8),
             SwitchListTile(
-              title: const Text('Despesa Recorrente'),
-              subtitle: const Text('Repete mensalmente'),
+              title: Text(lang.tr('expenses.recurring')),
+              subtitle: Text(lang.tr('expenses.recurringMsg')),
               value: _isRecurring,
               onChanged: (value) => setState(() => _isRecurring = value),
               secondary: Icon(
@@ -264,7 +272,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Cancelar'),
+                    child: Text(lang.tr('dash.cancel')),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -272,8 +280,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                   child: FilledButton(
                     onPressed: _save,
                     child: Text(widget.isEditing
-                        ? 'Salvar Alterações'
-                        : 'Salvar Despesa'),
+                        ? lang.tr('expenses.saveChanges')
+                        : lang.tr('expenses.saveExpense')),
                   ),
                 ),
               ],

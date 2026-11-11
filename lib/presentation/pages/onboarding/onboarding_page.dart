@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
 
@@ -39,11 +42,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     // If already configured, show brief message (auto-navigation scheduled above)
     if (settings.configured) {
-      return const Scaffold(
+      final lang = ref.watch(appLanguageProvider);
+      return Scaffold(
         body: Center(
           child: Text(
-            'Você já está configurado',
-            style: TextStyle(fontSize: 18),
+            lang.tr('onboarding.alreadyConfigured'),
+            style: const TextStyle(fontSize: 18),
             textAlign: TextAlign.center,
           ),
         ),
@@ -52,10 +56,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final selectedCountry =
-        _selectedCountryCode != null
-            ? COUNTRIES.firstWhere((c) => c.code == _selectedCountryCode)
-            : null;
+    final selectedCountry = _selectedCountryCode != null
+        ? COUNTRIES.firstWhere((c) => c.code == _selectedCountryCode)
+        : null;
+    final previewLang = selectedCountry != null
+        ? defaultLanguageForCountry(selectedCountry.code)
+        : defaultLanguageForCountry('BR');
 
     return Scaffold(
       body: SafeArea(
@@ -84,7 +90,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   const SizedBox(height: 24),
                   // Title
                   Text(
-                    'Bem-vindo ao CarJobFinance',
+                    previewLang.tr('onboarding.welcome'),
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -94,7 +100,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   const SizedBox(height: 12),
                   // Subtitle
                   Text(
-                    'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.',
+                    previewLang.tr('onboarding.subtitle'),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       height: 1.5,
@@ -104,58 +110,60 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   const SizedBox(height: 36),
                   // Country dropdown
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 360),
-                    child: DropdownButtonFormField<String>(
-                    key: const Key('country-dropdown'),
-                    decoration: InputDecoration(
-                      labelText: 'País',
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      isDense: true,
-                    ),
-                    items: COUNTRIES
-                        .map((c) => DropdownMenuItem(
-                              key: Key('country-option-${c.code}'),
-                              value: c.code,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    flagEmojiFor(c.code),
-                                    style: const TextStyle(fontSize: 22),
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: DropdownButtonFormField<String>(
+                        key: const Key('country-dropdown'),
+                        decoration: InputDecoration(
+                          labelText: previewLang.tr('onboarding.country'),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          isDense: true,
+                        ),
+                        items: COUNTRIES
+                            .map((c) => DropdownMenuItem(
+                                  key: Key('country-option-${c.code}'),
+                                  value: c.code,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        flagEmojiFor(c.code),
+                                        style: const TextStyle(fontSize: 22),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        c.namePt,
+                                        style: theme.textTheme.bodyLarge,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    c.namePt,
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                ],
-                              ),
-                            ))
-                        .toList(),
-                    initialValue: _selectedCountryCode,
-                    onChanged: (code) =>
-                        setState(() => _selectedCountryCode = code),
-                  )),
+                                ))
+                            .toList(),
+                        initialValue: _selectedCountryCode,
+                        onChanged: (code) =>
+                            setState(() => _selectedCountryCode = code),
+                      )),
                   // Selected country preview
                   if (selectedCountry != null) ...[
                     const SizedBox(height: 24),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+                        color:
+                            colorScheme.primaryContainer.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: colorScheme.primary, width: 1.5),
+                        border:
+                            Border.all(color: colorScheme.primary, width: 1.5),
                       ),
                       child: Row(
                         children: [
@@ -176,7 +184,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                   ),
                                 ),
                                 Text(
-                                  '${selectedCountry.currencySymbol} (${selectedCountry.currencyCode}) • ${selectedCountry.platforms.join(', ')}',
+                                  previewLang.tr(
+                                    'onboarding.currencyAndPlatforms',
+                                    args: {
+                                      'currency':
+                                          selectedCountry.currencySymbol,
+                                      'code': selectedCountry.currencyCode,
+                                      'platforms':
+                                          selectedCountry.platforms.join(', '),
+                                    },
+                                  ),
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -200,10 +217,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed:
-                          _selectedCountryCode != null ? _onContinuePressed : null,
+                      onPressed: _selectedCountryCode != null
+                          ? _onContinuePressed
+                          : null,
                       child: Text(
-                        'Continuar',
+                        previewLang.tr('onboarding.continue'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -223,7 +241,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (_selectedCountryCode == null) return;
 
     // Call setCountry on the notifier
-    await ref.read(appSettingsProvider.notifier).setCountry(_selectedCountryCode!);
+    await ref
+        .read(appSettingsProvider.notifier)
+        .setCountry(_selectedCountryCode!);
+
+    // Set the language to the country default (first-time)
+    final lang = defaultLanguageForCountry(_selectedCountryCode!);
+    await ref.read(languageProvider.notifier).setLanguage(lang);
 
     // Mark the manual navigation so the auto-skip timer (scheduled by the
     // rebuild that follows setCountry's state change) can't double-fire

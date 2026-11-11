@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
 import '../../../data/datasources/local/app_database.dart'
@@ -179,21 +181,22 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
 
   Future<void> _delete() async {
     if (widget.rideId == null) return;
+    final lang = ref.read(appLanguageProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Excluir Corrida?'),
-        content: const Text('Esta ação não pode ser desfeita.'),
+        title: Text(lang.tr('rides.deleteTitle')),
+        content: Text(lang.tr('rides.deleteMsg')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+              child: Text(lang.tr('dash.cancel'))),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Excluir'),
+            child: Text(lang.tr('rides.delete')),
           ),
         ],
       ),
@@ -207,6 +210,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
+    final lang = ref.watch(appLanguageProvider);
     final currencySymbol = settings.currencySymbol;
     final dbPlatforms = settings.platforms;
 
@@ -226,7 +230,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Editar Corrida' : 'Nova Corrida'),
+        title: Text(
+            widget.isEditing ? lang.tr('rides.edit') : lang.tr('rides.new')),
         actions: [
           if (widget.isEditing)
             IconButton(
@@ -241,7 +246,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
           padding: const EdgeInsets.all(16),
           children: [
             // Data e Hora
-            const _SectionTitle('Data e Hora'),
+            _SectionTitle(lang.tr('rides.sectionDate')),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -250,13 +255,14 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                     controller: _dateController,
                     readOnly: true,
                     onTap: _pickDate,
-                    decoration: const InputDecoration(
-                      labelText: 'Data',
-                      prefixIcon: Icon(Icons.calendar_today),
+                    decoration: InputDecoration(
+                      labelText: lang.tr('rides.fieldData'),
+                      prefixIcon: const Icon(Icons.calendar_today),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Data é obrigatória';
+                        return lang.tr('rides.validateRequired',
+                            args: {'field': lang.tr('rides.fieldData')});
                       }
                       return null;
                     },
@@ -271,9 +277,9 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                     ),
                     readOnly: true,
                     onTap: _pickTime,
-                    decoration: const InputDecoration(
-                      labelText: 'Hora',
-                      prefixIcon: Icon(Icons.access_time),
+                    decoration: InputDecoration(
+                      labelText: lang.tr('rides.fieldHora'),
+                      prefixIcon: const Icon(Icons.access_time),
                     ),
                   ),
                 ),
@@ -282,7 +288,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Plataforma
-            const _SectionTitle('Plataforma'),
+            _SectionTitle(lang.tr('rides.sectionPlatform')),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _selectedPlatform,
@@ -299,7 +305,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Tipo de Corrida
-            const _SectionTitle('Tipo de Corrida'),
+            _SectionTitle(lang.tr('rides.sectionType')),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _selectedRideType,
@@ -316,12 +322,12 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Ganhos
-            const _SectionTitle('Ganhos'),
+            _SectionTitle(lang.tr('rides.sectionEarnings')),
             const SizedBox(height: 8),
             TextFormField(
               controller: _earningsController,
               decoration: InputDecoration(
-                labelText: 'Valor ganho',
+                labelText: lang.tr('rides.fieldEarnings'),
                 prefixText: '$currencySymbol ',
                 prefixIcon: const Icon(Icons.attach_money),
               ),
@@ -329,10 +335,12 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                   const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Valor é obrigatório';
+                  return lang.tr('rides.validateRequired',
+                      args: {'field': lang.tr('rides.fieldEarnings')});
                 }
                 if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                  return 'Valor inválido';
+                  return lang.tr('rides.validateInvalid',
+                      args: {'field': lang.tr('rides.fieldEarnings')});
                 }
                 return null;
               },
@@ -340,16 +348,16 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Distância e Duração
-            const _SectionTitle('Distância e Duração'),
+            _SectionTitle(lang.tr('rides.sectionDistance')),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _distanceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Distância (km)',
-                      prefixIcon: Icon(Icons.straighten),
+                    decoration: InputDecoration(
+                      labelText: lang.tr('rides.fieldKm'),
+                      prefixIcon: const Icon(Icons.straighten),
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
@@ -357,7 +365,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                       if (value == null || value.isEmpty) return null;
                       final km = double.tryParse(value.replaceAll(',', '.'));
                       if (km == null || km > AppConstants.maxKmPerRide) {
-                        return 'Distância inválida';
+                        return lang.tr('rides.validateInvalid',
+                            args: {'field': lang.tr('rides.fieldKm')});
                       }
                       return null;
                     },
@@ -367,15 +376,16 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duração (min)',
-                      prefixIcon: Icon(Icons.timer),
+                    decoration: InputDecoration(
+                      labelText: lang.tr('rides.fieldMin'),
+                      prefixIcon: const Icon(Icons.timer),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) return null;
                       if (int.tryParse(value) == null) {
-                        return 'Duração inválida';
+                        return lang.tr('rides.validateInvalid',
+                            args: {'field': lang.tr('rides.fieldMin')});
                       }
                       return null;
                     },
@@ -386,21 +396,21 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
             const SizedBox(height: 24),
 
             // Origem e Destino
-            const _SectionTitle('Origem e Destino (Opcional)'),
+            _SectionTitle(lang.tr('rides.sectionOrigDest')),
             const SizedBox(height: 8),
             TextFormField(
               controller: _originController,
-              decoration: const InputDecoration(
-                labelText: 'Origem',
-                prefixIcon: Icon(Icons.my_location),
+              decoration: InputDecoration(
+                labelText: lang.tr('rides.fieldOrigem'),
+                prefixIcon: const Icon(Icons.my_location),
               ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _destinationController,
-              decoration: const InputDecoration(
-                labelText: 'Destino',
-                prefixIcon: Icon(Icons.location_on),
+              decoration: InputDecoration(
+                labelText: lang.tr('rides.fieldDestino'),
+                prefixIcon: const Icon(Icons.location_on),
               ),
             ),
             const SizedBox(height: 32),
@@ -411,7 +421,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Cancelar'),
+                    child: Text(lang.tr('dash.cancel')),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -419,8 +429,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                   child: FilledButton(
                     onPressed: _save,
                     child: Text(widget.isEditing
-                        ? 'Salvar Alterações'
-                        : 'Salvar Corrida'),
+                        ? lang.tr('rides.saveChanges')
+                        : lang.tr('rides.saveRide')),
                   ),
                 ),
               ],

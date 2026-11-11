@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -12,10 +15,11 @@ class ExpensesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expensesState = ref.watch(expensesControllerProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Despesas'),
+        title: Text(lang.tr('expenses.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -28,35 +32,38 @@ class ExpensesPage extends ConsumerWidget {
         ],
       ),
       body: expensesState.when(
-        data: (expenses) => _ExpensesList(expenses: expenses),
+        data: (expenses) => _ExpensesList(expenses: expenses, lang: lang),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Erro: $error')),
+        error: (error, stack) => Center(
+            child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/expenses/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Nova Despesa'),
+        label: Text(lang.tr('expenses.new')),
       ),
     );
   }
 }
 
 class _ExpensesList extends StatelessWidget {
-  const _ExpensesList({required this.expenses});
+  const _ExpensesList({required this.expenses, required this.lang});
 
   final List<entity_expense.Expense> expenses;
+  final AppLanguage lang;
 
   @override
   Widget build(BuildContext context) {
     if (expenses.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('Nenhuma despesa registrada',
-                style: TextStyle(color: Colors.grey)),
+            const Icon(Icons.receipt_long_outlined,
+                size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(lang.tr('expenses.empty'),
+                style: const TextStyle(color: Colors.grey)),
           ],
         ),
       );

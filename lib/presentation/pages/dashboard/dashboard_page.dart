@@ -2,8 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
@@ -38,20 +42,27 @@ class DashboardPage extends ConsumerWidget {
               monthlyGoal: goal,
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const _StaticDashboardBody(
-              rides: [],
-              expenses: [],
-              monthlyGoal: 5000.0,
-            ),
+            error: (error, stack) => Center(
+                child: Text(_trFor(context, 'error.generic',
+                    args: {'error': '$error'}))),
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text('Erro: $error')),
+          error: (error, stack) => Center(
+              child: Text(
+                  _trFor(context, 'error.generic', args: {'error': '$error'}))),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Erro: $error')),
+        error: (error, stack) => Center(
+            child: Text(
+                _trFor(context, 'error.generic', args: {'error': '$error'}))),
       ),
     );
   }
+}
+
+String _trFor(BuildContext context, String key, {Map<String, String>? args}) {
+  final ref = ProviderScope.containerOf(context);
+  return ref.read(appLanguageProvider).tr(key, args: args);
 }
 
 class _StaticDashboardBody extends ConsumerStatefulWidget {
@@ -89,6 +100,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
 
   void _showSetGoalDialog() {
     final settings = ref.read(appSettingsProvider);
+    final lang = ref.read(appLanguageProvider);
     final symbol = settings.currencySymbol;
     final controller = TextEditingController(
       text: _localGoal.toStringAsFixed(2).replaceAll('.', ','),
@@ -96,12 +108,12 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Definir Objetivo do Mês'),
+        title: Text(lang.tr('dash.setMonthlyGoal')),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: 'Valor do objetivo ($symbol)',
+            labelText: lang.tr('dash.goalValue', args: {'symbol': symbol}),
             prefixText: '$symbol ',
             border: const OutlineInputBorder(),
           ),
@@ -109,7 +121,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
+            child: Text(lang.tr('dash.cancel')),
           ),
           FilledButton(
             onPressed: () {
@@ -122,7 +134,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
               }
               Navigator.pop(dialogContext);
             },
-            child: const Text('Salvar'),
+            child: Text(lang.tr('dash.save')),
           ),
         ],
       ),
@@ -132,8 +144,10 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final today = _computeTodayData();
-    final month = _computeMonthData();
+    final lang = ref.watch(appLanguageProvider);
+    final locale = ref.watch(appLocaleProvider);
+    final today = _computeTodayData(locale);
+    final month = _computeMonthData(locale);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -141,7 +155,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Today summary card
-          _todayCard(context, today),
+          _todayCard(context, today, lang),
           const SizedBox(height: 12),
           // Action buttons above month panel
           Row(
@@ -150,7 +164,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/rides/new'),
                   icon: const Icon(Icons.directions_car, size: 18),
-                  label: const Text('Nova Corrida'),
+                  label: Text(lang.tr('dash.newRide')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: Colors.white,
@@ -168,7 +182,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/expenses/new'),
                   icon: const Icon(Icons.receipt_long, size: 18),
-                  label: const Text('Nova Despesa'),
+                  label: Text(lang.tr('dash.newExpense')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade700,
                     foregroundColor: Colors.white,
@@ -192,12 +206,13 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             label: month.label,
             goal: _localGoal,
             onSetGoal: _showSetGoalDialog,
+            lang: lang,
           ),
           // Recent rides strip — only when there are rides
           if (widget.rides.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _recentRidesStrip(
-                context, rides: widget.rides.take(2).toList()),
+            _recentRidesStrip(context,
+                rides: widget.rides.take(2).toList(), lang: lang),
           ],
           const SizedBox(height: 8),
         ],
@@ -205,7 +220,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
     );
   }
 
-  _TodayData _computeTodayData() {
+  _TodayData _computeTodayData(Locale locale) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final todayEnd = todayStart
@@ -228,12 +243,11 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
       expenses: todayExpenses.fold<double>(0, (s, e) => s + e.amount),
       rides: todayRides.length,
       km: todayRides.fold<double>(0, (s, r) => s + r.distanceKm),
-      label:
-          '${_weekdayName(now.weekday)}, ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year.toString().substring(2)}',
+      label: DateFormat('EEEE, dd/MM/yy', locale.toString()).format(now),
     );
   }
 
-  _MonthData _computeMonthData() {
+  _MonthData _computeMonthData(Locale locale) {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
     final monthEnd = DateTime(now.year, now.month + 1, 1)
@@ -249,37 +263,13 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             e.date.isBefore(monthEnd.add(const Duration(seconds: 1))))
         .toList();
 
+    final langTag = locale.toString();
     return _MonthData(
       earnings: monthRides.fold<double>(0, (s, r) => s + r.earnings),
       expenses: monthExpenses.fold<double>(0, (s, e) => s + e.amount),
-      label: '${_monthName(now.month)} de ${now.year}',
+      label: DateFormat('MMMM yyyy', langTag).format(now),
     );
   }
-
-  String _monthName(int m) => const [
-        'Janeiro',
-        'Fevereiro',
-        'Março',
-        'Abril',
-        'Maio',
-        'Junho',
-        'Julho',
-        'Agosto',
-        'Setembro',
-        'Outubro',
-        'Novembro',
-        'Dezembro',
-      ][m - 1];
-
-  String _weekdayName(int w) => const [
-        'Segunda-feira',
-        'Terça-feira',
-        'Quarta-feira',
-        'Quinta-feira',
-        'Sexta-feira',
-        'Sábado',
-        'Domingo',
-      ][w - 1];
 }
 
 class _TodayData {
@@ -312,7 +302,7 @@ class _MonthData {
 
 // ── TODAY CARD ────────────────────────────────────────────────
 
-Widget _todayCard(BuildContext context, _TodayData t) {
+Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
   final ts = Theme.of(context).textTheme;
   final profit = t.earnings - t.expenses;
   final isPositive = profit >= 0;
@@ -371,7 +361,7 @@ Widget _todayCard(BuildContext context, _TodayData t) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Lucro hoje',
+                    lang.tr('dash.todayProfit'),
                     style: ts.labelMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
                       letterSpacing: 0.8,
@@ -390,14 +380,13 @@ Widget _todayCard(BuildContext context, _TodayData t) {
             ),
             // Small badge with ride count
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                '${t.rides} corrida${t.rides != 1 ? 's' : ''}',
+                '${t.rides} ${t.rides == 1 ? lang.tr('dash.rideSingular') : lang.tr('dash.ridePlural')}',
                 style: ts.labelSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -445,21 +434,22 @@ Widget _todayCard(BuildContext context, _TodayData t) {
               children: [
                 _MetricPill(
                   icon: Icons.trending_up,
-                  label: 'Ganhos',
+                  label: lang.tr('dash.earnings'),
                   value: t.earnings,
                   pillWidth: pillWidth,
                 ),
                 const SizedBox(width: 8),
                 _MetricPill(
                   icon: Icons.money_off,
-                  label: 'Despesas',
+                  label: lang.tr('dash.expenses'),
                   value: t.expenses,
                   pillWidth: pillWidth,
+                  isExpense: true,
                 ),
                 const SizedBox(width: 8),
                 _MetricPill(
                   icon: Icons.speed,
-                  label: 'Km rodados',
+                  label: lang.tr('dash.kmDriven'),
                   value: t.km,
                   pillWidth: pillWidth,
                 ),
@@ -480,18 +470,19 @@ class _MetricPill extends ConsumerWidget {
     required this.label,
     required this.value,
     required this.pillWidth,
+    this.isExpense = false,
   });
 
   final IconData icon;
   final String label;
   final double value;
   final double pillWidth;
+  final bool isExpense;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final ts = Theme.of(context).textTheme;
-    final isExpense = label == 'Despesas';
     return SizedBox(
       width: pillWidth,
       child: Container(
@@ -551,6 +542,7 @@ class _MonthPanel extends StatelessWidget {
     required this.label,
     required this.goal,
     required this.onSetGoal,
+    required this.lang,
   });
 
   final double earnings;
@@ -559,6 +551,7 @@ class _MonthPanel extends StatelessWidget {
   final String label;
   final double goal;
   final VoidCallback onSetGoal;
+  final AppLanguage lang;
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +576,7 @@ class _MonthPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Resumo do Mês',
+                  lang.tr('dash.monthSummary'),
                   style: ts.titleMedium?.copyWith(
                     color: cs.onPrimary,
                     fontWeight: FontWeight.w700,
@@ -608,19 +601,18 @@ class _MonthPanel extends StatelessWidget {
               children: [
                 // Profit line
                 _StatRow(
-                  label: 'Lucro no mês',
+                  label: lang.tr('dash.monthProfit'),
                   value: netProfit,
                   color: netProfit >= 0
                       ? Colors.green.shade700
                       : Colors.red.shade700,
-                  icon: netProfit >= 0
-                      ? Icons.trending_up
-                      : Icons.trending_down,
+                  icon:
+                      netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
                 ),
                 const SizedBox(height: 10),
                 // Goal + progress
                 _StatRow(
-                  label: 'Objetivo',
+                  label: lang.tr('dash.goal'),
                   value: goal,
                   color: cs.primary,
                   icon: Icons.flag,
@@ -632,16 +624,16 @@ class _MonthPanel extends StatelessWidget {
                 Center(
                   child: OutlinedButton.icon(
                     onPressed: onSetGoal,
-                    icon: Icon(Icons.edit_outlined,
-                        size: 16, color: cs.primary),
-                    label: const Text('Alterar objetivo'),
+                    icon:
+                        Icon(Icons.edit_outlined, size: 16, color: cs.primary),
+                    label: Text(lang.tr('dash.changeGoal')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: cs.primary,
                       side: BorderSide(color: cs.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
-                      textStyle: ts.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600),
+                      textStyle:
+                          ts.labelSmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -700,6 +692,7 @@ class _StatRow extends ConsumerWidget {
 Widget _recentRidesStrip(
   BuildContext context, {
   required List<entity_ride.Ride> rides,
+  required AppLanguage lang,
 }) {
   final cs = Theme.of(context).colorScheme;
   final ts = Theme.of(context).textTheme;
@@ -711,7 +704,7 @@ Widget _recentRidesStrip(
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Últimas corridas', style: ts.titleSmall),
+          Text(lang.tr('dash.recentRides'), style: ts.titleSmall),
           TextButton(
             onPressed: () => context.push('/rides'),
             style: TextButton.styleFrom(
@@ -719,7 +712,7 @@ Widget _recentRidesStrip(
               minimumSize: const Size(0, 0),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text('Ver todas',
+            child: Text(lang.tr('dash.seeAll'),
                 style: ts.labelSmall?.copyWith(color: cs.primary)),
           ),
         ],
@@ -736,8 +729,7 @@ Widget _recentRidesStrip(
             leading: CircleAvatar(
               radius: 16,
               backgroundColor: cs.primaryContainer,
-              child: Icon(Icons.directions_car,
-                  size: 16, color: cs.primary),
+              child: Icon(Icons.directions_car, size: 16, color: cs.primary),
             ),
             title: Text(ride.platform, style: ts.bodySmall),
             subtitle: Text(

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
@@ -14,10 +17,11 @@ class RidesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ridesState = ref.watch(ridesControllerProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Corridas'),
+        title: Text(lang.tr('rides.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -30,35 +34,38 @@ class RidesPage extends ConsumerWidget {
         ],
       ),
       body: ridesState.when(
-        data: (rides) => _RidesList(rides: rides),
+        data: (rides) => _RidesList(rides: rides, lang: lang),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Erro: $error')),
+        error: (error, stack) => Center(
+            child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/rides/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Nova Corrida'),
+        label: Text(lang.tr('rides.new')),
       ),
     );
   }
 }
 
 class _RidesList extends StatelessWidget {
-  const _RidesList({required this.rides});
+  const _RidesList({required this.rides, required this.lang});
 
   final List<entity_ride.Ride> rides;
+  final AppLanguage lang;
 
   @override
   Widget build(BuildContext context) {
     if (rides.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.directions_car_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('Nenhuma corrida registrada',
-                style: TextStyle(color: Colors.grey)),
+            const Icon(Icons.directions_car_outlined,
+                size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(lang.tr('rides.empty'),
+                style: const TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -88,7 +95,8 @@ class RideCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final formattedAmount = LocalizedCurrency.formatWithSettings(ride.earnings, settings);
+    final formattedAmount =
+        LocalizedCurrency.formatWithSettings(ride.earnings, settings);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

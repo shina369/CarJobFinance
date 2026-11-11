@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -10,15 +13,18 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    String tr(String key) => lang.tr(key);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações'),
+        title: Text(tr('settings.title')),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Aparência
-          const _SectionHeader('Aparência'),
+          _SectionHeader(tr('settings.appearance')),
           Card(
             child: Column(
               children: [
@@ -30,24 +36,27 @@ class SettingsPage extends ConsumerWidget {
                         Icons.palette_outlined,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      title: const Text('Tema'),
-                      subtitle: Text(_themeModeToString(themeMode)),
+                      title: Text(tr('settings.theme')),
+                      subtitle: Text(_themeModeToString(themeMode, tr)),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _showThemeDialog(context, ref),
+                      onTap: () => _showThemeDialog(context, ref, tr),
                     );
                   },
                 ),
                 const Divider(height: 1, indent: 72),
-                ListTile(
-                  leading: Icon(
-                    Icons.language_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: const Text('Idioma'),
-                  subtitle: const Text('Português (Brasil)'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Show language selector
+                Consumer(
+                  builder: (context, ref, _) {
+                    final currentLang = ref.watch(appLanguageProvider);
+                    return ListTile(
+                      leading: Icon(
+                        Icons.language_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(tr('settings.language')),
+                      subtitle: Text(currentLang.displayName),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showLanguageDialog(context, ref, tr),
+                    );
                   },
                 ),
               ],
@@ -56,7 +65,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Dados
-          const _SectionHeader('Dados e Backup'),
+          _SectionHeader(tr('settings.data')),
           Card(
             child: Column(
               children: [
@@ -65,8 +74,8 @@ class SettingsPage extends ConsumerWidget {
                     Icons.backup_outlined,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Backup e Restauração'),
-                  subtitle: const Text('Exportar/Importar dados'),
+                  title: Text(tr('settings.backup')),
+                  subtitle: Text(tr('settings.backupSub')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Navigate to backup page
@@ -78,11 +87,10 @@ class SettingsPage extends ConsumerWidget {
                     Icons.delete_outline,
                     color: Theme.of(context).colorScheme.error,
                   ),
-                  title: const Text('Limpar Todos os Dados'),
-                  subtitle:
-                      const Text('Apaga corridas, despesas e configurações'),
+                  title: Text(tr('settings.clearData')),
+                  subtitle: Text(tr('settings.clearDataSub')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showClearDataDialog(context),
+                  onTap: () => _showClearDataDialog(context, tr),
                 ),
               ],
             ),
@@ -90,7 +98,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Notificações
-          const _SectionHeader('Notificações'),
+          _SectionHeader(tr('settings.notifications')),
           Card(
             child: Column(
               children: [
@@ -102,8 +110,8 @@ class SettingsPage extends ConsumerWidget {
                         Icons.notifications_outlined,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      title: const Text('Notificações Ativas'),
-                      subtitle: const Text('Receber lembretes e alertas'),
+                      title: Text(tr('settings.notificationsActive')),
+                      subtitle: Text(tr('settings.notificationsActiveSub')),
                       value: true, // TODO: actual value
                       onChanged: (value) {
                         // TODO: Toggle notifications
@@ -117,8 +125,8 @@ class SettingsPage extends ConsumerWidget {
                     Icons.schedule_outlined,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Lembrete Diário'),
-                  subtitle: const Text('Configurar horário do lembrete'),
+                  title: Text(tr('settings.dailyReminder')),
+                  subtitle: Text(tr('settings.dailyReminderSub')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Show time picker for daily reminder
@@ -130,7 +138,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sobre
-          const _SectionHeader('Sobre'),
+          _SectionHeader(tr('settings.about')),
           Card(
             child: Column(
               children: [
@@ -139,7 +147,7 @@ class SettingsPage extends ConsumerWidget {
                     Icons.info_outline,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Versão do App'),
+                  title: Text(tr('settings.appVersion')),
                   subtitle: const Text('1.0.0'),
                 ),
                 const Divider(height: 1, indent: 72),
@@ -148,7 +156,7 @@ class SettingsPage extends ConsumerWidget {
                     Icons.article_outlined,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Termos de Uso'),
+                  title: Text(tr('settings.terms')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Show terms
@@ -160,7 +168,7 @@ class SettingsPage extends ConsumerWidget {
                     Icons.privacy_tip_outlined,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Política de Privacidade'),
+                  title: Text(tr('settings.privacy')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Show privacy policy
@@ -172,7 +180,7 @@ class SettingsPage extends ConsumerWidget {
                     Icons.bug_report_outlined,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: const Text('Reportar Problema'),
+                  title: Text(tr('settings.reportIssue')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Open issue tracker/email
@@ -186,29 +194,30 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  String _themeModeToString(ThemeMode mode) {
+  String _themeModeToString(ThemeMode mode, String Function(String) tr) {
     switch (mode) {
       case ThemeMode.light:
-        return 'Claro';
+        return tr('settings.themeLight');
       case ThemeMode.dark:
-        return 'Escuro';
+        return tr('settings.themeDark');
       case ThemeMode.system:
-        return 'Sistema';
+        return tr('settings.themeSystem');
     }
   }
 
-  void _showThemeDialog(BuildContext context, WidgetRef ref) {
+  void _showThemeDialog(
+      BuildContext context, WidgetRef ref, String Function(String) tr) {
     showDialog(
       context: context,
       builder: (context) {
         final currentMode = ref.read(themeModeProvider);
         return AlertDialog(
-          title: const Text('Escolher Tema'),
+          title: Text(tr('settings.chooseTheme')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile<ThemeMode>(
-                title: const Text('Claro'),
+                title: Text(tr('settings.themeLight')),
                 value: ThemeMode.light,
                 groupValue: currentMode,
                 onChanged: (value) {
@@ -219,7 +228,7 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               RadioListTile<ThemeMode>(
-                title: const Text('Escuro'),
+                title: Text(tr('settings.themeDark')),
                 value: ThemeMode.dark,
                 groupValue: currentMode,
                 onChanged: (value) {
@@ -230,7 +239,7 @@ class SettingsPage extends ConsumerWidget {
                 },
               ),
               RadioListTile<ThemeMode>(
-                title: const Text('Sistema'),
+                title: Text(tr('settings.themeSystem')),
                 value: ThemeMode.system,
                 groupValue: currentMode,
                 onChanged: (value) {
@@ -247,19 +256,74 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  void _showClearDataDialog(BuildContext context) {
+  void _showLanguageDialog(
+      BuildContext context, WidgetRef ref, String Function(String) tr) {
+    final currentLang = ref.read(appLanguageProvider);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(tr('settings.language')),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: DropdownButtonFormField<AppLanguage>(
+              value: currentLang,
+              decoration: InputDecoration(
+                labelText: tr('settings.language'),
+                filled: true,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                isDense: true,
+              ),
+              items: SUPPORTED_LANGUAGES
+                  .map((l) => DropdownMenuItem(
+                        value: l,
+                        child: Row(
+                          children: [
+                            if (l.flag != null) ...[
+                              Text(l.flag!,
+                                  style: const TextStyle(fontSize: 22)),
+                              const SizedBox(width: 10),
+                            ],
+                            Expanded(
+                              child: Text(
+                                l.displayName,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (lang) {
+                if (lang != null && lang != currentLang) {
+                  ref.read(languageProvider.notifier).setLanguage(lang);
+                }
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showClearDataDialog(BuildContext context, String Function(String) tr) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Limpar Todos os Dados?'),
-        content: const Text(
-          'Esta ação é irreversível. Todas as suas corridas, despesas '
-          'e configurações serão apagadas permanentemente.',
-        ),
+        title: Text(tr('settings.clearDataConfirm')),
+        content: Text(tr('settings.clearDataMsg')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(tr('dash.cancel')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -269,7 +333,7 @@ class SettingsPage extends ConsumerWidget {
               // TODO: Clear all data
               Navigator.pop(context);
             },
-            child: const Text('Apagar Tudo'),
+            child: Text(tr('settings.deleteAll')),
           ),
         ],
       ),

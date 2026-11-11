@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
@@ -9,18 +12,18 @@ import '../../../presentation/controllers/controllers.dart';
 enum ReportPeriod { day, week, month, year, custom }
 
 extension ReportPeriodExtension on ReportPeriod {
-  String get label {
+  String label(AppLanguage lang) {
     switch (this) {
       case ReportPeriod.day:
-        return 'Hoje';
+        return lang.tr('reports.periodToday');
       case ReportPeriod.week:
-        return 'Esta Semana';
+        return lang.tr('reports.periodWeek');
       case ReportPeriod.month:
-        return 'Este Mês';
+        return lang.tr('reports.periodMonth');
       case ReportPeriod.year:
-        return 'Este Ano';
+        return lang.tr('reports.periodYear');
       case ReportPeriod.custom:
-        return 'Personalizado';
+        return lang.tr('reports.periodCustom');
     }
   }
 
@@ -68,9 +71,10 @@ class ReportsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Relatórios'),
+        title: Text(lang.tr('reports.title')),
       ),
       body: _ReportsContent(),
     );
@@ -81,6 +85,7 @@ class _PeriodDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(selectedReportPeriodProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return MenuAnchor(
       builder: (context, controller, child) {
@@ -108,7 +113,7 @@ class _PeriodDropdown extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  selectedPeriod.label,
+                  selectedPeriod.label(lang),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -147,7 +152,7 @@ class _PeriodDropdown extends ConsumerWidget {
                 else
                   const SizedBox(width: 20),
                 const SizedBox(width: 12),
-                Text(period.label),
+                Text(period.label(lang)),
               ],
             ),
           ),
@@ -160,6 +165,7 @@ class _PeriodDropdown extends ConsumerWidget {
 class _PeriodSelectorCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -167,7 +173,7 @@ class _PeriodSelectorCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Período do Relatório',
+              lang.tr('reports.period'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -186,6 +192,7 @@ class _ReportsContent extends ConsumerWidget {
     final ridesAsync = ref.watch(ridesControllerProvider);
     final expensesAsync = ref.watch(expensesControllerProvider);
     final settings = ref.watch(appSettingsProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return ridesAsync.when(
       data: (rides) => expensesAsync.when(
@@ -214,7 +221,8 @@ class _ReportsContent extends ConsumerWidget {
               filteredRides.fold<int>(0, (sum, r) => sum + r.durationMinutes);
 
           // Format currency using settings
-          String fmt(double v) => LocalizedCurrency.formatWithSettings(v, settings);
+          String fmt(double v) =>
+              LocalizedCurrency.formatWithSettings(v, settings);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -234,11 +242,11 @@ class _ReportsContent extends ConsumerWidget {
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: 'Resumo Financeiro',
+                              text: lang.tr('reports.summary'),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             TextSpan(
-                              text: '\n${period.label}',
+                              text: '\n${period.label(lang)}',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -254,18 +262,18 @@ class _ReportsContent extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       _SummaryRow(
-                        label: 'Total de Ganhos',
+                        label: lang.tr('reports.totalEarnings'),
                         value: fmt(totalEarnings),
                         isPositive: true,
                       ),
                       _SummaryRow(
-                        label: 'Total de Despesas',
+                        label: lang.tr('reports.totalExpenses'),
                         value: fmt(totalExpenses),
                         isPositive: false,
                       ),
                       const Divider(),
                       _SummaryRow(
-                        label: 'Lucro Líquido',
+                        label: lang.tr('reports.netProfit'),
                         value: fmt(netProfit),
                         isPositive: netProfit >= 0,
                         isTotal: true,
@@ -284,36 +292,36 @@ class _ReportsContent extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Métricas de Desempenho',
+                        lang.tr('reports.metrics'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 16),
                       _MetricRow(
-                        label: 'Corridas Realizadas',
+                        label: lang.tr('reports.ridesDone'),
                         value: filteredRides.length.toString(),
                       ),
                       _MetricRow(
-                        label: 'Quilometragem Total',
+                        label: lang.tr('reports.totalKm'),
                         value: '${totalKm.toStringAsFixed(1)} km',
                       ),
                       _MetricRow(
-                        label: 'Horas Trabalhadas',
+                        label: lang.tr('reports.hoursWorked'),
                         value: '${(totalMinutes / 60).toStringAsFixed(1)}h',
                       ),
                       _MetricRow(
-                        label: 'Média por km',
+                        label: lang.tr('reports.avgPerKm'),
                         value: totalKm > 0
                             ? '${fmt(totalEarnings / totalKm)}/km'
                             : '${fmt(0)}/km',
                       ),
                       _MetricRow(
-                        label: 'Média por hora',
+                        label: lang.tr('reports.avgPerHour'),
                         value: totalMinutes > 0
                             ? '${fmt(totalEarnings / (totalMinutes / 60))}/h'
                             : '${fmt(0)}/h',
                       ),
                       _MetricRow(
-                        label: 'Média por corrida',
+                        label: lang.tr('reports.avgPerRide'),
                         value: filteredRides.isNotEmpty
                             ? fmt(totalEarnings / filteredRides.length)
                             : fmt(0),
@@ -332,7 +340,7 @@ class _ReportsContent extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Exportar Dados',
+                        lang.tr('reports.export'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 16),
@@ -341,9 +349,8 @@ class _ReportsContent extends ConsumerWidget {
                           Icons.table_chart,
                           color: Theme.of(context).colorScheme.primary,
                         ),
-                        title: const Text('Exportar CSV'),
-                        subtitle:
-                            const Text('Planilha para Excel/Google Sheets'),
+                        title: Text(lang.tr('reports.exportCsv')),
+                        subtitle: Text(lang.tr('reports.exportCsvSub')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           // TODO: Export CSV
@@ -355,9 +362,8 @@ class _ReportsContent extends ConsumerWidget {
                           Icons.picture_as_pdf,
                           color: Theme.of(context).colorScheme.error,
                         ),
-                        title: const Text('Exportar PDF'),
-                        subtitle:
-                            const Text('Relatório formatado para impressão'),
+                        title: Text(lang.tr('reports.exportPdf')),
+                        subtitle: Text(lang.tr('reports.exportPdfSub')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           // TODO: Export PDF
@@ -369,8 +375,8 @@ class _ReportsContent extends ConsumerWidget {
                           Icons.backup,
                           color: Theme.of(context).colorScheme.tertiary,
                         ),
-                        title: const Text('Backup Completo'),
-                        subtitle: const Text('Todos os dados em JSON'),
+                        title: Text(lang.tr('reports.backup')),
+                        subtitle: Text(lang.tr('reports.backupSub')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           // TODO: Export JSON backup
@@ -385,10 +391,13 @@ class _ReportsContent extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erro ao carregar despesas: $e')),
+        error: (e, _) => Center(
+            child:
+                Text(lang.tr('reports.loadExpensesError', args: {'e': '$e'}))),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Erro ao carregar corridas: $e')),
+      error: (e, _) => Center(
+          child: Text(lang.tr('reports.loadRidesError', args: {'e': '$e'}))),
     );
   }
 }

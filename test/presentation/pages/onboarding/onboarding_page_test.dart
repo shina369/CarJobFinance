@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:carjobfinance/core/l10n/language_provider.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
-import 'package:carjobfinance/data/datasources/local/app_database.dart' show CountryPlatformsDao;
+import 'package:carjobfinance/data/datasources/local/app_database.dart'
+    show CountryPlatformsDao;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart';
 
@@ -13,8 +15,7 @@ import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart
 /// never actually called by the onboarding tests.
 class _FakeAppDao implements AppDao {
   @override
-  noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError('FakeAppDao');
+  noSuchMethod(Invocation invocation) => throw UnimplementedError('FakeAppDao');
 }
 
 class _FakeCountryPlatformsDao implements CountryPlatformsDao {
@@ -23,12 +24,35 @@ class _FakeCountryPlatformsDao implements CountryPlatformsDao {
       throw UnimplementedError('FakeCountryPlatformsDao');
 }
 
+/// In-memory AppDao for the language provider so its initialize() call
+/// during tests doesn't throw.
+class _FakeInMemoryAppDao implements AppDao {
+  final Map<String, String> _storage = {};
+
+  @override
+  Future<String?> getSetting(String key) async => _storage[key];
+
+  @override
+  Future<void> setSetting(String key, String value) async {
+    _storage[key] = value;
+  }
+
+  @override
+  Future<void> deleteSetting(String key) async {
+    _storage.remove(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Mock notifier for testing that doesn't touch a real database.
 /// Only [setCountry] is overridden — the page's Continue button is the
 /// sole DAO-backed method the onboarding tests exercise.
 class _MockAppSettingsNotifier extends AppSettingsNotifier {
   _MockAppSettingsNotifier(AppSettings initialState)
-      : super.forTesting(_FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
+      : super.forTesting(
+            _FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
 
   @override
   Future<void> setCountry(String countryCode) async {
@@ -43,6 +67,7 @@ class _MockAppSettingsNotifier extends AppSettingsNotifier {
 void main() {
   group('OnboardingPage', () {
     late _MockAppSettingsNotifier notifier;
+    late _FakeInMemoryAppDao languageDao;
 
     /// Pump the onboarding page with optional custom settings and router.
     /// Uses MaterialApp(home:) for non-navigation tests and MaterialApp.router for navigation tests.
@@ -51,19 +76,28 @@ void main() {
       AppSettings? initialSettings,
       GoRouter? router,
     }) async {
-      notifier = _MockAppSettingsNotifier(initialSettings ?? AppSettings.defaultBrazil());
+      final settingsToUse = initialSettings ?? AppSettings.defaultBrazil();
+      notifier = _MockAppSettingsNotifier(settingsToUse);
+      languageDao = _FakeInMemoryAppDao();
+
+      final languageNotifier = LanguageNotifier(
+        languageDao,
+        AppLanguagePref.defaultFor(settingsToUse.countryCode),
+      );
+      await languageNotifier.initialize();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             appSettingsProvider.overrideWith((ref) => notifier),
+            languageProvider.overrideWith((ref) => languageNotifier),
           ],
           child: router != null
               ? MaterialApp.router(routerConfig: router)
               : const MaterialApp(home: OnboardingPage()),
         ),
       );
-      await tester.pump(); // Use pump only, not pumpAndSettle, to avoid animation timeouts
+      await tester.pump();
     }
 
     testWidgets('renders country dropdown', (WidgetTester tester) async {
@@ -91,7 +125,8 @@ void main() {
       expect(buttonWidget.onPressed, isNotNull);
     });
 
-    testWidgets('Continue button disabled until a country is picked', (WidgetTester tester) async {
+    testWidgets('Continue button disabled until a country is picked',
+        (WidgetTester tester) async {
       await pumpOnboardingPage(tester);
 
       // Continue button should be disabled initially
@@ -102,7 +137,8 @@ void main() {
       expect(buttonWidget.onPressed, isNull);
     });
 
-    testWidgets('After select + continue, navigates to /', (WidgetTester tester) async {
+    testWidgets('After select + continue, navigates to /',
+        (WidgetTester tester) async {
       final router = GoRouter(
         initialLocation: '/onboarding',
         routes: [
@@ -140,7 +176,8 @@ void main() {
       expect(find.byKey(const Key('home-page')), findsOneWidget);
     });
 
-    testWidgets('Auto-skip when already configured', (WidgetTester tester) async {
+    testWidgets('Auto-skip when already configured',
+        (WidgetTester tester) async {
       // Create pre-configured settings (Portugal)
       final pt = COUNTRIES.firstWhere((c) => c.code == 'PT');
       final configuredSettings = AppSettings.fromCountry(pt, pt.platforms);
@@ -167,7 +204,7 @@ void main() {
         router: router,
       );
 
-      // Should show "Você já está configurado" message
+      // Should show "You are already configured" (PT uses pt_PT)
       expect(find.text('Você já está configurado'), findsOneWidget);
 
       // Should auto-navigate to home after 800ms

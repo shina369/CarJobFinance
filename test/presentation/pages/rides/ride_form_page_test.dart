@@ -3,18 +3,42 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carjobfinance/presentation/pages/rides/ride_form_page.dart';
+import 'package:carjobfinance/core/l10n/language_provider.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
 import 'package:carjobfinance/core/router/app_router.dart';
-import 'package:carjobfinance/data/datasources/local/app_database.dart' show CountryPlatformsDao;
+import 'package:carjobfinance/data/datasources/local/app_database.dart'
+    show CountryPlatformsDao;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
+
+/// In-memory AppDao so [languageProvider] can build a [LanguageNotifier]
+/// without a real database.
+class _InMemoryAppDao implements AppDao {
+  final Map<String, String> _storage = {};
+
+  @override
+  Future<String?> getSetting(String key) async => _storage[key];
+
+  @override
+  Future<void> setSetting(String key, String value) async {
+    _storage[key] = value;
+  }
+
+  @override
+  Future<void> deleteSetting(String key) async {
+    _storage.remove(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('InMemoryAppDao');
+}
 
 /// Dummy DAOs used to satisfy the non-nullable fields of the real
 /// [AppSettingsNotifier].
 class _FakeAppDao implements AppDao {
   @override
-  noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError('FakeAppDao');
+  noSuchMethod(Invocation invocation) => throw UnimplementedError('FakeAppDao');
 }
 
 class _FakeCountryPlatformsDao implements CountryPlatformsDao {
@@ -26,7 +50,8 @@ class _FakeCountryPlatformsDao implements CountryPlatformsDao {
 /// Mock notifier for testing that doesn't touch a real database.
 class _MockAppSettingsNotifier extends AppSettingsNotifier {
   _MockAppSettingsNotifier(AppSettings initialState)
-      : super.forTesting(_FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
+      : super.forTesting(
+            _FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
 
   @override
   Future<void> setCountry(String countryCode) async {
@@ -73,6 +98,7 @@ void main() {
         ProviderScope(
           overrides: [
             appSettingsProvider.overrideWith((ref) => notifier),
+            languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
             routerProvider.overrideWithValue(router),
           ],
           child: MaterialApp.router(routerConfig: router),
@@ -91,12 +117,14 @@ void main() {
         await pumpRideFormPage(tester, initialSettings: configuredSettings);
 
         // Find the platform dropdown
-        final dropdownFinder = find.byType(DropdownButtonFormField<String>).first;
+        final dropdownFinder =
+            find.byType(DropdownButtonFormField<String>).first;
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
         // PT platforms: ['Uber', 'Bolt', 'IzzyMove', 'Taxi', 'Transfer']
-        expect(find.text('Uber'), findsWidgets); // At least one (button + menu item)
+        expect(find.text('Uber'),
+            findsWidgets); // At least one (button + menu item)
         expect(find.text('Bolt'), findsOneWidget); // Only in menu
         expect(find.text('IzzyMove'), findsOneWidget); // Only in menu
         expect(find.text('Taxi'), findsOneWidget); // Only in menu
@@ -118,13 +146,15 @@ void main() {
         await pumpRideFormPage(tester, initialSettings: configuredSettings);
 
         // Find the platform dropdown
-        final dropdownFinder = find.byType(DropdownButtonFormField<String>).first;
+        final dropdownFinder =
+            find.byType(DropdownButtonFormField<String>).first;
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
         // BR platforms: ['Uber', '99', 'inDrive', 'Maxim', 'POP Move',
         //               'Garupa', 'Urbano Norte', 'Mubis', 'Taxi', 'Transfer']
-        expect(find.text('Uber'), findsWidgets); // At least one (button + menu item)
+        expect(find.text('Uber'),
+            findsWidgets); // At least one (button + menu item)
         expect(find.text('99'), findsOneWidget); // Only in menu
         expect(find.text('inDrive'), findsOneWidget); // Only in menu
         expect(find.text('Maxim'), findsOneWidget); // Only in menu
