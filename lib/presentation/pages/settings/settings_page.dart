@@ -264,50 +264,42 @@ class SettingsPage extends ConsumerWidget {
       builder: (context) {
         return AlertDialog(
           title: Text(tr('settings.language')),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: DropdownButtonFormField<AppLanguage>(
-              value: currentLang,
-              decoration: InputDecoration(
-                labelText: tr('settings.language'),
-                filled: true,
-                fillColor:
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                isDense: true,
+          content: DropdownButtonFormField<AppLanguage>(
+            value: currentLang,
+            // No explicit width: inside a dialog the form field must
+            // shrink-wrap, and a full-width Row with an Expanded child
+            // inside the dropdown menu overflowed the unbounded
+            // horizontal menu constraint ("RenderFlex children have
+            // non-zero flex but incoming width constraints are unbounded").
+            decoration: InputDecoration(
+              labelText: tr('settings.language'),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
-              items: SUPPORTED_LANGUAGES
-                  .map((l) => DropdownMenuItem(
-                        value: l,
-                        child: Row(
-                          children: [
-                            if (l.flag != null) ...[
-                              Text(l.flag!,
-                                  style: const TextStyle(fontSize: 22)),
-                              const SizedBox(width: 10),
-                            ],
-                            Expanded(
-                              child: Text(
-                                l.displayName,
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-              onChanged: (lang) {
-                if (lang != null && lang != currentLang) {
-                  ref.read(languageProvider.notifier).setLanguage(lang);
-                }
-                Navigator.pop(context);
-              },
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              isDense: true,
             ),
+            items: SUPPORTED_LANGUAGES
+                .map((l) => DropdownMenuItem(
+                      value: l,
+                      child: Text(
+                        l.flag != null
+                            ? '${l.flag}  ${l.displayName}'
+                            : l.displayName,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ))
+                .toList(),
+            onChanged: (lang) {
+              if (lang != null && lang != currentLang) {
+                ref.read(languageProvider.notifier).setLanguage(lang);
+              }
+              Navigator.pop(context);
+            },
           ),
         );
       },
