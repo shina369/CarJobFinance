@@ -1370,8 +1370,29 @@ class $CountryPlatformsTable extends CountryPlatforms
   late final GeneratedColumn<String> platformName = GeneratedColumn<String>(
       'platform_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
   @override
-  List<GeneratedColumn> get $columns => [countryCode, platformName];
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _isCustomMeta =
+      const VerificationMeta('isCustom');
+  @override
+  late final GeneratedColumn<bool> isCustom = GeneratedColumn<bool>(
+      'is_custom', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_custom" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [countryCode, platformName, isActive, isCustom];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1398,6 +1419,14 @@ class $CountryPlatformsTable extends CountryPlatforms
     } else if (isInserting) {
       context.missing(_platformNameMeta);
     }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('is_custom')) {
+      context.handle(_isCustomMeta,
+          isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta));
+    }
     return context;
   }
 
@@ -1411,6 +1440,10 @@ class $CountryPlatformsTable extends CountryPlatforms
           .read(DriftSqlType.string, data['${effectivePrefix}country_code'])!,
       platformName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}platform_name'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      isCustom: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_custom'])!,
     );
   }
 
@@ -1423,13 +1456,27 @@ class $CountryPlatformsTable extends CountryPlatforms
 class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
   final String countryCode;
   final String platformName;
+
+  /// Whether the user has this platform active (v3+). Built-ins are
+  /// seeded active; user-created names are inserted active and can be
+  /// toggled or deleted.
+  final bool isActive;
+
+  /// Marks user-created platforms (v3+). Built-ins (isCustom = false)
+  /// can be toggled but never deleted; customs can be removed entirely.
+  final bool isCustom;
   const CountryPlatform(
-      {required this.countryCode, required this.platformName});
+      {required this.countryCode,
+      required this.platformName,
+      required this.isActive,
+      required this.isCustom});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['country_code'] = Variable<String>(countryCode);
     map['platform_name'] = Variable<String>(platformName);
+    map['is_active'] = Variable<bool>(isActive);
+    map['is_custom'] = Variable<bool>(isCustom);
     return map;
   }
 
@@ -1437,6 +1484,8 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
     return CountryPlatformsCompanion(
       countryCode: Value(countryCode),
       platformName: Value(platformName),
+      isActive: Value(isActive),
+      isCustom: Value(isCustom),
     );
   }
 
@@ -1446,6 +1495,8 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
     return CountryPlatform(
       countryCode: serializer.fromJson<String>(json['countryCode']),
       platformName: serializer.fromJson<String>(json['platformName']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      isCustom: serializer.fromJson<bool>(json['isCustom']),
     );
   }
   @override
@@ -1454,13 +1505,21 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
     return <String, dynamic>{
       'countryCode': serializer.toJson<String>(countryCode),
       'platformName': serializer.toJson<String>(platformName),
+      'isActive': serializer.toJson<bool>(isActive),
+      'isCustom': serializer.toJson<bool>(isCustom),
     };
   }
 
-  CountryPlatform copyWith({String? countryCode, String? platformName}) =>
+  CountryPlatform copyWith(
+          {String? countryCode,
+          String? platformName,
+          bool? isActive,
+          bool? isCustom}) =>
       CountryPlatform(
         countryCode: countryCode ?? this.countryCode,
         platformName: platformName ?? this.platformName,
+        isActive: isActive ?? this.isActive,
+        isCustom: isCustom ?? this.isCustom,
       );
   CountryPlatform copyWithCompanion(CountryPlatformsCompanion data) {
     return CountryPlatform(
@@ -1469,6 +1528,8 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
       platformName: data.platformName.present
           ? data.platformName.value
           : this.platformName,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
     );
   }
 
@@ -1476,44 +1537,59 @@ class CountryPlatform extends DataClass implements Insertable<CountryPlatform> {
   String toString() {
     return (StringBuffer('CountryPlatform(')
           ..write('countryCode: $countryCode, ')
-          ..write('platformName: $platformName')
+          ..write('platformName: $platformName, ')
+          ..write('isActive: $isActive, ')
+          ..write('isCustom: $isCustom')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(countryCode, platformName);
+  int get hashCode =>
+      Object.hash(countryCode, platformName, isActive, isCustom);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is CountryPlatform &&
           other.countryCode == this.countryCode &&
-          other.platformName == this.platformName);
+          other.platformName == this.platformName &&
+          other.isActive == this.isActive &&
+          other.isCustom == this.isCustom);
 }
 
 class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
   final Value<String> countryCode;
   final Value<String> platformName;
+  final Value<bool> isActive;
+  final Value<bool> isCustom;
   final Value<int> rowid;
   const CountryPlatformsCompanion({
     this.countryCode = const Value.absent(),
     this.platformName = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.isCustom = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CountryPlatformsCompanion.insert({
     required String countryCode,
     required String platformName,
+    this.isActive = const Value.absent(),
+    this.isCustom = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : countryCode = Value(countryCode),
         platformName = Value(platformName);
   static Insertable<CountryPlatform> custom({
     Expression<String>? countryCode,
     Expression<String>? platformName,
+    Expression<bool>? isActive,
+    Expression<bool>? isCustom,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (countryCode != null) 'country_code': countryCode,
       if (platformName != null) 'platform_name': platformName,
+      if (isActive != null) 'is_active': isActive,
+      if (isCustom != null) 'is_custom': isCustom,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1521,10 +1597,14 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
   CountryPlatformsCompanion copyWith(
       {Value<String>? countryCode,
       Value<String>? platformName,
+      Value<bool>? isActive,
+      Value<bool>? isCustom,
       Value<int>? rowid}) {
     return CountryPlatformsCompanion(
       countryCode: countryCode ?? this.countryCode,
       platformName: platformName ?? this.platformName,
+      isActive: isActive ?? this.isActive,
+      isCustom: isCustom ?? this.isCustom,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1538,6 +1618,12 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
     if (platformName.present) {
       map['platform_name'] = Variable<String>(platformName.value);
     }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (isCustom.present) {
+      map['is_custom'] = Variable<bool>(isCustom.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1549,6 +1635,8 @@ class CountryPlatformsCompanion extends UpdateCompanion<CountryPlatform> {
     return (StringBuffer('CountryPlatformsCompanion(')
           ..write('countryCode: $countryCode, ')
           ..write('platformName: $platformName, ')
+          ..write('isActive: $isActive, ')
+          ..write('isCustom: $isCustom, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2223,12 +2311,16 @@ typedef $$CountryPlatformsTableCreateCompanionBuilder
     = CountryPlatformsCompanion Function({
   required String countryCode,
   required String platformName,
+  Value<bool> isActive,
+  Value<bool> isCustom,
   Value<int> rowid,
 });
 typedef $$CountryPlatformsTableUpdateCompanionBuilder
     = CountryPlatformsCompanion Function({
   Value<String> countryCode,
   Value<String> platformName,
+  Value<bool> isActive,
+  Value<bool> isCustom,
   Value<int> rowid,
 });
 
@@ -2246,6 +2338,12 @@ class $$CountryPlatformsTableFilterComposer
 
   ColumnFilters<String> get platformName => $composableBuilder(
       column: $table.platformName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isCustom => $composableBuilder(
+      column: $table.isCustom, builder: (column) => ColumnFilters(column));
 }
 
 class $$CountryPlatformsTableOrderingComposer
@@ -2263,6 +2361,12 @@ class $$CountryPlatformsTableOrderingComposer
   ColumnOrderings<String> get platformName => $composableBuilder(
       column: $table.platformName,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isCustom => $composableBuilder(
+      column: $table.isCustom, builder: (column) => ColumnOrderings(column));
 }
 
 class $$CountryPlatformsTableAnnotationComposer
@@ -2279,6 +2383,12 @@ class $$CountryPlatformsTableAnnotationComposer
 
   GeneratedColumn<String> get platformName => $composableBuilder(
       column: $table.platformName, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCustom =>
+      $composableBuilder(column: $table.isCustom, builder: (column) => column);
 }
 
 class $$CountryPlatformsTableTableManager extends RootTableManager<
@@ -2310,21 +2420,29 @@ class $$CountryPlatformsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> countryCode = const Value.absent(),
             Value<String> platformName = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<bool> isCustom = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountryPlatformsCompanion(
             countryCode: countryCode,
             platformName: platformName,
+            isActive: isActive,
+            isCustom: isCustom,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String countryCode,
             required String platformName,
+            Value<bool> isActive = const Value.absent(),
+            Value<bool> isCustom = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountryPlatformsCompanion.insert(
             countryCode: countryCode,
             platformName: platformName,
+            isActive: isActive,
+            isCustom: isCustom,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

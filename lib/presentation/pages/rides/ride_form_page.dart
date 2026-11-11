@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
@@ -211,9 +213,8 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
     final lang = ref.watch(appLanguageProvider);
-    final currencySymbol = settings.currencySymbol;
+    final currency = ref.watch(currency_pkg.appCurrencyProvider);
     final dbPlatforms = settings.platforms;
-
     // Platforms from COUNTRIES are the source of truth; the DB-seeded
     // (settings.platforms) list and the ride being edited are merged in so
     // nothing the user previously picked disappears from the dropdown.
@@ -222,7 +223,13 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
         .where((c) => c.code == settings.countryCode)
         .expand((c) => c.platforms)
         .toSet();
-    final merged = countryPlatforms.union(dbPlatforms.toSet());
+    final activePlatforms = ref.watch(activePlatformsProvider);
+    // If the user has customised platforms (i.e. not empty), use their
+    // active list; otherwise fall back to the full built-in set.
+    final effectiveBase = activePlatforms.isNotEmpty
+        ? activePlatforms.toSet()
+        : countryPlatforms;
+    final merged = effectiveBase.union(dbPlatforms.toSet());
     final effectivePlatforms = merged
         .where((p) => !OBSOLETE_PLATFORM_NAMES.contains(p))
         .toSet()
@@ -328,7 +335,7 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
               controller: _earningsController,
               decoration: InputDecoration(
                 labelText: lang.tr('rides.fieldEarnings'),
-                prefixText: '$currencySymbol ',
+                prefixText: '${currency.symbol} ',
                 prefixIcon: const Icon(Icons.attach_money),
               ),
               keyboardType:

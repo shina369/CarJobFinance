@@ -118,6 +118,60 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
     });
   }
 
+  /// Returns the full per-row state (name, isActive, isCustom) of every
+  /// platform for a country, ordered alphabetically.
+  Future<List<PlatformState>> getPlatformStatesFor(String countryCode) async {
+    final query = select(countryPlatforms)
+      ..where((tbl) => tbl.countryCode.equals(countryCode))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.platformName)]);
+    final rows = await query.get();
+    return rows
+        .map((r) => PlatformState(
+              name: r.platformName,
+              isActive: r.isActive,
+              isCustom: r.isCustom,
+            ))
+        .toList();
+  }
+
+  /// Toggles the [isActive] flag for a single platform row.
+  Future<void> setActive(
+      String countryCode, String platform, bool active) async {
+    await (update(countryPlatforms)
+          ..where(
+            (tbl) =>
+                tbl.countryCode.equals(countryCode) &
+                tbl.platformName.equals(platform),
+          ))
+        .write(CountryPlatformsCompanion(isActive: Value(active)));
+  }
+
+  /// Inserts a new user-created (custom) platform row for a country.
+  /// The caller is responsible for pre-validating that the name does
+  /// not already exist (built-in or custom, case-insensitive).
+  Future<void> createCustom(String countryCode, String platform) async {
+    await into(countryPlatforms).insertOnConflictUpdate(
+      CountryPlatformsCompanion(
+        countryCode: Value(countryCode),
+        platformName: Value(platform),
+        isActive: const Value(true),
+        isCustom: const Value(true),
+      ),
+    );
+  }
+
+  /// Deletes a custom platform row for a country. No-op for built-ins
+  /// (they can only be toggled, not removed).
+  Future<void> deleteCustom(String countryCode, String platform) async {
+    await (delete(countryPlatforms)
+          ..where(
+            (tbl) =>
+                tbl.countryCode.equals(countryCode) &
+                tbl.platformName.equals(platform),
+          ))
+        .go();
+  }
+
   Future<List<String>> getPlatformsFor(String countryCode) async {
     final query = select(countryPlatforms)
       ..where((tbl) => tbl.countryCode.equals(countryCode))

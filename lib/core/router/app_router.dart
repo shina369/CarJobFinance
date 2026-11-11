@@ -15,6 +15,7 @@ import '../../presentation/pages/expenses/expenses_page.dart';
 import '../../presentation/pages/expenses/expense_form_page.dart';
 import '../../presentation/pages/reports/reports_page.dart';
 import '../../presentation/pages/settings/settings_page.dart';
+import '../../presentation/pages/settings/platforms_page.dart';
 import '../../presentation/pages/onboarding/onboarding_page.dart';
 
 /// A [ChangeNotifier] that wraps a [StateNotifier] to provide [Listenable]
@@ -124,6 +125,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/settings',
             name: 'settings',
             builder: (context, state) => const SettingsPage(),
+            routes: [
+              GoRoute(
+                path: 'platforms',
+                name: 'settings-platforms',
+                builder: (context, state) => const PlatformsPage(),
+              ),
+            ],
           ),
         ],
       ),

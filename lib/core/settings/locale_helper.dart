@@ -2,6 +2,7 @@
 // Uses intl package for number formatting and COUNTRIES for currency symbol lookup
 
 import 'package:intl/intl.dart';
+import 'package:carjobfinance/core/l10n/currencies.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 
@@ -26,6 +27,17 @@ class LocalizedCurrency {
   /// Convenience method for presentation layer widgets that have access to AppSettings.
   static String formatWithSettings(double amount, AppSettings settings) {
     return format(amount, localeTag: settings.localeTag);
+  }
+
+  /// Formats a currency amount using an explicit [AppCurrency].
+  ///
+  /// Uses [currency.formatTag] only for the number separators; the
+  /// symbol comes from [currency.symbol] directly, so the result is
+  /// independent of the current country/language settings.
+  static String formatFor(double amount, AppCurrency currency) {
+    final formattedAmount =
+        NumberFormat('#,##0.00', currency.formatTag).format(amount);
+    return '${currency.symbol} $formattedAmount';
   }
 
   /// Resolves the currency symbol for a given locale tag.
@@ -59,3 +71,8 @@ String formatCurrency(double amount, {String? localeTag, String? currencySymbol}
   final formattedAmount = NumberFormat('#,##0.00', effectiveLocale).format(amount);
   return '$effectiveSymbol $formattedAmount';
 }
+
+/// Top-level convenience for presentation: formats with an explicit
+/// [AppCurrency], decoupled from country/language settings.
+String formatCurrencyFor(double amount, AppCurrency currency) =>
+    LocalizedCurrency.formatFor(amount, currency);

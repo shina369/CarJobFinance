@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/settings/app_settings_notifier.dart';
 import '../../data/datasources/local/app_database.dart' as db;
 import '../../data/datasources/local/daos.dart';
 import '../../data/datasources/local/app_database.dart';
@@ -181,3 +182,11 @@ class MonthlyGoalController extends StateNotifier<AsyncValue<double>> {
     }
   }
 }
+
+// ===== CURRENCY =====
+/// Convenience provider for the current country's symbol.
+/// Watches settings + country code; same value every watch.
+final appCurrencyProvider = Provider<String>((ref) {
+  final settings = ref.watch(appSettingsProvider);
+  return settings.currencySymbol;
+});

@@ -149,7 +149,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
       (c) => c.code == countryCode,
       orElse: () => COUNTRIES.firstWhere((c) => c.code == 'BR'),
     );
-    final platforms = await _countryPlatformsDao.getPlatformsFor(countryCode);
+    final platforms = await _countryPlatformsDao.getPlatformNames(countryCode);
     state = AppSettings.fromCountry(countryEntry, platforms);
   }
 
@@ -165,7 +165,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     await _dao.setSetting('app_country', countryCode);
 
     // Load platforms and update state
-    final platforms = await _countryPlatformsDao.getPlatformsFor(countryCode);
+    final platforms = await _countryPlatformsDao.getPlatformNames(countryCode);
     state = AppSettings.fromCountry(countryEntry, platforms);
   }
 

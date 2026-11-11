@@ -5,7 +5,7 @@ import 'package:carjobfinance/main.dart';
 import 'package:carjobfinance/core/l10n/language_provider.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart'
-    show CountryPlatformsDao;
+    show CountryPlatformsDao, PlatformState;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 
 /// In-memory settings DAO so the app's settings/language providers can load
@@ -36,10 +36,22 @@ class _InMemoryAppDao implements AppDao {
 class _StubCountryPlatformsDao implements CountryPlatformsDao {
   @override
   Future<void> upsertCountryPlatforms(
-      String countryCode, List<String> platforms) async {}
+      String countryCode, List<String> platforms,
+      {Map<String, PlatformState> existingStates = const {}}) async {}
 
   @override
   Future<void> deleteObsoletePlatforms(Set<String> names) async {}
+
+  @override
+  Future<List<PlatformState>> getPlatformsFor(String countryCode) async => [];
+
+  @override
+  Future<List<String>> getPlatformNames(String countryCode) async => [];
+
+  @override
+  Future<Map<String, PlatformState>> getExistingStates(
+      String countryCode) async =>
+      {};
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>

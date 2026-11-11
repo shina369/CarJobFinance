@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/currency_provider.dart' as currency_pkg;
+import '../../../core/l10n/currencies.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
-import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
@@ -84,6 +85,10 @@ class _StaticDashboardBody extends ConsumerStatefulWidget {
 class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   double _localGoal = 5000.0;
 
+  // Convenience: current user-selected currency
+  AppCurrency get _currency =>
+      ref.watch(currency_pkg.appCurrencyProvider);
+
   @override
   void initState() {
     super.initState();
@@ -99,9 +104,9 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   }
 
   void _showSetGoalDialog() {
-    final settings = ref.read(appSettingsProvider);
     final lang = ref.read(appLanguageProvider);
-    final symbol = settings.currencySymbol;
+    final currency = ref.read(currency_pkg.appCurrencyProvider);
+    final symbol = currency.symbol;
     final controller = TextEditingController(
       text: _localGoal.toStringAsFixed(2).replaceAll('.', ','),
     );
@@ -155,7 +160,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Today summary card
-          _todayCard(context, today, lang),
+          _todayCard(context, today, lang, _currency),
           const SizedBox(height: 12),
           // Action buttons above month panel
           Row(
@@ -207,12 +212,15 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             goal: _localGoal,
             onSetGoal: _showSetGoalDialog,
             lang: lang,
+            currency: _currency,
           ),
           // Recent rides strip — only when there are rides
           if (widget.rides.isNotEmpty) ...[
             const SizedBox(height: 12),
             _recentRidesStrip(context,
-                rides: widget.rides.take(2).toList(), lang: lang),
+                rides: widget.rides.take(2).toList(),
+                lang: lang,
+                currency: _currency),
           ],
           const SizedBox(height: 8),
         ],
@@ -302,7 +310,8 @@ class _MonthData {
 
 // ── TODAY CARD ────────────────────────────────────────────────
 
-Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
+Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
+    AppCurrency currency) {
   final ts = Theme.of(context).textTheme;
   final profit = t.earnings - t.expenses;
   final isPositive = profit >= 0;
@@ -399,7 +408,6 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
         // Big profit number
         Consumer(
           builder: (context, ref, _) {
-            final settings = ref.watch(appSettingsProvider);
             return Row(
               children: [
                 Text(
@@ -411,7 +419,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
                 ),
                 Flexible(
                   child: Text(
-                    LocalizedCurrency.formatWithSettings(profit, settings),
+                    LocalizedCurrency.formatFor(profit, currency),
                     style: ts.displaySmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -437,6 +445,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
                   label: lang.tr('dash.earnings'),
                   value: t.earnings,
                   pillWidth: pillWidth,
+                  currency: currency,
                 ),
                 const SizedBox(width: 8),
                 _MetricPill(
@@ -445,6 +454,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
                   value: t.expenses,
                   pillWidth: pillWidth,
                   isExpense: true,
+                  currency: currency,
                 ),
                 const SizedBox(width: 8),
                 _MetricPill(
@@ -452,6 +462,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang) {
                   label: lang.tr('dash.kmDriven'),
                   value: t.km,
                   pillWidth: pillWidth,
+                  currency: currency,
                 ),
               ],
             );
@@ -471,6 +482,7 @@ class _MetricPill extends ConsumerWidget {
     required this.value,
     required this.pillWidth,
     this.isExpense = false,
+    required this.currency,
   });
 
   final IconData icon;
@@ -478,10 +490,10 @@ class _MetricPill extends ConsumerWidget {
   final double value;
   final double pillWidth;
   final bool isExpense;
+  final AppCurrency currency;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsProvider);
     final ts = Theme.of(context).textTheme;
     return SizedBox(
       width: pillWidth,
@@ -517,7 +529,7 @@ class _MetricPill extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              LocalizedCurrency.formatWithSettings(value, settings),
+              LocalizedCurrency.formatFor(value, currency),
               style: ts.titleSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -543,6 +555,7 @@ class _MonthPanel extends StatelessWidget {
     required this.goal,
     required this.onSetGoal,
     required this.lang,
+    required this.currency,
   });
 
   final double earnings;
@@ -552,6 +565,7 @@ class _MonthPanel extends StatelessWidget {
   final double goal;
   final VoidCallback onSetGoal;
   final AppLanguage lang;
+  final AppCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -608,6 +622,7 @@ class _MonthPanel extends StatelessWidget {
                       : Colors.red.shade700,
                   icon:
                       netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+                  currency: currency,
                 ),
                 const SizedBox(height: 10),
                 // Goal + progress
@@ -616,6 +631,7 @@ class _MonthPanel extends StatelessWidget {
                   value: goal,
                   color: cs.primary,
                   icon: Icons.flag,
+                  currency: currency,
                 ),
                 const SizedBox(height: 8),
                 _ProgressBar(value: progress / 100, color: progressColor),
@@ -652,16 +668,17 @@ class _StatRow extends ConsumerWidget {
     required this.value,
     required this.color,
     required this.icon,
+    required this.currency,
   });
 
   final String label;
   final double value;
   final Color color;
   final IconData icon;
+  final AppCurrency currency;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsProvider);
     final cs = Theme.of(context).colorScheme;
     final ts = Theme.of(context).textTheme;
     return Row(
@@ -676,7 +693,7 @@ class _StatRow extends ConsumerWidget {
           ],
         ),
         Text(
-          LocalizedCurrency.formatWithSettings(value, settings),
+          LocalizedCurrency.formatFor(value, currency),
           style: ts.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
@@ -693,6 +710,7 @@ Widget _recentRidesStrip(
   BuildContext context, {
   required List<entity_ride.Ride> rides,
   required AppLanguage lang,
+  required AppCurrency currency,
 }) {
   final cs = Theme.of(context).colorScheme;
   final ts = Theme.of(context).textTheme;
@@ -736,17 +754,12 @@ Widget _recentRidesStrip(
               '${ride.formattedDate} · ${ride.durationMinutes}min',
               style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant),
             ),
-            trailing: Consumer(
-              builder: (context, ref, _) {
-                final settings = ref.watch(appSettingsProvider);
-                return Text(
-                  LocalizedCurrency.formatWithSettings(ride.earnings, settings),
-                  style: ts.labelLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: cs.primary,
-                  ),
-                );
-              },
+            trailing: Text(
+              LocalizedCurrency.formatFor(ride.earnings, currency),
+              style: ts.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: cs.primary,
+              ),
             ),
             onTap: () => context.push('/rides/${ride.id}'),
           ),
@@ -853,3 +866,4 @@ class _BarPainter extends CustomPainter {
   bool shouldRepaint(covariant _BarPainter old) =>
       old.value != value || old.color != color;
 }
+

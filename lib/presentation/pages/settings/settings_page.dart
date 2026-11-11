@@ -2,9 +2,13 @@
 // Settings Page - Configurações
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/currencies.dart';
+import '../../../core/l10n/currency_provider.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -56,6 +60,45 @@ class SettingsPage extends ConsumerWidget {
                       subtitle: Text(currentLang.displayName),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _showLanguageDialog(context, ref, tr),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 72),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final currency = ref.watch(appCurrencyProvider);
+                    return ListTile(
+                      leading: Icon(
+                        Icons.attach_money_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(tr('settings.currency')),
+                      subtitle: Text(
+                        '${currency.symbol}  ${currency.displayName}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showCurrencyDialog(context, ref, tr),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 72),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final platforms = ref.watch(platformsProvider);
+                    final activeNames = platforms.activeNames;
+                    final subtitle = activeNames.isEmpty
+                        ? tr('platforms.none')
+                        : _activeNamesSubtitle(activeNames, activeNames.length);
+                    return ListTile(
+                      leading: Icon(
+                        Icons.apps_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(tr('settings.platforms')),
+                      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.go('/settings/platforms'),
                     );
                   },
                 ),
@@ -297,6 +340,57 @@ class SettingsPage extends ConsumerWidget {
             onChanged: (lang) {
               if (lang != null && lang != currentLang) {
                 ref.read(languageProvider.notifier).setLanguage(lang);
+              }
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  String _activeNamesSubtitle(List<String> activeNames, int total) {
+    if (activeNames.isEmpty) return '';
+    const shown = 3;
+    final names = activeNames.take(shown).join(', ');
+    final extra = activeNames.length - shown;
+    return extra > 0 ? '$names, +$extra' : names;
+  }
+
+  void _showCurrencyDialog(
+      BuildContext context, WidgetRef ref, String Function(String) tr) {
+    final current = ref.read(appCurrencyProvider);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(tr('settings.chooseCurrency')),
+          content: DropdownButtonFormField<AppCurrency>(
+            value: current,
+            decoration: InputDecoration(
+              labelText: tr('settings.currency'),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              isDense: true,
+            ),
+            items: SUPPORTED_CURRENCIES
+                .map((c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(
+                        '${c.symbol}  ${c.displayName}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ))
+                .toList(),
+            onChanged: (currency) {
+              if (currency != null && currency != current) {
+                ref.read(currencyProvider.notifier).setCurrency(currency);
               }
               Navigator.pop(context);
             },
