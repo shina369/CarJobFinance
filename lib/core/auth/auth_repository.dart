@@ -54,7 +54,12 @@ abstract class AuthRepository {
   /// Creates the account. Returns the user when it is usable right away, or
   /// null when a confirmation code was e-mailed and must be passed to
   /// [confirmSignUp] first.
-  Future<AuthUser?> signUp(String email, String password);
+  Future<AuthUser?> signUp(
+    String email,
+    String password, {
+    required String firstName,
+    required String lastName,
+  });
 
   Future<AuthUser> confirmSignUp(String email, String code);
 
@@ -78,5 +83,7 @@ final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 bool isValidEmail(String value) => _emailPattern.hasMatch(value.trim());
 
 bool isValidPassword(String value) => value.length >= kMinPasswordLength;
+
+bool isValidName(String value) => value.trim().isNotEmpty;
 
 bool isValidCode(String value) => RegExp(r'^\d{6,10}$').hasMatch(value.trim());

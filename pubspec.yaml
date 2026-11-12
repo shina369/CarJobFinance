@@ -50,6 +50,8 @@ dependencies:
   flutter_dotenv: ^6.0.1
   crypto: ^3.0.8
   http: ^1.6.0
+  flutter_secure_storage: ^11.2.0
+  country_flags: ^4.1.2
 
 # The upstream Windows notifications plugin compiles C++ that needs the
 # Visual Studio ATL component. The app only schedules notifications on

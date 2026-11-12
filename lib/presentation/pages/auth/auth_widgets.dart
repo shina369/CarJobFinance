@@ -49,6 +49,9 @@ mixin AuthFormMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   String? validateCode(String? value) =>
       isValidCode(value ?? '') ? null : lang.tr('auth.err.code');
+
+  String? validateName(String? value) =>
+      isValidName(value ?? '') ? null : lang.tr('auth.err.nameRequired');
 }
 
 class AuthScaffold extends StatelessWidget {
@@ -196,6 +199,41 @@ class EmailField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: const Icon(Icons.email_outlined),
+        border: const OutlineInputBorder(),
+      ),
+      validator: validator,
+    );
+  }
+}
+
+class NameField extends StatelessWidget {
+  const NameField({
+    super.key,
+    required this.fieldKey,
+    required this.controller,
+    required this.label,
+    required this.validator,
+    required this.autofillHint,
+  });
+
+  final Key fieldKey;
+  final TextEditingController controller;
+  final String label;
+  final FormFieldValidator<String> validator;
+  final String autofillHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      key: fieldKey,
+      controller: controller,
+      keyboardType: TextInputType.name,
+      textCapitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
+      autofillHints: [autofillHint],
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.person_outline),
         border: const OutlineInputBorder(),
       ),
       validator: validator,

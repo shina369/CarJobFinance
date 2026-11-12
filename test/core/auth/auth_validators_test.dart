@@ -21,6 +21,15 @@ void main() {
     });
   });
 
+  group('isValidName', () {
+    test('requires some text besides spaces', () {
+      expect(isValidName('Ana'), isTrue);
+      expect(isValidName('  Ana  '), isTrue);
+      expect(isValidName(''), isFalse);
+      expect(isValidName('   '), isFalse);
+    });
+  });
+
   group('isValidCode', () {
     test('accepts 6 to 10 digits', () {
       expect(isValidCode('123456'), isTrue);

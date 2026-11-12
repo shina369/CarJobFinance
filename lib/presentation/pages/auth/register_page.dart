@@ -21,6 +21,8 @@ class RegisterPage extends ConsumerStatefulWidget {
 class _RegisterPageState extends ConsumerState<RegisterPage>
     with AuthFormMixin {
   final _formKey = GlobalKey<FormState>();
+  final _firstName = TextEditingController();
+  final _lastName = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -37,6 +39,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
 
   @override
   void dispose() {
+    _firstName.dispose();
+    _lastName.dispose();
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
@@ -49,9 +53,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
     final email = _email.text.trim();
     var created = false;
     final ok = await submit(() async {
-      created = await ref
-          .read(sessionProvider.notifier)
-          .signUp(email, _password.text);
+      created = await ref.read(sessionProvider.notifier).signUp(
+            email,
+            _password.text,
+            firstName: _firstName.text,
+            lastName: _lastName.text,
+          );
     });
     if (ok && !created && mounted) setState(() => _awaitingCodeFor = email);
   }
@@ -119,6 +126,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                NameField(
+                  fieldKey: const Key('auth-first-name'),
+                  controller: _firstName,
+                  label: lang.tr('auth.firstName'),
+                  validator: validateName,
+                  autofillHint: AutofillHints.givenName,
+                ),
+                const SizedBox(height: 16),
+                NameField(
+                  fieldKey: const Key('auth-last-name'),
+                  controller: _lastName,
+                  label: lang.tr('auth.lastName'),
+                  validator: validateName,
+                  autofillHint: AutofillHints.familyName,
+                ),
+                const SizedBox(height: 16),
                 EmailField(
                   controller: _email,
                   label: lang.tr('auth.email'),

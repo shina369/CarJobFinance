@@ -9,6 +9,7 @@ import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/app_settings_notifier.dart';
 import '../../../core/settings/country_data.dart';
+import '../../widgets/flag_icon.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -56,8 +57,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final selectedCountry = _selectedCountryCode != null
-        ? COUNTRIES.firstWhere((c) => c.code == _selectedCountryCode)
+    final selectedCode = _selectedCountryCode;
+    final selectedCountry = selectedCode != null
+        ? COUNTRIES.firstWhere((c) => c.code == selectedCode)
         : null;
     final previewLang = selectedCountry != null
         ? defaultLanguageForCountry(selectedCountry.code)
@@ -134,10 +136,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        flagEmojiFor(c.code),
-                                        style: const TextStyle(fontSize: 22),
-                                      ),
+                                      FlagIcon(c.code),
                                       const SizedBox(width: 10),
                                       Text(
                                         c.namePt,
@@ -147,7 +146,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                   ),
                                 ))
                             .toList(),
-                        initialValue: _selectedCountryCode,
+                        initialValue: selectedCode,
                         onChanged: (code) =>
                             setState(() => _selectedCountryCode = code),
                       )),
@@ -167,10 +166,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       ),
                       child: Row(
                         children: [
-                          Text(
-                            flagEmojiFor(selectedCountry.code),
-                            style: const TextStyle(fontSize: 32),
-                          ),
+                          FlagIcon(selectedCountry.code, width: 48),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
@@ -217,8 +213,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedCountryCode != null
-                          ? _onContinuePressed
+                      onPressed: selectedCode != null
+                          ? () => _onContinuePressed(selectedCode)
                           : null,
                       child: Text(
                         previewLang.tr('onboarding.continue'),
@@ -237,53 +233,30 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
-  Future<void> _onContinuePressed() async {
-    if (_selectedCountryCode == null) return;
+  Future<void> _onContinuePressed(String countryCode) async {
+    // Read before setCountry: it rebuilds the language provider.
+    final pickedOnSignIn =
+        ref.read(languageProvider.notifier).hasChosenLanguage;
+    final current = ref.read(appLanguageProvider);
+    final target = defaultLanguageForCountry(countryCode);
 
-    // Call setCountry on the notifier
-    await ref
-        .read(appSettingsProvider.notifier)
-        .setCountry(_selectedCountryCode!);
+    await ref.read(appSettingsProvider.notifier).setCountry(countryCode);
 
-    // Set the language to the country default (first-time)
-    final lang = defaultLanguageForCountry(_selectedCountryCode!);
-    await ref.read(languageProvider.notifier).setLanguage(lang);
+    // The language follows the country, unless the driver picked another one
+    // on the sign-in page. A pick of the same language (e.g. Spanish) still
+    // moves to the country's variant, which sets number and date formats.
+    final sameLanguage =
+        current.locale.languageCode == target.locale.languageCode;
+    if (!pickedOnSignIn || sameLanguage) {
+      await ref.read(languageProvider.notifier).setLanguage(target);
+    }
 
     // Mark the manual navigation so the auto-skip timer (scheduled by the
     // rebuild that follows setCountry's state change) can't double-fire
     _navigated = true;
 
-    // Navigate to home after successful country selection
     if (mounted) {
       context.go('/');
     }
-  }
-}
-
-/// Flag emoji for a country code, with a fallback.
-String flagEmojiFor(String countryCode) {
-  switch (countryCode) {
-    case 'BR':
-      return '🇧🇷';
-    case 'PT':
-      return '🇵🇹';
-    case 'MX':
-      return '🇲🇽';
-    case 'CO':
-      return '🇨🇴';
-    case 'CL':
-      return '🇨🇱';
-    case 'AR':
-      return '🇦🇷';
-    case 'ES':
-      return '🇪🇸';
-    case 'US':
-      return '🇺🇸';
-    case 'ID':
-      return '🇮🇩';
-    case 'IN':
-      return '🇮🇳';
-    default:
-      return '🏳️';
   }
 }

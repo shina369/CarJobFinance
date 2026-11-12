@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:carjobfinance/core/auth/auth_repository.dart';
+import 'package:carjobfinance/core/auth/credential_store.dart';
 import 'package:carjobfinance/core/auth/supabase_auth_repository.dart';
 import 'package:carjobfinance/core/backup/cloud_backup_repository.dart';
 import 'package:carjobfinance/core/storage/device_store.dart';
@@ -26,6 +27,8 @@ class FakeAuth implements AuthRepository {
   AuthUser? current;
   AuthUser account = testAccount;
   bool signUpNeedsCode = false;
+  String? lastFirstName;
+  String? lastLastName;
 
   /// Thrown by the next call that can fail, then cleared.
   AuthFailure? failure;
@@ -53,9 +56,16 @@ class FakeAuth implements AuthRepository {
   }
 
   @override
-  Future<AuthUser?> signUp(String email, String password) async {
+  Future<AuthUser?> signUp(
+    String email,
+    String password, {
+    required String firstName,
+    required String lastName,
+  }) async {
     _maybeFail();
     calls.add('signUp:$email');
+    lastFirstName = firstName;
+    lastLastName = lastName;
     if (signUpNeedsCode) return null;
     return current = account;
   }
@@ -136,18 +146,37 @@ class FakeDao extends Fake implements AppDao {
   Future<BackupData> readBackupData() async => data;
 }
 
+class FakeCredentialStore implements CredentialStore {
+  SavedLogin? saved;
+
+  @override
+  Future<SavedLogin?> read() async => saved;
+
+  @override
+  Future<void> write(SavedLogin login) async {
+    saved = login;
+  }
+
+  @override
+  Future<void> clear() async {
+    saved = null;
+  }
+}
+
 /// Everything the auth and backup controllers talk to, replaced by fakes.
 class AuthHarness {
   final FakeAuth auth = FakeAuth();
   final FakeCloud cloud = FakeCloud();
   final FakeDao dao = FakeDao();
   final MemoryDeviceStore store = MemoryDeviceStore();
+  final FakeCredentialStore credentials = FakeCredentialStore();
 
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
         cloudBackupRepositoryProvider.overrideWithValue(cloud),
         appDaoProvider.overrideWithValue(dao),
         deviceStoreProvider.overrideWithValue(store),
+        credentialStoreProvider.overrideWithValue(credentials),
       ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides);

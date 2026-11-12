@@ -49,8 +49,9 @@ const Set<String> _signedOutRoutes = {
 
 /// Where the app must go instead of [location], or null to stay.
 ///
-/// Order of the gates: login, then any decision pending after login, then
-/// the first-run onboarding.
+/// Order of the gates: login, then any decision pending after login, then the
+/// first-run onboarding (country selection), which a configured device never
+/// sees again.
 String? appRedirect({
   required SessionState session,
   required bool configured,

@@ -1,3 +1,5 @@
+import 'package:carjobfinance/core/auth/auth_repository.dart';
+import 'package:carjobfinance/core/auth/credential_store.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart';
 import 'package:carjobfinance/data/datasources/local/backup_data.dart';
 import 'package:carjobfinance/presentation/controllers/session_controller.dart';
@@ -45,6 +47,60 @@ void main() {
     expect(await h.store.read(SessionController.dataOwnerKey), testAccount.id);
   });
 
+  test('signing in with "remember" stores the trimmed e-mail and password',
+      () async {
+    final session = controllerOf(h);
+    await session.signIn('  ana@example.com ', 'senha1234', remember: true);
+
+    expect(h.credentials.saved?.email, 'ana@example.com');
+    expect(h.credentials.saved?.password, 'senha1234');
+    expect(session.state.gate, LoginGate.none);
+  });
+
+  test('signing in without "remember" stores nothing', () async {
+    final session = controllerOf(h);
+    await session.signIn('ana@example.com', 'senha1234');
+
+    expect(h.credentials.saved, isNull);
+  });
+
+  test('signing in without "remember" forgets a login kept earlier', () async {
+    h.credentials.saved =
+        const SavedLogin(email: 'ana@example.com', password: 'velha');
+    final session = controllerOf(h);
+    await session.signIn('ana@example.com', 'senha1234');
+
+    expect(h.credentials.saved, isNull);
+  });
+
+  test('a refused sign-in leaves the remembered login alone', () async {
+    h.credentials.saved =
+        const SavedLogin(email: 'ana@example.com', password: 'senha1234');
+    h.auth.failure = const AuthFailure(AuthFailureReason.invalidCredentials);
+    final session = controllerOf(h);
+
+    await expectLater(
+      session.signIn('ana@example.com', 'errada', remember: false),
+      throwsA(isA<AuthFailure>()),
+    );
+    expect(h.credentials.saved?.password, 'senha1234');
+  });
+
+  test('sign-up does not touch the remembered login', () async {
+    final session = controllerOf(h);
+    await session.signUp(
+      'ana@example.com',
+      'senha1234',
+      firstName: 'Ana',
+      lastName: 'Silva',
+    );
+
+    expect(session.state.gate, LoginGate.none);
+    expect(h.credentials.saved, isNull);
+    expect(h.auth.lastFirstName, 'Ana');
+    expect(h.auth.lastLastName, 'Silva');
+  });
+
   test('an empty device with a cloud backup is offered a restore', () async {
     h.cloud.remoteAt = DateTime.utc(2026, 5, 1, 10);
     final session = controllerOf(h);
@@ -78,7 +134,7 @@ void main() {
     expect(h.auth.calls, contains('signOut'));
   });
 
-  test('declining the restore offer opens an empty app', () async {
+  test('declining the restore offer opens the app', () async {
     h.cloud.remoteAt = DateTime.utc(2026, 5, 1, 10);
     final session = controllerOf(h);
     await session.signIn('ana@example.com', 'senha1234');
@@ -92,7 +148,12 @@ void main() {
     h.auth.signUpNeedsCode = true;
     final session = controllerOf(h);
 
-    final created = await session.signUp('ana@example.com', 'senha1234');
+    final created = await session.signUp(
+      'ana@example.com',
+      'senha1234',
+      firstName: 'Ana',
+      lastName: 'Silva',
+    );
 
     expect(created, isFalse);
     expect(session.state.isAuthenticated, isFalse);

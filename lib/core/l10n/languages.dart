@@ -111,6 +111,59 @@ const List<AppLanguage> SUPPORTED_LANGUAGES = [
   ),
 ];
 
+/// One entry of the sign-in language picker. All Spanish variants share a
+/// single entry; the other languages are listed as they are.
+@immutable
+class SignInLanguage {
+  const SignInLanguage({
+    required this.language,
+    required this.label,
+    required this.flagCountry,
+    this.family,
+  });
+
+  /// The language applied when the entry is picked.
+  final AppLanguage language;
+  final String label;
+
+  /// Country whose flag illustrates the entry.
+  final String flagCountry;
+
+  /// Language code covered by the entry, when it stands for several variants.
+  final String? family;
+
+  /// Whether [other] is the entry's language, or one of its variants.
+  bool covers(AppLanguage other) =>
+      other == language ||
+      (family != null && other.locale.languageCode == family);
+}
+
+/// Languages offered on the sign-in page: Spanish once, the rest unchanged.
+List<SignInLanguage> signInLanguages() {
+  final options = <SignInLanguage>[];
+  var spanishAdded = false;
+  for (final lang in SUPPORTED_LANGUAGES) {
+    final country = lang.tag.split('_').last;
+    if (lang.locale.languageCode == 'es') {
+      if (spanishAdded) continue;
+      spanishAdded = true;
+      options.add(SignInLanguage(
+        language: lang,
+        label: 'Español',
+        flagCountry: 'ES',
+        family: 'es',
+      ));
+      continue;
+    }
+    options.add(SignInLanguage(
+      language: lang,
+      label: lang.displayName,
+      flagCountry: country,
+    ));
+  }
+  return options;
+}
+
 /// Find a language by tag.
 AppLanguage? languageForTag(String tag) {
   for (final lang in SUPPORTED_LANGUAGES) {

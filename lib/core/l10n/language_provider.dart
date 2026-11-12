@@ -45,6 +45,10 @@ class LanguageNotifier extends StateNotifier<AppLanguagePref> {
 
   bool _disposed = false;
 
+  /// Whether the user (or the onboarding) picked a language, as opposed to
+  /// the one derived from the country.
+  bool hasChosenLanguage = false;
+
   LanguageNotifier(this._dao, AppLanguagePref initialState)
       : super(initialState);
 
@@ -62,6 +66,7 @@ class LanguageNotifier extends StateNotifier<AppLanguagePref> {
     if (_disposed) return;
     final country = state.countryCode;
     if (stored != null && languageForTag(stored) != null) {
+      hasChosenLanguage = true;
       state = AppLanguagePref(
         language: languageForTag(stored)!,
         countryCode: country,
@@ -74,6 +79,7 @@ class LanguageNotifier extends StateNotifier<AppLanguagePref> {
   /// Pick a new language and persist it.
   Future<void> setLanguage(AppLanguage lang) async {
     if (_disposed) return;
+    hasChosenLanguage = true;
     await _dao.setSetting(_storageKey, lang.tag);
     if (_disposed) return;
     state = AppLanguagePref(language: lang, countryCode: state.countryCode);
@@ -85,6 +91,7 @@ class LanguageNotifier extends StateNotifier<AppLanguagePref> {
     if (_disposed) return;
     await _dao.deleteSetting(_storageKey);
     if (_disposed) return;
+    hasChosenLanguage = false;
     state = AppLanguagePref.defaultFor(state.countryCode);
   }
 }

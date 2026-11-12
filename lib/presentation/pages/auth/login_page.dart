@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_repository.dart';
+import '../../../core/auth/credential_store.dart';
 import '../../../core/l10n/language_provider.dart';
+import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
 import '../../controllers/session_controller.dart';
+import '../../widgets/flag_icon.dart';
 import 'auth_widgets.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -20,12 +23,33 @@ class _LoginPageState extends ConsumerState<LoginPage> with AuthFormMixin {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _languages = signInLanguages();
+  bool _remember = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillSavedLogin();
+  }
 
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _prefillSavedLogin() async {
+    final SavedLogin? saved;
+    try {
+      saved = await ref.read(credentialStoreProvider).read();
+    } catch (_) {
+      return;
+    }
+    if (!mounted || saved == null || _email.text.isNotEmpty) return;
+    _email.text = saved.email;
+    _password.text = saved.password;
+    setState(() => _remember = true);
   }
 
   Future<void> _signIn() async {
@@ -36,11 +60,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with AuthFormMixin {
 
     await submit(() async {
       try {
-        await session.signIn(email, _password.text);
+        await session.signIn(email, _password.text, remember: _remember);
       } on AuthFailure catch (e) {
         if (e.reason != AuthFailureReason.emailNotConfirmed) rethrow;
-        // The account exists but its e-mail was never confirmed: send a
-        // fresh code and let the driver finish that step.
         await session.resendSignUpCode(email);
         needsConfirmation = true;
       }
@@ -54,11 +76,50 @@ class _LoginPageState extends ConsumerState<LoginPage> with AuthFormMixin {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
+    final selected = _languages.firstWhere(
+      (option) => option.covers(lang),
+      orElse: () => _languages.first,
+    );
 
     return AuthScaffold(
       title: lang.tr('auth.signIn'),
       subtitle: lang.tr('auth.loginSubtitle'),
       children: [
+        DropdownButtonFormField<SignInLanguage>(
+          key: ValueKey('auth-language-${selected.language.tag}'),
+          isExpanded: true,
+          initialValue: selected,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.language),
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+          items: [
+            for (final option in _languages)
+              DropdownMenuItem(
+                key: Key('auth-language-option-${option.language.tag}'),
+                value: option,
+                child: Row(
+                  children: [
+                    FlagIcon(option.flagCountry, width: 24),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          onChanged: (option) {
+            if (option != null) {
+              ref.read(languageProvider.notifier).setLanguage(option.language);
+            }
+          },
+        ),
+        const SizedBox(height: 24),
         Form(
           key: _formKey,
           child: AutofillGroup(
@@ -84,6 +145,16 @@ class _LoginPageState extends ConsumerState<LoginPage> with AuthFormMixin {
               ],
             ),
           ),
+        ),
+        CheckboxListTile(
+          key: const Key('auth-remember'),
+          value: _remember,
+          onChanged:
+              busy ? null : (v) => setState(() => _remember = v ?? false),
+          title: Text(lang.tr('auth.rememberMe')),
+          controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
         ),
         Align(
           alignment: Alignment.centerRight,

@@ -70,9 +70,21 @@ class SupabaseAuthRepository implements AuthRepository {
       });
 
   @override
-  Future<AuthUser?> signUp(String email, String password) => _guard(() async {
-        final response =
-            await _auth.signUp(email: email.trim(), password: password);
+  Future<AuthUser?> signUp(
+    String email,
+    String password, {
+    required String firstName,
+    required String lastName,
+  }) =>
+      _guard(() async {
+        final response = await _auth.signUp(
+          email: email.trim(),
+          password: password,
+          data: {
+            'first_name': firstName.trim(),
+            'last_name': lastName.trim(),
+          },
+        );
         final user = response.user;
         // For an address that is already registered the server answers with
         // an obfuscated user that has no identities.

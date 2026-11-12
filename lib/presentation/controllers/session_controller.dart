@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_repository.dart';
+import '../../core/auth/credential_store.dart';
 import '../../core/auth/supabase_auth_repository.dart';
 import '../../core/storage/device_store.dart';
 import 'cloud_backup_controller.dart';
@@ -59,6 +60,7 @@ class SessionController extends StateNotifier<SessionState> {
 
   AuthRepository get _auth => _ref.read(authRepositoryProvider);
   DeviceStore get _store => _ref.read(deviceStoreProvider);
+  CredentialStore get _credentials => _ref.read(credentialStoreProvider);
   CloudBackupController get _backup => _ref.read(cloudBackupControllerProvider);
 
   /// Loads the saved session. Call once before the first frame.
@@ -71,13 +73,46 @@ class SessionController extends StateNotifier<SessionState> {
     if (user != null) unawaited(_backup.autoBackupIfDue());
   }
 
-  Future<void> signIn(String email, String password) async =>
-      _enter(await _auth.signIn(email, password));
+  /// With [remember] the e-mail and password are kept on this device for the
+  /// next sign-in; without it, any login kept earlier is forgotten.
+  Future<void> signIn(
+    String email,
+    String password, {
+    bool remember = false,
+  }) async {
+    final user = await _auth.signIn(email, password);
+    await _updateRememberedLogin(
+      remember ? SavedLogin(email: email.trim(), password: password) : null,
+    );
+    await _enter(user);
+  }
+
+  Future<void> _updateRememberedLogin(SavedLogin? login) async {
+    try {
+      if (login == null) {
+        await _credentials.clear();
+      } else {
+        await _credentials.write(login);
+      }
+    } catch (_) {
+      // The keystore may be unavailable: signing in must still work.
+    }
+  }
 
   /// Returns false when the account was created but still needs the code
   /// sent by e-mail ([confirmSignUp]).
-  Future<bool> signUp(String email, String password) async {
-    final user = await _auth.signUp(email, password);
+  Future<bool> signUp(
+    String email,
+    String password, {
+    required String firstName,
+    required String lastName,
+  }) async {
+    final user = await _auth.signUp(
+      email,
+      password,
+      firstName: firstName,
+      lastName: lastName,
+    );
     if (user == null) return false;
     await _enter(user);
     return true;

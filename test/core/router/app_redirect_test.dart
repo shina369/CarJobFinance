@@ -50,6 +50,24 @@ void main() {
     });
   });
 
+  group('country step after login', () {
+    test('a device without a country goes to the country page', () {
+      expect(
+        _redirect(session: _signedIn, configured: false, location: '/login'),
+        '/onboarding',
+      );
+      expect(
+        _redirect(session: _signedIn, configured: false, location: '/'),
+        '/onboarding',
+      );
+    });
+
+    test('a configured device never sees the country page again', () {
+      expect(_redirect(session: _signedIn, location: '/login'), '/');
+      expect(_redirect(session: _signedIn, location: '/onboarding'), '/');
+    });
+  });
+
   group('with a signed-in account', () {
     test('a configured app opens the dashboard instead of auth pages', () {
       expect(_redirect(session: _signedIn, location: '/login'), '/');
