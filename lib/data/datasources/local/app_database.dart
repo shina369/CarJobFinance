@@ -143,6 +143,9 @@ class AppDatabase extends _$AppDatabase {
   /// Test constructor using in-memory SQLite database.
   AppDatabase.memory() : super(NativeDatabase.memory());
 
+  /// Test constructor over a prepared executor, e.g. an old-schema database.
+  AppDatabase.forTesting(super.executor);
+
   @override
   int get schemaVersion => 4;
 
@@ -159,46 +162,45 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(countryPlatforms);
             await _seedCountryPlatforms();
           }
+          // The v2 block creates country_platforms with the *current*
+          // schema, so the column additions below must skip columns that
+          // already exist.
           if (from < 3) {
             // v3: add per-row activation + custom flags to
             // country_platforms. Additive only; existing rows default
             // to active / not-custom.
-            await customStatement(
-              'ALTER TABLE country_platforms '
-              'ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1',
-            );
-            await customStatement(
-              'ALTER TABLE country_platforms '
-              'ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0',
-            );
+            await _addColumnIfMissing(
+                'country_platforms', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
+            await _addColumnIfMissing(
+                'country_platforms', 'is_custom', 'INTEGER NOT NULL DEFAULT 0');
           }
           if (from < 4) {
             // v4: platform commission config + per-ride commission
             // snapshot. Additive only; old rides carry amount 0.
-            await customStatement(
-              'ALTER TABLE country_platforms ADD COLUMN commission_type TEXT',
-            );
-            await customStatement(
-              'ALTER TABLE country_platforms ADD COLUMN commission_value REAL',
-            );
-            await customStatement(
-              'ALTER TABLE rides ADD COLUMN commission_type TEXT',
-            );
-            await customStatement(
-              'ALTER TABLE rides ADD COLUMN commission_value REAL',
-            );
-            await customStatement(
-              'ALTER TABLE rides '
-              'ADD COLUMN commission_amount REAL NOT NULL DEFAULT 0.0',
-            );
+            await _addColumnIfMissing(
+                'country_platforms', 'commission_type', 'TEXT');
+            await _addColumnIfMissing(
+                'country_platforms', 'commission_value', 'REAL');
+            await _addColumnIfMissing('rides', 'commission_type', 'TEXT');
+            await _addColumnIfMissing('rides', 'commission_value', 'REAL');
+            await _addColumnIfMissing(
+                'rides', 'commission_amount', 'REAL NOT NULL DEFAULT 0.0');
           }
         },
       );
 
+  Future<void> _addColumnIfMissing(
+      String table, String column, String definition) async {
+    final columns = await customSelect('PRAGMA table_info($table)').get();
+    if (columns.any((row) => row.read<String>('name') == column)) return;
+    await customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
+  }
+
   /// DAO for accessing country-platform mappings.
   CountryPlatformsDao get countryPlatformsDao => CountryPlatformsDao(this);
 
-  /// Seeds the country_platforms table with platforms from COUNTRIES.
+  /// Seeds the country_platforms table with platforms from COUNTRIES,
+  /// keeping rows that already exist (e.g. from an interrupted upgrade).
   Future<void> _seedCountryPlatforms() async {
     for (final country in COUNTRIES) {
       for (final platform in country.platforms) {
@@ -207,6 +209,7 @@ class AppDatabase extends _$AppDatabase {
             countryCode: country.code,
             platformName: platform,
           ),
+          mode: InsertMode.insertOrIgnore,
         );
       }
     }

@@ -1,7 +1,7 @@
 // Domain - UseCases
-import '../../../domain/entities/ride.dart';
-import '../../../domain/entities/expense.dart';
-import '../../../domain/entities/financial_summary.dart';
+import '../entities/ride.dart';
+import '../entities/expense.dart';
+import '../entities/financial_summary.dart';
 import '../repositories/repositories.dart';
 
 abstract class UseCase<T, Params> {

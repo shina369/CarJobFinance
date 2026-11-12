@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.carjobfinance.carjobfinance"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications 23 requires compiling against SDK 37.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

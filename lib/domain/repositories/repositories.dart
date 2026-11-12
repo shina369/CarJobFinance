@@ -1,8 +1,8 @@
 // Domain - Repositórios (contratos)
 import 'dart:async';
 
-import '../../../domain/entities/ride.dart';
-import '../../../domain/entities/expense.dart';
+import '../entities/ride.dart';
+import '../entities/expense.dart';
 
 abstract class RideRepository {
   Stream<List<Ride>> watchAll();
