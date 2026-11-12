@@ -10,6 +10,7 @@ import 'package:carjobfinance/core/l10n/languages.dart';
 import 'package:carjobfinance/core/l10n/strings.dart';
 import 'package:carjobfinance/core/notifications/notification_service.dart';
 import 'package:carjobfinance/core/notifications/notification_settings.dart';
+import 'package:carjobfinance/core/notifications/reminder.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart'
     show CountryPlatformsDao, PlatformState;
@@ -21,9 +22,9 @@ import 'package:carjobfinance/domain/repositories/repositories.dart';
 import 'package:carjobfinance/presentation/controllers/controllers.dart'
     show expenseRepositoryProvider, rideRepositoryProvider;
 import 'package:carjobfinance/presentation/controllers/data_controller.dart';
-import 'package:carjobfinance/presentation/pages/reports/reports_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/backup_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/legal_page.dart';
+import 'package:carjobfinance/presentation/pages/settings/reminders_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,17 +72,33 @@ class _FakeNotificationService implements NotificationService {
   Future<bool> requestPermission() async => grantPermission;
 
   @override
-  Future<void> scheduleDailyReminder({
+  Future<void> scheduleReminder({
+    required int id,
     required int hour,
     required int minute,
+    required Set<int> days,
     required String title,
     required String body,
+    String? soundUri,
   }) async {
-    scheduled.add('$hour:$minute');
+    final sorted = (days.toList()..sort()).join(',');
+    scheduled.add('$hour:$minute [$sorted] $title');
   }
 
   @override
-  Future<void> cancelDailyReminder() async {}
+  Future<void> cancelReminder(int id) async {}
+
+  @override
+  Future<void> showNow({
+    required String title,
+    required String body,
+    String? soundUri,
+  }) async {
+    scheduled.add('now $title');
+  }
+
+  @override
+  Future<ReminderSound?> pickSound(String? currentUri) async => null;
 }
 
 class _FakeDataController implements DataController {
@@ -141,6 +158,9 @@ class _FakeRideRepository implements RideRepository {
   Stream<List<Ride>> watchAll() => Stream.value(rides);
 
   @override
+  Future<List<Ride>> getAll() async => rides;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('FakeRideRepository');
 }
@@ -151,6 +171,9 @@ class _FakeExpenseRepository implements ExpenseRepository {
 
   @override
   Stream<List<Expense>> watchAll() => Stream.value(expenses);
+
+  @override
+  Future<List<Expense>> getAll() async => expenses;
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -179,7 +202,7 @@ void main() {
             .overrideWithValue(currencyForCode('BRL')!),
       ];
 
-  group('ReportsPage export card', () {
+  group('SettingsPage export actions', () {
     Future<void> pumpReports(
       WidgetTester tester,
       _RecordingExporter exporter,
@@ -209,8 +232,11 @@ void main() {
               .overrideWithValue(_FakeExpenseRepository([expense])),
           fileExporterProvider.overrideWithValue(exporter),
           dataControllerProvider.overrideWithValue(data),
+          appDaoProviderForSettings.overrideWithValue(_InMemoryAppDao()),
+          notificationServiceProvider
+              .overrideWithValue(_FakeNotificationService()),
         ],
-        child: const MaterialApp(home: ReportsPage()),
+        child: const MaterialApp(home: SettingsPage()),
       ));
       await tester.pumpAndSettle();
     }
@@ -292,6 +318,10 @@ void main() {
             builder: (_, __) => const BackupPage(),
           ),
           GoRoute(
+            path: '/settings/reminders',
+            builder: (_, __) => const RemindersPage(),
+          ),
+          GoRoute(
             path: '/settings/terms',
             builder: (_, __) => const LegalPage.terms(),
           ),
@@ -350,30 +380,107 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('picking a reminder time schedules it and shows the time',
+    testWidgets('the reminders entry opens the reminders page', (tester) async {
+      await pumpSettings(tester);
+      expect(find.text(ptBr.tr('reminders.none')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('settings-reminders')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(ptBr.tr('reminders.empty')), findsOneWidget);
+    });
+
+    testWidgets('a reminder takes days, time and message and is scheduled',
         (tester) async {
       final service = _FakeNotificationService();
       final dao = _InMemoryAppDao();
       await pumpSettings(tester, service: service, dao: dao);
-
-      await tester.tap(find.text(ptBr.tr('settings.dailyReminder')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('OK'));
+      await tester.tap(find.byKey(const Key('settings-reminders')));
       await tester.pumpAndSettle();
 
-      expect(service.scheduled, ['20:0']);
-      expect(dao.storage[NotificationSettingsNotifier.reminderKey], '20:00');
+      await tester.tap(find.byKey(const Key('reminder-add')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-days-weekdays')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('reminder-message-custom')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.byKey(const Key('reminder-message-custom-field')),
+          'Buscar cliente');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('reminder-save')));
+      await tester.pumpAndSettle();
+
+      expect(service.scheduled, ['20:0 [1,2,3,4,5] Buscar cliente']);
       expect(dao.storage[NotificationSettingsNotifier.enabledKey], 'true');
-      expect(find.textContaining('Todos os dias às'), findsOneWidget);
-
-      await tester.tap(find.byTooltip(ptBr.tr('settings.reminderDisable')));
-      await tester.pumpAndSettle();
-
-      expect(dao.storage.containsKey(NotificationSettingsNotifier.reminderKey),
-          isFalse);
-      expect(find.text(ptBr.tr('settings.dailyReminderSub')), findsOneWidget);
+      expect(find.text(ptBr.tr('reminders.weekdays')), findsOneWidget);
+      expect(find.text('Buscar cliente'), findsOneWidget);
     });
 
+    testWidgets('a reminder needs at least one day', (tester) async {
+      await pumpSettings(tester);
+      await tester.tap(find.byKey(const Key('settings-reminders')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-add')));
+      await tester.pumpAndSettle();
+
+      for (var day = 1; day <= 7; day++) {
+        await tester.tap(find.byKey(Key('reminder-day-$day')));
+      }
+      await tester.pump();
+
+      expect(find.text(ptBr.tr('reminders.noDays')), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('reminder-save')))
+            .onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('a saved reminder can be switched off and deleted',
+        (tester) async {
+      final dao = _InMemoryAppDao();
+      await pumpSettings(tester, dao: dao);
+      await tester.tap(find.byKey(const Key('settings-reminders')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-add')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-save')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('reminder-switch-1')));
+      await tester.pumpAndSettle();
+      expect(
+          Reminder.decodeList(
+                  dao.storage[NotificationSettingsNotifier.remindersKey])
+              .single
+              .enabled,
+          isFalse);
+
+      await tester.tap(find.text(ptBr.tr('reminders.everyDay')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-delete')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(ptBr.tr('reminders.empty')), findsOneWidget);
+    });
+
+    testWidgets('the test button shows a notification right away',
+        (tester) async {
+      final service = _FakeNotificationService();
+      await pumpSettings(tester, service: service);
+      await tester.tap(find.byKey(const Key('settings-reminders')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reminder-add')));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('reminder-test')));
+      await tester.tap(find.byKey(const Key('reminder-test')));
+      await tester.pumpAndSettle();
+
+      expect(service.scheduled.single, startsWith('now '));
+    });
     testWidgets('Clear All Data wipes only after confirmation', (tester) async {
       final data = _FakeDataController();
       await pumpSettings(tester, data: data);

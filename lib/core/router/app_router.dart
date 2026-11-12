@@ -25,6 +25,7 @@ import '../../presentation/pages/settings/option_picker_page.dart';
 import '../../presentation/pages/onboarding/onboarding_page.dart';
 import '../../presentation/pages/settings/backup_page.dart';
 import '../../presentation/pages/settings/legal_page.dart';
+import '../../presentation/pages/settings/reminders_page.dart';
 
 /// Adapts a [Stream] to the [Listenable] GoRouter refreshes on.
 class _StreamListenable extends ChangeNotifier {
@@ -181,6 +182,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'backup',
                 name: 'settings-backup',
                 builder: (context, state) => const BackupPage(),
+              ),
+              GoRoute(
+                path: 'reminders',
+                name: 'settings-reminders',
+                builder: (context, state) => const RemindersPage(),
               ),
               GoRoute(
                 path: 'terms',

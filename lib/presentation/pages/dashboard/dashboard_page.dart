@@ -193,7 +193,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 22),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -211,7 +211,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade700,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 22),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -234,23 +234,10 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             lang: lang,
             currency: _currency,
           ),
-          // Recent rides strip — only when there are rides
-          if (widget.rides.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _recentRidesStrip(context,
-                rides: _latestRides(widget.rides, 2),
-                lang: lang,
-                currency: _currency),
-          ],
           const SizedBox(height: 8),
         ],
       ),
     );
-  }
-
-  List<entity_ride.Ride> _latestRides(List<entity_ride.Ride> rides, int count) {
-    final sorted = [...rides]..sort((a, b) => b.date.compareTo(a.date));
-    return sorted.take(count).toList();
   }
 
   _TodayData _computeTodayData(Locale locale) {
@@ -345,7 +332,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
 
   return Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -431,7 +418,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         // Big profit number
         Consumer(
           builder: (context, ref, _) {
@@ -460,7 +447,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Three metric pills in a row
         LayoutBuilder(
           builder: (ctx, constraints) {
@@ -616,7 +603,7 @@ class _MonthPanel extends StatelessWidget {
           // Dark header band
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
             color: cs.primary,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -641,7 +628,7 @@ class _MonthPanel extends StatelessWidget {
           ),
           // Content area
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -657,7 +644,7 @@ class _MonthPanel extends StatelessWidget {
                       netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
                   currency: currency,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 // Goal + progress
                 _StatRow(
                   label: lang.tr('dash.goal'),
@@ -666,9 +653,9 @@ class _MonthPanel extends StatelessWidget {
                   icon: Icons.flag,
                   currency: currency,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _ProgressBar(value: progress / 100, color: progressColor),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 // Edit goal link
                 Center(
                   child: OutlinedButton.icon(
@@ -754,71 +741,6 @@ class _StatRow extends ConsumerWidget {
       ],
     );
   }
-}
-
-// ── RECENT RIDES COMPACT STRIP ─────────────────────────────────
-
-Widget _recentRidesStrip(
-  BuildContext context, {
-  required List<entity_ride.Ride> rides,
-  required AppLanguage lang,
-  required AppCurrency currency,
-}) {
-  final cs = Theme.of(context).colorScheme;
-  final ts = Theme.of(context).textTheme;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(lang.tr('dash.recentRides'), style: ts.titleSmall),
-          TextButton(
-            onPressed: () => context.push('/rides'),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 0),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(lang.tr('dash.seeAll'),
-                style: ts.labelSmall?.copyWith(color: cs.primary)),
-          ),
-        ],
-      ),
-      const SizedBox(height: 4),
-      ...rides.map(
-        (ride) => Padding(
-          padding: const EdgeInsets.only(bottom: 3),
-          child: ListTile(
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            leading: CircleAvatar(
-              radius: 16,
-              backgroundColor: cs.primaryContainer,
-              child: Icon(Icons.directions_car, size: 16, color: cs.primary),
-            ),
-            title: Text(ride.platform, style: ts.bodySmall),
-            subtitle: Text(
-              '${ride.formattedDate} · ${ride.durationMinutes}min',
-              style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-            ),
-            trailing: Text(
-              LocalizedCurrency.formatFor(ride.earnings, currency),
-              style: ts.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: cs.primary,
-              ),
-            ),
-            onTap: () => context.push('/rides/${ride.id}'),
-          ),
-        ),
-      ),
-    ],
-  );
 }
 
 // ── PROGRESS BAR ───────────────────────────────────────────────

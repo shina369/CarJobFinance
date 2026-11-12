@@ -19,6 +19,8 @@ class RidesPage extends ConsumerWidget {
     final ridesState = ref.watch(ridesControllerProvider);
     final lang = ref.watch(appLanguageProvider);
 
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.tr('rides.title')),
@@ -40,6 +42,11 @@ class RidesPage extends ConsumerWidget {
             child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: isLight ? Theme.of(context).colorScheme.primary : null,
+        foregroundColor: isLight ? Colors.white : null,
+        shape: isLight
+            ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+            : null,
         onPressed: () => context.push('/rides/new'),
         icon: const Icon(Icons.add),
         label: Text(lang.tr('rides.new')),

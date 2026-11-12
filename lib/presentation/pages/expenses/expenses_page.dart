@@ -32,6 +32,8 @@ class ExpensesPage extends ConsumerWidget {
       }
     }
 
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.tr('expenses.title')),
@@ -57,6 +59,11 @@ class ExpensesPage extends ConsumerWidget {
             child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: isLight ? Colors.orange.shade700 : null,
+        foregroundColor: isLight ? Colors.white : null,
+        shape: isLight
+            ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+            : null,
         onPressed: () => context.push('/expenses/new'),
         icon: const Icon(Icons.add),
         label: Text(lang.tr('expenses.new')),

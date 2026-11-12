@@ -173,9 +173,21 @@ ThemeData get lightTheme => ThemeData(
       // Chips
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        side: const BorderSide(color: AppColors.outlineVariant),
+        side: const BorderSide(color: AppColors.outline),
+        backgroundColor: AppColors.surface,
         selectedColor: AppColors.primaryContainer,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        secondarySelectedColor: AppColors.primaryContainer,
+        checkmarkColor: AppColors.primaryDark,
+        deleteIconColor: AppColors.onSurfaceVariant,
+        iconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: AppColors.onSurface,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: AppColors.onSurface,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
 
@@ -202,8 +214,12 @@ ThemeData get lightTheme => ThemeData(
 
       // Floating Action Button
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        shape: CircleBorder(),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))),
         elevation: 4,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
+        extendedTextStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ),
 
       // Divider

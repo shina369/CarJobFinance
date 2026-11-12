@@ -1,27 +1,29 @@
-// Persisted notification preferences (settings table) kept in sync with
-// the scheduled daily reminder.
+// Persisted notification preferences and reminders (settings table) kept in
+// sync with the notifications scheduled on the device.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/daos.dart' show AppDao;
+import '../l10n/language_provider.dart';
+import '../l10n/strings.dart';
 import '../settings/app_settings_notifier.dart';
 import 'notification_service.dart';
+import 'reminder.dart';
 
 class NotificationPrefs {
   const NotificationPrefs({
     this.enabled = false,
-    this.reminderHour,
-    this.reminderMinute,
+    this.reminders = const [],
   });
 
   final bool enabled;
-  final int? reminderHour;
-  final int? reminderMinute;
+  final List<Reminder> reminders;
 
-  bool get hasReminder => reminderHour != null && reminderMinute != null;
+  int get activeCount =>
+      reminders.where((r) => r.enabled && r.days.isNotEmpty).length;
 }
 
-/// Texts shown by the daily reminder, resolved by the caller in the
-/// user's language.
+/// Default texts used when a reminder has no custom message, resolved by
+/// the caller in the user's language.
 typedef ReminderText = ({String title, String body});
 
 class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
@@ -29,7 +31,11 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
       : super(const NotificationPrefs());
 
   static const enabledKey = 'notifications_enabled';
-  static const reminderKey = 'daily_reminder_time';
+  static const remindersKey = 'reminders';
+
+  // Single daily reminder stored by earlier versions.
+  static const legacyTimeKey = 'daily_reminder_time';
+  static const legacyMessageKey = 'daily_reminder_message';
 
   final AppDao _dao;
   final NotificationService _service;
@@ -43,14 +49,38 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
 
   Future<void> initialize() async {
     final enabled = await _dao.getSetting(enabledKey);
-    final reminder = await _dao.getSetting(reminderKey);
+    var reminders = Reminder.decodeList(await _dao.getSetting(remindersKey));
+    if (reminders.isEmpty) {
+      final migrated = await _migrateLegacy();
+      if (migrated != null) reminders = [migrated];
+    }
     if (_disposed) return;
-    final time = _parseTime(reminder);
-    state = NotificationPrefs(
-      enabled: enabled == 'true',
-      reminderHour: time?.$1,
-      reminderMinute: time?.$2,
+    state = NotificationPrefs(enabled: enabled == 'true', reminders: reminders);
+  }
+
+  Future<Reminder?> _migrateLegacy() async {
+    final time = _parseTime(await _dao.getSetting(legacyTimeKey));
+    if (time == null) return null;
+    final message = (await _dao.getSetting(legacyMessageKey))?.trim();
+    final reminder = Reminder(
+      id: 1,
+      hour: time.$1,
+      minute: time.$2,
+      days: Reminder.allDays,
+      message: (message == null || message.isEmpty) ? null : message,
     );
+    await _dao.setSetting(remindersKey, Reminder.encodeList([reminder]));
+    await _dao.deleteSetting(legacyTimeKey);
+    await _dao.deleteSetting(legacyMessageKey);
+    // The old single reminder used notification id 1.
+    await _service.cancelReminder(0);
+    return reminder;
+  }
+
+  /// Id for a new reminder.
+  int nextId() {
+    final ids = state.reminders.map((r) => r.id);
+    return ids.isEmpty ? 1 : ids.reduce((a, b) => a > b ? a : b) + 1;
   }
 
   /// Turns notifications on or off. Enabling asks the OS for permission
@@ -58,51 +88,75 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
   Future<bool> setEnabled(bool enabled, ReminderText text) async {
     if (enabled && !await _service.requestPermission()) return false;
     await _dao.setSetting(enabledKey, '$enabled');
-    if (enabled && state.hasReminder) {
-      await _schedule(state.reminderHour!, state.reminderMinute!, text);
-    } else if (!enabled) {
-      await _service.cancelDailyReminder();
-    }
     if (_disposed) return true;
-    state = NotificationPrefs(
-      enabled: enabled,
-      reminderHour: state.reminderHour,
-      reminderMinute: state.reminderMinute,
-    );
+    state = NotificationPrefs(enabled: enabled, reminders: state.reminders);
+    await resync(text);
     return true;
   }
 
-  /// Sets the daily reminder time; it only fires while notifications
-  /// are enabled.
-  Future<void> setReminder(int hour, int minute, ReminderText text) async {
-    await _dao.setSetting(reminderKey, _formatTime(hour, minute));
-    if (state.enabled) await _schedule(hour, minute, text);
-    if (_disposed) return;
-    state = NotificationPrefs(
-      enabled: state.enabled,
-      reminderHour: hour,
-      reminderMinute: minute,
-    );
+  /// Adds or replaces a reminder (matched by id).
+  Future<void> save(Reminder reminder, ReminderText text) async {
+    final list = [...state.reminders];
+    final index = list.indexWhere((r) => r.id == reminder.id);
+    if (index >= 0) {
+      list[index] = reminder;
+    } else {
+      list.add(reminder);
+    }
+    await _persist(list);
+    await _apply(reminder, text);
   }
 
-  Future<void> clearReminder() async {
-    await _dao.deleteSetting(reminderKey);
-    await _service.cancelDailyReminder();
-    if (_disposed) return;
-    state = NotificationPrefs(enabled: state.enabled);
+  Future<void> remove(int id) async {
+    await _persist(state.reminders.where((r) => r.id != id).toList());
+    await _service.cancelReminder(id);
   }
 
-  Future<void> _schedule(int hour, int minute, ReminderText text) {
-    return _service.scheduleDailyReminder(
-      hour: hour,
-      minute: minute,
-      title: text.title,
+  /// Re-schedules every reminder, or cancels them all while notifications
+  /// are off. Also refreshes texts after a language change.
+  Future<void> resync(ReminderText text) async {
+    for (final reminder in state.reminders) {
+      await _apply(reminder, text);
+    }
+  }
+
+  /// Cancels every scheduled reminder without touching what is stored.
+  Future<void> cancelAll() async {
+    for (final reminder in state.reminders) {
+      await _service.cancelReminder(reminder.id);
+    }
+  }
+
+  Future<void> _persist(List<Reminder> reminders) async {
+    await _dao.setSetting(remindersKey, Reminder.encodeList(reminders));
+    if (_disposed) return;
+    state = NotificationPrefs(enabled: state.enabled, reminders: reminders);
+  }
+
+  Future<void> _apply(Reminder reminder, ReminderText text) async {
+    if (!state.enabled || !reminder.enabled || reminder.days.isEmpty) {
+      await _service.cancelReminder(reminder.id);
+      return;
+    }
+    await _service.scheduleReminder(
+      id: reminder.id,
+      hour: reminder.hour,
+      minute: reminder.minute,
+      days: reminder.days,
+      title: reminder.message ?? text.title,
       body: text.body,
+      soundUri: reminder.soundUri,
     );
   }
 
-  static String _formatTime(int hour, int minute) =>
-      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  /// Shows [reminder] right away to preview its text and sound.
+  Future<void> preview(Reminder reminder, ReminderText text) {
+    return _service.showNow(
+      title: reminder.message ?? text.title,
+      body: text.body,
+      soundUri: reminder.soundUri,
+    );
+  }
 
   static (int, int)? _parseTime(String? value) {
     final match = RegExp(r'^(\d{2}):(\d{2})$').firstMatch(value ?? '');
@@ -114,6 +168,10 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
   }
 }
 
+/// Default reminder texts in the language resolved by [tr].
+ReminderText reminderTextFor(String Function(String) tr) =>
+    (title: tr('notif.reminderTitle'), body: tr('notif.reminderBody'));
+
 final notificationSettingsProvider =
     StateNotifierProvider<NotificationSettingsNotifier, NotificationPrefs>(
         (ref) {
@@ -121,6 +179,12 @@ final notificationSettingsProvider =
     ref.watch(appDaoProviderForSettings),
     ref.watch(notificationServiceProvider),
   );
-  notifier.initialize();
+  // Re-schedule on start so reminders survive time-zone changes and
+  // pick up the current language.
+  final lang = ref.read(appLanguageProvider);
+  notifier
+      .initialize()
+      .then((_) => notifier.resync(reminderTextFor(lang.tr)))
+      .catchError((_) {});
   return notifier;
 });

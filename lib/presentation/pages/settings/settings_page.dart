@@ -14,6 +14,7 @@ import '../../../core/notifications/notification_settings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../controllers/data_controller.dart';
 import '../../controllers/session_controller.dart';
+import '../../widgets/export_actions.dart';
 
 /// Opens a link outside the app. Overridable in tests.
 final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
@@ -132,6 +133,8 @@ class SettingsPage extends ConsumerWidget {
                   onTap: () => context.push('/settings/backup'),
                 ),
                 const Divider(height: 1, indent: 72),
+                const ExportTiles(),
+                const Divider(height: 1, indent: 72),
                 ListTile(
                   leading: Icon(
                     Icons.delete_outline,
@@ -171,33 +174,21 @@ class SettingsPage extends ConsumerWidget {
                 const Divider(height: 1, indent: 72),
                 Consumer(
                   builder: (context, ref, _) {
-                    final prefs = ref.watch(notificationSettingsProvider);
+                    final active = ref.watch(notificationSettingsProvider
+                        .select((p) => p.enabled ? p.activeCount : 0));
                     return ListTile(
+                      key: const Key('settings-reminders'),
                       leading: Icon(
-                        Icons.schedule_outlined,
+                        Icons.alarm_outlined,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      title: Text(tr('settings.dailyReminder')),
-                      subtitle: Text(
-                        prefs.hasReminder
-                            ? lang.tr('settings.reminderAt', args: {
-                                'time': TimeOfDay(
-                                  hour: prefs.reminderHour!,
-                                  minute: prefs.reminderMinute!,
-                                ).format(context),
-                              })
-                            : tr('settings.dailyReminderSub'),
-                      ),
-                      trailing: prefs.hasReminder
-                          ? IconButton(
-                              icon: const Icon(Icons.close),
-                              tooltip: tr('settings.reminderDisable'),
-                              onPressed: () => ref
-                                  .read(notificationSettingsProvider.notifier)
-                                  .clearReminder(),
-                            )
-                          : const Icon(Icons.chevron_right),
-                      onTap: () => _pickReminderTime(context, ref, tr, prefs),
+                      title: Text(tr('settings.reminders')),
+                      subtitle: Text(active == 0
+                          ? tr('reminders.none')
+                          : lang.tr('reminders.active',
+                              args: {'count': '$active'})),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/settings/reminders'),
                     );
                   },
                 ),
@@ -361,43 +352,16 @@ class SettingsPage extends ConsumerWidget {
     return extra > 0 ? '$names, +$extra' : names;
   }
 
-  ReminderText _reminderText(String Function(String) tr) => (
-        title: tr('notif.reminderTitle'),
-        body: tr('notif.reminderBody'),
-      );
-
-  /// Returns whether notifications ended up in the requested state.
-  Future<bool> _setNotificationsEnabled(BuildContext context, WidgetRef ref,
+  Future<void> _setNotificationsEnabled(BuildContext context, WidgetRef ref,
       String Function(String) tr, bool enabled) async {
     final messenger = ScaffoldMessenger.of(context);
     final ok = await ref
         .read(notificationSettingsProvider.notifier)
-        .setEnabled(enabled, _reminderText(tr));
+        .setEnabled(enabled, reminderTextFor(tr));
     if (!ok) {
       messenger.showSnackBar(
           SnackBar(content: Text(tr('settings.notificationsUnavailable'))));
     }
-    return ok;
-  }
-
-  Future<void> _pickReminderTime(BuildContext context, WidgetRef ref,
-      String Function(String) tr, NotificationPrefs prefs) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: prefs.reminderHour ?? 20,
-        minute: prefs.reminderMinute ?? 0,
-      ),
-    );
-    if (picked == null || !context.mounted) return;
-    // A reminder is useless with notifications off, so turn them on too.
-    if (!prefs.enabled &&
-        !await _setNotificationsEnabled(context, ref, tr, true)) {
-      return;
-    }
-    await ref
-        .read(notificationSettingsProvider.notifier)
-        .setReminder(picked.hour, picked.minute, _reminderText(tr));
   }
 
   Future<void> _reportIssue(

@@ -1,21 +1,14 @@
 // Reports Page - Relatórios e exportação
-import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/export/file_exporter.dart';
-import '../../../core/export/report_data.dart';
-import '../../../core/export/report_pdf.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
-import '../../../presentation/controllers/data_controller.dart';
-import '../../widgets/export_feedback.dart';
 
 enum ReportPeriod { day, week, month, year, custom }
 
@@ -348,89 +341,6 @@ class _ReportsContent extends ConsumerWidget {
                         value: filteredRides.isNotEmpty
                             ? fmt(totalEarnings / filteredRides.length)
                             : fmt(0),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Ações de Exportação
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lang.tr('reports.export'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        leading: Icon(
-                          Icons.table_chart,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        title: Text(lang.tr('reports.exportCsv')),
-                        subtitle: Text(lang.tr('reports.exportCsvSub')),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => runExport(context, lang, () {
-                          final data = ReportData(
-                            periodLabel: period.label(lang),
-                            rides: filteredRides,
-                            expenses: filteredExpenses,
-                          );
-                          return ref.read(fileExporterProvider).export(
-                                fileName: exportFileName('report', 'csv'),
-                                bytes: Uint8List.fromList(
-                                    utf8.encode(buildReportCsv(data, lang))),
-                                mimeType: 'text/csv',
-                              );
-                        }),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: Icon(
-                          Icons.picture_as_pdf,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        title: Text(lang.tr('reports.exportPdf')),
-                        subtitle: Text(lang.tr('reports.exportPdfSub')),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => runExport(context, lang, () async {
-                          final data = ReportData(
-                            periodLabel: period.label(pdfLanguageFor(lang)),
-                            rides: filteredRides,
-                            expenses: filteredExpenses,
-                          );
-                          final exporter = ref.read(fileExporterProvider);
-                          final bytes = await buildReportPdf(
-                            data,
-                            lang: lang,
-                            currency: currency,
-                          );
-                          return exporter.export(
-                            fileName: exportFileName('report', 'pdf'),
-                            bytes: bytes,
-                            mimeType: 'application/pdf',
-                          );
-                        }),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: Icon(
-                          Icons.backup,
-                          color: Theme.of(context).colorScheme.tertiary,
-                        ),
-                        title: Text(lang.tr('reports.backup')),
-                        subtitle: Text(lang.tr('reports.backupSub')),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => runExport(
-                          context,
-                          lang,
-                          ref.read(dataControllerProvider).exportBackup,
-                        ),
                       ),
                     ],
                   ),

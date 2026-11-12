@@ -8,7 +8,6 @@ import '../../core/export/file_exporter.dart';
 import '../../core/l10n/currency_provider.dart';
 import '../../core/l10n/language_provider.dart';
 import '../../core/l10n/platforms_provider.dart';
-import '../../core/notifications/notification_service.dart';
 import '../../core/notifications/notification_settings.dart';
 import '../../core/settings/app_settings_notifier.dart';
 import '../../data/datasources/local/backup_data.dart';
@@ -51,7 +50,7 @@ class DataController {
   }
 
   Future<void> clearAll() async {
-    await _ref.read(notificationServiceProvider).cancelDailyReminder();
+    await _ref.read(notificationSettingsProvider.notifier).cancelAll();
     await _ref.read(appDaoProvider).clearAllData();
     await _reloadPreferences();
   }

@@ -10,6 +10,7 @@ import 'core/di/injection.dart';
 import 'core/l10n/language_provider.dart';
 import 'core/l10n/languages.dart';
 import 'core/l10n/strings.dart';
+import 'core/notifications/notification_settings.dart';
 import 'core/router/app_router.dart';
 import 'core/settings/app_settings_notifier.dart';
 import 'core/theme/app_theme.dart';
@@ -36,6 +37,8 @@ void main() async {
   await container.read(appSettingsProvider.notifier).initialize();
   await container.read(languageProvider.notifier).initialize();
   await container.read(sessionProvider.notifier).initialize();
+  // Starts loading reminders and re-schedules them.
+  container.read(notificationSettingsProvider);
 
   runApp(UncontrolledProviderScope(
     container: container,

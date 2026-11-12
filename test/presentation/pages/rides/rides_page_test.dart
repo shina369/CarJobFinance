@@ -99,4 +99,30 @@ void main() {
     expect(find.textContaining('€'), findsOneWidget);
     expect(find.textContaining(r'R$'), findsNothing);
   });
+
+  testWidgets('the add button uses the Home green in the light theme',
+      (tester) async {
+    final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appSettingsProvider.overrideWith((ref) => _MockAppSettingsNotifier(
+              AppSettings.fromCountry(br, br.platforms))),
+          languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository([])),
+        ],
+        child: MaterialApp(
+          theme: ThemeData(colorSchemeSeed: Colors.green),
+          home: const RidesPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fab =
+        tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
+    expect(fab.backgroundColor,
+        Theme.of(tester.element(find.byType(RidesPage))).colorScheme.primary);
+    expect(fab.foregroundColor, Colors.white);
+  });
 }
