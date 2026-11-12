@@ -18,6 +18,8 @@ import '../../presentation/pages/settings/settings_page.dart';
 import '../../presentation/pages/settings/platforms_page.dart';
 import '../../presentation/pages/settings/option_picker_page.dart';
 import '../../presentation/pages/onboarding/onboarding_page.dart';
+import '../../presentation/pages/settings/backup_page.dart';
+import '../../presentation/pages/settings/legal_page.dart';
 
 /// A [ChangeNotifier] that wraps a [StateNotifier] to provide [Listenable]
 /// compatibility for GoRouter's [refreshListenable].
@@ -141,6 +143,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'currency',
                 name: 'settings-currency',
                 builder: (context, state) => const CurrencyPickerPage(),
+              ),
+              GoRoute(
+                path: 'backup',
+                name: 'settings-backup',
+                builder: (context, state) => const BackupPage(),
+              ),
+              GoRoute(
+                path: 'terms',
+                name: 'settings-terms',
+                builder: (context, state) => const LegalPage.terms(),
+              ),
+              GoRoute(
+                path: 'privacy',
+                name: 'settings-privacy',
+                builder: (context, state) => const LegalPage.privacy(),
               ),
             ],
           ),

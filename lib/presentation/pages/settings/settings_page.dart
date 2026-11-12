@@ -3,12 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/currency_provider.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
+import '../../../core/notifications/notification_settings.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../controllers/data_controller.dart';
+
+/// Opens a link outside the app. Overridable in tests.
+final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
+  (ref) => (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+);
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -119,9 +128,7 @@ class SettingsPage extends ConsumerWidget {
                   title: Text(tr('settings.backup')),
                   subtitle: Text(tr('settings.backupSub')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Navigate to backup page
-                  },
+                  onTap: () => context.push('/settings/backup'),
                 ),
                 const Divider(height: 1, indent: 72),
                 ListTile(
@@ -132,7 +139,7 @@ class SettingsPage extends ConsumerWidget {
                   title: Text(tr('settings.clearData')),
                   subtitle: Text(tr('settings.clearDataSub')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showClearDataDialog(context, tr),
+                  onTap: () => _showClearDataDialog(context, ref, tr),
                 ),
               ],
             ),
@@ -146,7 +153,7 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 Consumer(
                   builder: (context, ref, _) {
-                    // TODO: Connect to notification settings provider
+                    final prefs = ref.watch(notificationSettingsProvider);
                     return SwitchListTile(
                       secondary: Icon(
                         Icons.notifications_outlined,
@@ -154,24 +161,43 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       title: Text(tr('settings.notificationsActive')),
                       subtitle: Text(tr('settings.notificationsActiveSub')),
-                      value: true, // TODO: actual value
-                      onChanged: (value) {
-                        // TODO: Toggle notifications
-                      },
+                      value: prefs.enabled,
+                      onChanged: (value) =>
+                          _setNotificationsEnabled(context, ref, tr, value),
                     );
                   },
                 ),
                 const Divider(height: 1, indent: 72),
-                ListTile(
-                  leading: Icon(
-                    Icons.schedule_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(tr('settings.dailyReminder')),
-                  subtitle: Text(tr('settings.dailyReminderSub')),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Show time picker for daily reminder
+                Consumer(
+                  builder: (context, ref, _) {
+                    final prefs = ref.watch(notificationSettingsProvider);
+                    return ListTile(
+                      leading: Icon(
+                        Icons.schedule_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(tr('settings.dailyReminder')),
+                      subtitle: Text(
+                        prefs.hasReminder
+                            ? lang.tr('settings.reminderAt', args: {
+                                'time': TimeOfDay(
+                                  hour: prefs.reminderHour!,
+                                  minute: prefs.reminderMinute!,
+                                ).format(context),
+                              })
+                            : tr('settings.dailyReminderSub'),
+                      ),
+                      trailing: prefs.hasReminder
+                          ? IconButton(
+                              icon: const Icon(Icons.close),
+                              tooltip: tr('settings.reminderDisable'),
+                              onPressed: () => ref
+                                  .read(notificationSettingsProvider.notifier)
+                                  .clearReminder(),
+                            )
+                          : const Icon(Icons.chevron_right),
+                      onTap: () => _pickReminderTime(context, ref, tr, prefs),
+                    );
                   },
                 ),
               ],
@@ -190,7 +216,7 @@ class SettingsPage extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   title: Text(tr('settings.appVersion')),
-                  subtitle: const Text('1.0.0'),
+                  subtitle: const Text(AppConstants.appVersion),
                 ),
                 const Divider(height: 1, indent: 72),
                 ListTile(
@@ -200,9 +226,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   title: Text(tr('settings.terms')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Show terms
-                  },
+                  onTap: () => context.push('/settings/terms'),
                 ),
                 const Divider(height: 1, indent: 72),
                 ListTile(
@@ -212,9 +236,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   title: Text(tr('settings.privacy')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Show privacy policy
-                  },
+                  onTap: () => context.push('/settings/privacy'),
                 ),
                 const Divider(height: 1, indent: 72),
                 ListTile(
@@ -224,9 +246,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   title: Text(tr('settings.reportIssue')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Open issue tracker/email
-                  },
+                  onTap: () => _reportIssue(context, ref, tr),
                 ),
               ],
             ),
@@ -306,7 +326,66 @@ class SettingsPage extends ConsumerWidget {
     return extra > 0 ? '$names, +$extra' : names;
   }
 
-  void _showClearDataDialog(BuildContext context, String Function(String) tr) {
+  ReminderText _reminderText(String Function(String) tr) => (
+        title: tr('notif.reminderTitle'),
+        body: tr('notif.reminderBody'),
+      );
+
+  /// Returns whether notifications ended up in the requested state.
+  Future<bool> _setNotificationsEnabled(BuildContext context, WidgetRef ref,
+      String Function(String) tr, bool enabled) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref
+        .read(notificationSettingsProvider.notifier)
+        .setEnabled(enabled, _reminderText(tr));
+    if (!ok) {
+      messenger.showSnackBar(
+          SnackBar(content: Text(tr('settings.notificationsUnavailable'))));
+    }
+    return ok;
+  }
+
+  Future<void> _pickReminderTime(BuildContext context, WidgetRef ref,
+      String Function(String) tr, NotificationPrefs prefs) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: prefs.reminderHour ?? 20,
+        minute: prefs.reminderMinute ?? 0,
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+    // A reminder is useless with notifications off, so turn them on too.
+    if (!prefs.enabled &&
+        !await _setNotificationsEnabled(context, ref, tr, true)) {
+      return;
+    }
+    await ref
+        .read(notificationSettingsProvider.notifier)
+        .setReminder(picked.hour, picked.minute, _reminderText(tr));
+  }
+
+  Future<void> _reportIssue(
+      BuildContext context, WidgetRef ref, String Function(String) tr) async {
+    final messenger = ScaffoldMessenger.of(context);
+    var opened = false;
+    try {
+      opened = await ref
+          .read(urlOpenerProvider)(Uri.parse(AppConstants.issueTrackerUrl));
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(
+            '${tr('settings.linkFailed')} ${AppConstants.issueTrackerUrl}'),
+      ));
+    }
+  }
+
+  void _showClearDataDialog(
+      BuildContext context, WidgetRef ref, String Function(String) tr) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -321,9 +400,18 @@ class SettingsPage extends ConsumerWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            onPressed: () {
-              // TODO: Clear all data
+            onPressed: () async {
               Navigator.pop(context);
+              try {
+                await ref.read(dataControllerProvider).clearAll();
+                messenger.showSnackBar(
+                    SnackBar(content: Text(tr('settings.dataCleared'))));
+              } catch (e) {
+                messenger.showSnackBar(SnackBar(
+                  content:
+                      Text(tr('export.failed').replaceAll('{error}', '$e')),
+                ));
+              }
             },
             child: Text(tr('settings.deleteAll')),
           ),

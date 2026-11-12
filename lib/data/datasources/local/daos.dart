@@ -2,6 +2,7 @@
 import 'package:drift/drift.dart';
 
 import 'app_database.dart';
+import 'backup_data.dart';
 
 part 'daos.g.dart';
 
@@ -205,6 +206,48 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
     return query
         .watch()
         .map((rows) => rows.map((r) => r.platformName).toList());
+  }
+
+  // ===== BACKUP / RESET =====
+
+  Future<BackupData> readBackupData() async {
+    return BackupData(
+      rides: await getAllRides(),
+      expenses: await getAllExpenses(),
+      settings: await getAllSettings(),
+      countryPlatforms: await select(countryPlatforms).get(),
+    );
+  }
+
+  /// Wipes every table: rides, expenses, settings and platform config.
+  Future<void> clearAllData() {
+    return transaction(() async {
+      await delete(rides).go();
+      await delete(expenses).go();
+      await delete(settings).go();
+      await delete(countryPlatforms).go();
+    });
+  }
+
+  /// Replaces the whole database content with [data]. Atomic: a failure
+  /// while inserting leaves the previous data untouched.
+  Future<void> restoreBackupData(BackupData data) {
+    return transaction(() async {
+      await clearAllData();
+      await batch((b) {
+        b.insertAll(rides, data.rides);
+        b.insertAll(expenses, data.expenses);
+        b.insertAll(countryPlatforms, data.countryPlatforms);
+        b.insertAll(settings, [
+          for (final entry in data.settings.entries)
+            SettingsCompanion.insert(
+              key: entry.key,
+              value: entry.value,
+              updatedAt: DateTime.now(),
+            ),
+        ]);
+      });
+    });
   }
 
   // ===== AGGREGATIONS / RELATÓRIOS =====

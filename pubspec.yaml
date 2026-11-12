@@ -39,6 +39,20 @@ dependencies:
   uuid: ^4.4.0
   collection: ^1.18.0
   flutter_svg: ^2.0.0
+  share_plus: ^13.3.1
+  pdf: ^3.13.1
+  file_picker: ^13.3.3
+  flutter_local_notifications: ^23.0.1
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
+  url_launcher: ^6.3.3
+
+# The upstream Windows notifications plugin compiles C++ that needs the
+# Visual Studio ATL component. The app only schedules notifications on
+# Android/iOS/macOS, so a copy without the native part is used instead.
+dependency_overrides:
+  flutter_local_notifications_windows:
+    path: third_party/flutter_local_notifications_windows
 
 dev_dependencies:
   flutter_test:
