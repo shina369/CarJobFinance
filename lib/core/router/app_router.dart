@@ -8,6 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/l10n/language_provider.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/settings/app_settings_notifier.dart';
+import '../../presentation/controllers/session_controller.dart';
+import '../../presentation/pages/auth/account_gate_page.dart';
+import '../../presentation/pages/auth/forgot_password_page.dart';
+import '../../presentation/pages/auth/login_page.dart';
+import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/dashboard/dashboard_page.dart';
 import '../../presentation/pages/rides/rides_page.dart';
 import '../../presentation/pages/rides/ride_form_page.dart';
@@ -21,17 +26,13 @@ import '../../presentation/pages/onboarding/onboarding_page.dart';
 import '../../presentation/pages/settings/backup_page.dart';
 import '../../presentation/pages/settings/legal_page.dart';
 
-/// A [ChangeNotifier] that wraps a [StateNotifier] to provide [Listenable]
-/// compatibility for GoRouter's [refreshListenable].
-class _SettingsListenable extends ChangeNotifier {
-  _SettingsListenable(this._notifier) {
-    _subscription = _notifier.stream.listen((_) {
-      notifyListeners();
-    });
+/// Adapts a [Stream] to the [Listenable] GoRouter refreshes on.
+class _StreamListenable extends ChangeNotifier {
+  _StreamListenable(Stream<Object?> stream) {
+    _subscription = stream.listen((_) => notifyListeners());
   }
 
-  final StateNotifier<AppSettings> _notifier;
-  late final StreamSubscription<AppSettings> _subscription;
+  late final StreamSubscription<Object?> _subscription;
 
   @override
   void dispose() {
@@ -40,13 +41,44 @@ class _SettingsListenable extends ChangeNotifier {
   }
 }
 
+const Set<String> _signedOutRoutes = {
+  '/login',
+  '/register',
+  '/forgot-password',
+};
+
+/// Where the app must go instead of [location], or null to stay.
+///
+/// Order of the gates: login, then any decision pending after login, then
+/// the first-run onboarding.
+String? appRedirect({
+  required SessionState session,
+  required bool configured,
+  required String location,
+}) {
+  if (!session.isAuthenticated) {
+    return _signedOutRoutes.contains(location) ? null : '/login';
+  }
+  if (session.gate != LoginGate.none) {
+    return location == '/account-gate' ? null : '/account-gate';
+  }
+  final home = configured ? '/' : '/onboarding';
+  if (_signedOutRoutes.contains(location) || location == '/account-gate') {
+    return home;
+  }
+  if (!configured && location != '/onboarding') return '/onboarding';
+  if (configured && location == '/onboarding') return '/';
+  return null;
+}
+
 /// Provider do router
 final routerProvider = Provider<GoRouter>((ref) {
-  // Build the router inside the provider so we can access ref for the redirect
   final settingsListenable =
-      _SettingsListenable(ref.read(appSettingsProvider.notifier));
-  // Ensure the listenable is disposed when the provider is disposed
+      _StreamListenable(ref.read(appSettingsProvider.notifier).stream);
+  final sessionListenable =
+      _StreamListenable(ref.read(sessionProvider.notifier).stream);
   ref.onDispose(settingsListenable.dispose);
+  ref.onDispose(sessionListenable.dispose);
 
   return GoRouter(
     initialLocation: '/',
@@ -170,30 +202,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/register',
+        name: 'register',
+        builder: (context, state) =>
+            RegisterPage(pendingEmail: state.extra as String?),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: '/account-gate',
+        name: 'account-gate',
+        builder: (context, state) => const AccountGatePage(),
+      ),
     ],
 
-    // Redirect to onboarding if not configured
-    redirect: (context, state) {
-      // Read settings synchronously from the provider container
-      final settings = ref.read(appSettingsProvider);
-      final isOnboarding = state.matchedLocation == '/onboarding';
+    redirect: (context, state) => appRedirect(
+      session: ref.read(sessionProvider),
+      configured: ref.read(appSettingsProvider).configured,
+      location: state.matchedLocation,
+    ),
 
-      if (!settings.configured && !isOnboarding) {
-        // Not configured and not on onboarding -> redirect to onboarding
-        return '/onboarding';
-      }
-
-      if (settings.configured && isOnboarding) {
-        // Already configured but on onboarding -> redirect to home
-        return '/';
-      }
-
-      // No redirect needed
-      return null;
-    },
-
-    // Refresh the router when settings change
-    refreshListenable: settingsListenable,
+    refreshListenable:
+        Listenable.merge([settingsListenable, sessionListenable]),
 
     // Observers para analytics/logging
     observers: [

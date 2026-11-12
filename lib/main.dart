@@ -4,6 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
+import 'core/auth/supabase_auth_repository.dart';
+import 'core/config/env.dart';
 import 'core/di/injection.dart';
 import 'core/l10n/language_provider.dart';
 import 'core/l10n/languages.dart';
@@ -11,6 +13,7 @@ import 'core/l10n/strings.dart';
 import 'core/router/app_router.dart';
 import 'core/settings/app_settings_notifier.dart';
 import 'core/theme/app_theme.dart';
+import 'presentation/controllers/session_controller.dart';
 
 final getIt = GetIt.instance;
 
@@ -23,14 +26,21 @@ void main() async {
   // Prepare intl date formatting for all supported locales (month/weekday names).
   await Strings.initIntlDateFormats();
 
-  // Create a temporary ProviderContainer to initialize settings before the app starts
-  // This ensures the router guard has the correct configured state on first render
-  final container = ProviderContainer();
+  final env = await Env.load();
+
+  // One container for start-up and for the app, so what is loaded here
+  // (settings, language, saved session) is what the first frame sees.
+  final container = ProviderContainer(
+    overrides: [envProvider.overrideWithValue(env)],
+  );
   await container.read(appSettingsProvider.notifier).initialize();
   await container.read(languageProvider.notifier).initialize();
-  container.dispose();
+  await container.read(sessionProvider.notifier).initialize();
 
-  runApp(const ProviderScope(child: CarJobFinanceApp()));
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const CarJobFinanceApp(),
+  ));
 }
 
 class CarJobFinanceApp extends ConsumerWidget {

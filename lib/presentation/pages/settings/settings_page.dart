@@ -13,6 +13,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/notifications/notification_settings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../controllers/data_controller.dart';
+import '../../controllers/session_controller.dart';
 
 /// Opens a link outside the app. Overridable in tests.
 final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
@@ -205,6 +206,40 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
+          // Conta
+          _SectionHeader(tr('settings.account')),
+          Card(
+            child: Column(
+              children: [
+                Consumer(
+                  builder: (context, ref, _) {
+                    final email = ref.watch(
+                        sessionProvider.select((s) => s.user?.email ?? ''));
+                    return ListTile(
+                      leading: Icon(
+                        Icons.account_circle_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(tr('auth.email')),
+                      subtitle: Text(email),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 72),
+                ListTile(
+                  key: const Key('settings-sign-out'),
+                  leading: Icon(
+                    Icons.logout,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(tr('settings.signOut')),
+                  onTap: () => _showSignOutDialog(context, ref, tr),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // Sobre
           _SectionHeader(tr('settings.about')),
           Card(
@@ -381,6 +416,30 @@ class SettingsPage extends ConsumerWidget {
             '${tr('settings.linkFailed')} ${AppConstants.issueTrackerUrl}'),
       ));
     }
+  }
+
+  Future<void> _showSignOutDialog(
+      BuildContext context, WidgetRef ref, String Function(String) tr) async {
+    final session = ref.read(sessionProvider.notifier);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tr('settings.signOutConfirm')),
+        content: Text(tr('settings.signOutMsg')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(tr('dash.cancel')),
+          ),
+          FilledButton(
+            key: const Key('settings-sign-out-confirm'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr('settings.signOut')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await session.signOut();
   }
 
   void _showClearDataDialog(
