@@ -442,13 +442,11 @@ class _RideFormPageState extends ConsumerState<RideFormPage> {
                         children: [
                           Text(
                             lang.tr('rides.netValue'),
-                            style: style?.copyWith(
-                                fontWeight: FontWeight.w700),
+                            style: style?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           Text(
                             fmt(gross - commission),
-                            style: style?.copyWith(
-                                fontWeight: FontWeight.w700),
+                            style: style?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),

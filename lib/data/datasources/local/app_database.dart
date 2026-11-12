@@ -34,8 +34,7 @@ class Rides extends Table {
   /// deducted from [earnings]. Null type/value = no commission.
   TextColumn get commissionType => text().nullable()();
   RealColumn get commissionValue => real().nullable()();
-  RealColumn get commissionAmount =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get commissionAmount => real().withDefault(const Constant(0.0))();
 
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
@@ -216,7 +215,8 @@ class AppDatabase extends _$AppDatabase {
 
 /// DAO for accessing country-platform mappings.
 @DriftAccessor(tables: [CountryPlatforms])
-class CountryPlatformsDao extends DatabaseAccessor<AppDatabase> with _$CountryPlatformsDaoMixin {
+class CountryPlatformsDao extends DatabaseAccessor<AppDatabase>
+    with _$CountryPlatformsDaoMixin {
   CountryPlatformsDao(super.db);
 
   /// Inserts or replaces all platforms for a given country.

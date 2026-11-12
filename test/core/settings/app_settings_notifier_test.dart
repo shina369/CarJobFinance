@@ -21,7 +21,8 @@ void main() {
   });
   tearDown(() async => db.close());
 
-  test('initial state returns Brazil defaults when no settings saved', () async {
+  test('initial state returns Brazil defaults when no settings saved',
+      () async {
     final notifier = AppSettingsNotifier(dao, db.countryPlatformsDao);
     await notifier.initialize();
     expect(notifier.state.countryCode, 'BR');
@@ -61,7 +62,8 @@ void main() {
     expect(saved, 'PT');
   });
 
-  test('resetToDefault clears setting and returns to Brazil defaults', () async {
+  test('resetToDefault clears setting and returns to Brazil defaults',
+      () async {
     await dao.setSetting('app_country', 'PT');
     final notifier = AppSettingsNotifier(dao, db.countryPlatformsDao);
     await notifier.initialize();

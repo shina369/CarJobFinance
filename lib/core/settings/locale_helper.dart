@@ -65,10 +65,13 @@ class LocalizedCurrency {
 /// Domain entities cannot depend on Riverpod or AppSettings, so this function
 /// takes the locale explicitly. Presentation layer is responsible for passing
 /// the correct locale from AppSettings.
-String formatCurrency(double amount, {String? localeTag, String? currencySymbol}) {
+String formatCurrency(double amount,
+    {String? localeTag, String? currencySymbol}) {
   final effectiveLocale = localeTag ?? 'en_US';
-  final effectiveSymbol = currencySymbol ?? LocalizedCurrency._currencySymbolForLocale(effectiveLocale);
-  final formattedAmount = NumberFormat('#,##0.00', effectiveLocale).format(amount);
+  final effectiveSymbol = currencySymbol ??
+      LocalizedCurrency._currencySymbolForLocale(effectiveLocale);
+  final formattedAmount =
+      NumberFormat('#,##0.00', effectiveLocale).format(amount);
   return '$effectiveSymbol $formattedAmount';
 }
 

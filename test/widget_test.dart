@@ -50,7 +50,7 @@ class _StubCountryPlatformsDao implements CountryPlatformsDao {
 
   @override
   Future<Map<String, PlatformState>> getExistingStates(
-      String countryCode) async =>
+          String countryCode) async =>
       {};
 
   @override

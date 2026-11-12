@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/finance/commission.dart';
 import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
+import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
@@ -140,6 +142,15 @@ class CommissionSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currency = ref.watch(currency_pkg.appCurrencyProvider);
     String fmt(double v) => LocalizedCurrency.formatFor(v, currency);
+    final platformsPref = ref.watch(platformsProvider);
+    String labelOf(String platform) {
+      final info = platformsPref.byName(platform);
+      if (info == null || !info.hasCommission) return platform;
+      final config = formatCommissionConfig(
+          info.commissionType, info.commissionValue!, currency);
+      return '$platform ($config)';
+    }
+
     final platforms = commissionByPlatform.keys.toList()..sort();
     final total =
         commissionByPlatform.values.fold<double>(0, (sum, v) => sum + v);
@@ -180,12 +191,16 @@ class CommissionSummaryCard extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(platform,
+                    Text(labelOf(platform),
                         style: Theme.of(context).textTheme.bodyMedium),
                     Text(
                       fmt(commissionByPlatform[platform]!),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.error,
+                            color: Color.lerp(
+                              Theme.of(context).colorScheme.error,
+                              Colors.white,
+                              0.35,
+                            )!,
                             fontWeight: FontWeight.w600,
                           ),
                     ),

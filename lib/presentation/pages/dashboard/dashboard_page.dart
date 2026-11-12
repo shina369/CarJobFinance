@@ -86,8 +86,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
   double _localGoal = 5000.0;
 
   // Convenience: current user-selected currency
-  AppCurrency get _currency =>
-      ref.watch(currency_pkg.appCurrencyProvider);
+  AppCurrency get _currency => ref.watch(currency_pkg.appCurrencyProvider);
 
   @override
   void initState() {
@@ -129,15 +128,36 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             child: Text(lang.tr('dash.cancel')),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               final value = double.tryParse(
                 controller.text.replaceAll(',', '.'),
               );
               if (value != null && value >= 0) {
-                ref.read(monthlyGoalControllerProvider.notifier).setGoal(value);
-                setState(() => _localGoal = value);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (confirmContext) => AlertDialog(
+                    title: Text(lang.tr('dash.confirmGoalTitle')),
+                    content: Text(lang.tr('dash.confirmGoalMsg')),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(confirmContext, false),
+                        child: Text(lang.tr('dash.confirmNo')),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(confirmContext, true),
+                        child: Text(lang.tr('dash.confirmYes')),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && mounted) {
+                  ref
+                      .read(monthlyGoalControllerProvider.notifier)
+                      .setGoal(value);
+                  setState(() => _localGoal = value);
+                }
               }
-              Navigator.pop(dialogContext);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
             child: Text(lang.tr('dash.save')),
           ),
@@ -173,7 +193,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 22),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -191,7 +211,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade700,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 22),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -218,7 +238,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
           if (widget.rides.isNotEmpty) ...[
             const SizedBox(height: 12),
             _recentRidesStrip(context,
-                rides: widget.rides.take(2).toList(),
+                rides: _latestRides(widget.rides, 2),
                 lang: lang,
                 currency: _currency),
           ],
@@ -226,6 +246,11 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
         ],
       ),
     );
+  }
+
+  List<entity_ride.Ride> _latestRides(List<entity_ride.Ride> rides, int count) {
+    final sorted = [...rides]..sort((a, b) => b.date.compareTo(a.date));
+    return sorted.take(count).toList();
   }
 
   _TodayData _computeTodayData(Locale locale) {
@@ -464,6 +489,7 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
                   label: lang.tr('dash.kmDriven'),
                   value: t.km,
                   pillWidth: pillWidth,
+                  isCount: true,
                   currency: currency,
                 ),
               ],
@@ -484,6 +510,7 @@ class _MetricPill extends ConsumerWidget {
     required this.value,
     required this.pillWidth,
     this.isExpense = false,
+    this.isCount = false,
     required this.currency,
   });
 
@@ -492,6 +519,7 @@ class _MetricPill extends ConsumerWidget {
   final double value;
   final double pillWidth;
   final bool isExpense;
+  final bool isCount;
   final AppCurrency currency;
 
   @override
@@ -531,7 +559,9 @@ class _MetricPill extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              LocalizedCurrency.formatFor(value, currency),
+              isCount
+                  ? value.round().toString()
+                  : LocalizedCurrency.formatFor(value, currency),
               style: ts.titleSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -611,13 +641,14 @@ class _MonthPanel extends StatelessWidget {
           ),
           // Content area
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Profit line
                 _StatRow(
                   label: lang.tr('dash.monthProfit'),
+                  tag: lang.tr('dash.netLabel'),
                   value: netProfit,
                   color: netProfit >= 0
                       ? Colors.green.shade700
@@ -626,7 +657,7 @@ class _MonthPanel extends StatelessWidget {
                       netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
                   currency: currency,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 // Goal + progress
                 _StatRow(
                   label: lang.tr('dash.goal'),
@@ -635,9 +666,9 @@ class _MonthPanel extends StatelessWidget {
                   icon: Icons.flag,
                   currency: currency,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 _ProgressBar(value: progress / 100, color: progressColor),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 // Edit goal link
                 Center(
                   child: OutlinedButton.icon(
@@ -667,6 +698,7 @@ class _MonthPanel extends StatelessWidget {
 class _StatRow extends ConsumerWidget {
   const _StatRow({
     required this.label,
+    this.tag,
     required this.value,
     required this.color,
     required this.icon,
@@ -674,6 +706,7 @@ class _StatRow extends ConsumerWidget {
   });
 
   final String label;
+  final String? tag;
   final double value;
   final Color color;
   final IconData icon;
@@ -692,6 +725,23 @@ class _StatRow extends ConsumerWidget {
             const SizedBox(width: 6),
             Text(label,
                 style: ts.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+            if (tag != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  tag!,
+                  style: ts.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         Text(
@@ -868,4 +918,3 @@ class _BarPainter extends CustomPainter {
   bool shouldRepaint(covariant _BarPainter old) =>
       old.value != value || old.color != color;
 }
-

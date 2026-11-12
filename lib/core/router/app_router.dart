@@ -16,6 +16,7 @@ import '../../presentation/pages/expenses/expense_form_page.dart';
 import '../../presentation/pages/reports/reports_page.dart';
 import '../../presentation/pages/settings/settings_page.dart';
 import '../../presentation/pages/settings/platforms_page.dart';
+import '../../presentation/pages/settings/option_picker_page.dart';
 import '../../presentation/pages/onboarding/onboarding_page.dart';
 
 /// A [ChangeNotifier] that wraps a [StateNotifier] to provide [Listenable]
@@ -130,6 +131,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'platforms',
                 name: 'settings-platforms',
                 builder: (context, state) => const PlatformsPage(),
+              ),
+              GoRoute(
+                path: 'language',
+                name: 'settings-language',
+                builder: (context, state) => const LanguagePickerPage(),
+              ),
+              GoRoute(
+                path: 'currency',
+                name: 'settings-currency',
+                builder: (context, state) => const CurrencyPickerPage(),
               ),
             ],
           ),

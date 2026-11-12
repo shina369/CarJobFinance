@@ -99,7 +99,8 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
 
   // ===== COUNTRY PLATFORMS =====
 
-  Future<void> upsertCountryPlatforms(String countryCode, List<String> platforms) async {
+  Future<void> upsertCountryPlatforms(
+      String countryCode, List<String> platforms) async {
     await transaction(() async {
       // Delete existing platforms for this country
       await (delete(countryPlatforms)
@@ -201,7 +202,9 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
     final query = select(countryPlatforms)
       ..where((tbl) => tbl.countryCode.equals(countryCode))
       ..orderBy([(tbl) => OrderingTerm.asc(tbl.platformName)]);
-    return query.watch().map((rows) => rows.map((r) => r.platformName).toList());
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.platformName).toList());
   }
 
   // ===== AGGREGATIONS / RELATÓRIOS =====

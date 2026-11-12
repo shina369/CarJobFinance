@@ -7,7 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:carjobfinance/core/router/app_router.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
-import 'package:carjobfinance/data/datasources/local/app_database.dart' show CountryPlatformsDao;
+import 'package:carjobfinance/data/datasources/local/app_database.dart'
+    show CountryPlatformsDao;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart';
 
@@ -16,8 +17,7 @@ import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart
 /// never actually called by the router guard tests.
 class _FakeAppDao implements AppDao {
   @override
-  noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError('FakeAppDao');
+  noSuchMethod(Invocation invocation) => throw UnimplementedError('FakeAppDao');
 }
 
 class _FakeCountryPlatformsDao implements CountryPlatformsDao {
@@ -29,7 +29,8 @@ class _FakeCountryPlatformsDao implements CountryPlatformsDao {
 /// Mock notifier for testing that doesn't touch a real database.
 class _MockAppSettingsNotifier extends AppSettingsNotifier {
   _MockAppSettingsNotifier(AppSettings initialState)
-      : super.forTesting(_FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
+      : super.forTesting(
+            _FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
 
   @override
   Future<void> setCountry(String countryCode) async {
@@ -67,8 +68,8 @@ void main() {
               GoRoute(
                 path: '/',
                 name: 'dashboard',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Dashboard', key: Key('dashboard'))),
+                builder: (context, state) => const Scaffold(
+                    body: Text('Dashboard', key: Key('dashboard'))),
               ),
 
               // Corridas (minimal)
@@ -83,8 +84,8 @@ void main() {
               GoRoute(
                 path: '/expenses',
                 name: 'expenses',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Expenses', key: Key('expenses'))),
+                builder: (context, state) => const Scaffold(
+                    body: Text('Expenses', key: Key('expenses'))),
               ),
 
               // Relatórios (minimal)
@@ -99,8 +100,8 @@ void main() {
               GoRoute(
                 path: '/settings',
                 name: 'settings',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Settings', key: Key('settings'))),
+                builder: (context, state) => const Scaffold(
+                    body: Text('Settings', key: Key('settings'))),
               ),
             ],
           ),
@@ -146,7 +147,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('unconfigured settings + navigate to / redirects to /onboarding', (
+    testWidgets(
+        'unconfigured settings + navigate to / redirects to /onboarding', (
       WidgetTester tester,
     ) async {
       // Start with unconfigured settings (Brazil default, configured: false)
@@ -155,19 +157,25 @@ void main() {
       await pumpApp(
         tester,
         initialSettings: unconfiguredSettings,
-        initialLocation: '/onboarding', // Start at onboarding to avoid initial redirect issue
+        initialLocation:
+            '/onboarding', // Start at onboarding to avoid initial redirect issue
       );
 
       // Navigate to / which should redirect to /onboarding
-      final router = tester.widget<MaterialApp>(
-        find.byType(MaterialApp),
-      ).routerConfig as GoRouter;
+      final router = tester
+          .widget<MaterialApp>(
+            find.byType(MaterialApp),
+          )
+          .routerConfig as GoRouter;
       router.go('/');
       await tester.pumpAndSettle();
 
       // Should be redirected back to /onboarding
       expect(find.text('Bem-vindo ao CarJobFinance'), findsOneWidget);
-      expect(find.text('Selecione seu país para configurar moeda, idioma e plataformas disponíveis.'), findsOneWidget);
+      expect(
+          find.text(
+              'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.'),
+          findsOneWidget);
     });
 
     testWidgets('configured settings + navigate to / lands on dashboard', (
@@ -188,7 +196,8 @@ void main() {
       expect(find.text('Dashboard'), findsOneWidget);
     });
 
-    testWidgets('configured settings + navigate to /onboarding redirects to /', (
+    testWidgets('configured settings + navigate to /onboarding redirects to /',
+        (
       WidgetTester tester,
     ) async {
       // Start with configured settings

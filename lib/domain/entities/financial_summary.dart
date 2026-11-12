@@ -30,7 +30,8 @@ class FinancialSummary with _$FinancialSummary {
   /// @Deprecated Use `LocalizedCurrency.formatWithSettings` in the presentation
   /// layer instead — these getters hardcode `pt_BR` and will show wrong
   /// formatting to a user in a different country.
-  String get formattedNetProfit => formatCurrency(netProfit, localeTag: 'pt_BR');
+  String get formattedNetProfit =>
+      formatCurrency(netProfit, localeTag: 'pt_BR');
   String get formattedTotalEarnings =>
       formatCurrency(totalEarnings, localeTag: 'pt_BR');
   String get formattedTotalExpenses =>

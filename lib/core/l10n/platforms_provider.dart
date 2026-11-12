@@ -206,8 +206,7 @@ class PlatformsNotifier extends StateNotifier<AppPlatformsPref> {
     if (_disposed) return;
     state = AppPlatformsPref(
       countryCode: state.countryCode,
-      platforms:
-          state.platforms.where((p) => p.name != name).toList(),
+      platforms: state.platforms.where((p) => p.name != name).toList(),
     );
   }
 

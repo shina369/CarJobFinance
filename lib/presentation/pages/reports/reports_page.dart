@@ -272,11 +272,13 @@ class _ReportsContent extends ConsumerWidget {
                           label: lang.tr('reports.commissions'),
                           value: fmt(totalCommissions),
                           isPositive: false,
+                          isLightValue: true,
                         ),
                         _SummaryRow(
                           label: lang.tr('reports.otherExpenses'),
                           value: fmt(otherExpenses),
                           isPositive: false,
+                          isLightValue: true,
                         ),
                       ],
                       _SummaryRow(
@@ -421,18 +423,23 @@ class _SummaryRow extends StatelessWidget {
     required this.value,
     required this.isPositive,
     this.isTotal = false,
+    this.isLightValue = false,
   });
 
   final String label;
   final String value;
   final bool isPositive;
   final bool isTotal;
+  final bool isLightValue;
 
   @override
   Widget build(BuildContext context) {
+    final errorColor = Theme.of(context).colorScheme.error;
     final color = isPositive
         ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.error;
+        : isLightValue
+            ? Color.lerp(errorColor, Colors.white, 0.35)!
+            : errorColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),

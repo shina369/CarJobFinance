@@ -9,12 +9,10 @@ void main() {
   tearDown(() async => db.close());
 
   test('upsert and get return inserted platforms with default flags', () async {
-    await db.countryPlatformsDao.upsertCountryPlatforms(
-        'BR', ['Uber', '99']);
+    await db.countryPlatformsDao.upsertCountryPlatforms('BR', ['Uber', '99']);
     final platforms = await db.countryPlatformsDao.getPlatformsFor('BR');
     expect(platforms, hasLength(2));
-    final names = platforms.map((p) => p.name).toList()
-      ..sort();
+    final names = platforms.map((p) => p.name).toList()..sort();
     expect(names, equals(['99', 'Uber']));
     // Defaults: new rows are active and non-custom
     for (final p in platforms) {
@@ -25,10 +23,8 @@ void main() {
 
   test('upsert preserves flags when existingStates is provided', () async {
     await db.countryPlatformsDao.upsertCountryPlatforms('BR', ['Uber']);
-    const state = PlatformState(
-        name: 'Uber', isActive: false, isCustom: true);
-    await db.countryPlatformsDao.upsertCountryPlatforms(
-        'BR', ['Uber', '99'],
+    const state = PlatformState(name: 'Uber', isActive: false, isCustom: true);
+    await db.countryPlatformsDao.upsertCountryPlatforms('BR', ['Uber', '99'],
         existingStates: {'Uber': state});
     final platforms = await db.countryPlatformsDao.getPlatformsFor('BR');
     final uber = platforms.firstWhere((p) => p.name == 'Uber');

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
 import 'package:carjobfinance/data/datasources/local/daos.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart';
+
 /// Immutable value object holding the current app settings state.
 @immutable
 class AppSettings {

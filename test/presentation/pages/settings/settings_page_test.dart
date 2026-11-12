@@ -8,7 +8,9 @@ import 'package:carjobfinance/core/theme/app_theme.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart'
     show CountryPlatformsDao, PlatformState;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
+import 'package:carjobfinance/presentation/pages/settings/option_picker_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/settings_page.dart';
+import 'package:go_router/go_router.dart';
 
 class _InMemoryAppDao implements AppDao {
   final Map<String, String> _storage = {};
@@ -48,7 +50,7 @@ class _StubCountryPlatformsDao implements CountryPlatformsDao {
 
   @override
   Future<Map<String, PlatformState>> getExistingStates(
-      String countryCode) async =>
+          String countryCode) async =>
       {};
 
   @override
@@ -81,12 +83,22 @@ void main() {
         ],
       );
 
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const SettingsPage()),
+          GoRoute(
+            path: '/settings/language',
+            builder: (_, __) => const LanguagePickerPage(),
+          ),
+        ],
+      );
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(
+          child: MaterialApp.router(
             theme: lightTheme,
-            home: const SettingsPage(),
+            routerConfig: router,
           ),
         ),
       );
@@ -94,30 +106,22 @@ void main() {
       return container;
     }
 
-    testWidgets('opens the language dropdown without errors',
+    testWidgets('opens the language page and selects a language with a check',
         (WidgetTester tester) async {
       final ptBr = SUPPORTED_LANGUAGES.firstWhere((l) => l.tag == 'pt_BR');
       final container = await buildSettingsPage(tester, ptBr);
       addTearDown(container.dispose);
 
-      // Tap the "Idioma" tile to open the dialog.
-      final tile = find.text('Idioma');
-      expect(tile, findsWidgets);
       await tester.tap(find.byType(ListTile).at(1)); // language tile
       await tester.pumpAndSettle();
 
-      // The dialog with the dropdown must be on screen.
-      expect(find.byType(DropdownButtonFormField<AppLanguage>), findsOneWidget);
+      expect(find.byType(LanguagePickerPage), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
-      // Open the dropdown menu.
-      await tester.tap(find.byType(DropdownButtonFormField<AppLanguage>));
+      final english = find.text('🇺🇸  English (US)');
+      await tester.scrollUntilVisible(english, 100);
+      await tester.tap(english);
       await tester.pumpAndSettle();
-      expect(find.text('🇺🇸  English (US)'), findsOneWidget);
-
-      // Pick a language — the provider state must follow the choice.
-      await tester.tap(find.text('🇺🇸  English (US)'));
-      await tester.pumpAndSettle();
-      expect(find.byType(DropdownButtonFormField<AppLanguage>), findsNothing);
       expect(container.read(appLanguageProvider).tag, 'en_US');
     });
   });

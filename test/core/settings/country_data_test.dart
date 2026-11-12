@@ -52,7 +52,8 @@ void main() {
     test('every country includes Taxi and Transfer', () {
       for (final c in COUNTRIES) {
         expect(c.platforms, contains('Taxi'), reason: '${c.code} missing Taxi');
-        expect(c.platforms, contains('Transfer'), reason: '${c.code} missing Transfer');
+        expect(c.platforms, contains('Transfer'),
+            reason: '${c.code} missing Transfer');
       }
     });
   });

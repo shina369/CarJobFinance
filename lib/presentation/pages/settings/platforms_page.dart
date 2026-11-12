@@ -5,12 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/finance/commission.dart';
-import '../../../core/l10n/currencies.dart';
+import '../../../core/settings/country_data.dart';
 import '../../../core/l10n/currency_provider.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
-import '../../../core/settings/locale_helper.dart';
 import '../../controllers/controllers.dart' show rideRepositoryProvider;
 
 class PlatformsPage extends ConsumerWidget {
@@ -105,11 +104,34 @@ class PlatformsPage extends ConsumerWidget {
     );
   }
 
+  /// Built-in platform names from every other country, deduplicated and
+  /// skipping any name already in [excludedLowerNames] (lowercase).
+  static List<String> _platformsFromOtherCountries(
+    String currentCountryCode, {
+    required Set<String> excludedLowerNames,
+  }) {
+    final seen = <String>{...excludedLowerNames};
+    final names = <String>[];
+    for (final country in COUNTRIES) {
+      if (country.code == currentCountryCode) continue;
+      for (final name in country.platforms) {
+        if (seen.add(name.toLowerCase())) names.add(name);
+      }
+    }
+    return names;
+  }
+
   void _showAddDialog(BuildContext context, WidgetRef ref,
       String Function(String) tr, AppPlatformsPref platforms) {
     final existingNames =
         platforms.platforms.map((p) => p.name.toLowerCase()).toSet();
     final inactiveBuiltins = platforms.inactiveBuiltinNames;
+    final otherCountryNames = _platformsFromOtherCountries(
+      platforms.countryCode,
+      excludedLowerNames: existingNames.union(
+        inactiveBuiltins.map((n) => n.toLowerCase()).toSet(),
+      ),
+    );
     final newCtrl = TextEditingController();
 
     showDialog(
@@ -156,6 +178,35 @@ class PlatformsPage extends ConsumerWidget {
                     Divider(height: 1, color: Theme.of(ctx).dividerColor),
                     const SizedBox(height: 12),
                   ],
+                  if (otherCountryNames.isNotEmpty) ...[
+                    Text(
+                      tr('platforms.addFromOtherCountries'),
+                      style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
+                            color: Theme.of(ctx).colorScheme.primary,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: otherCountryNames
+                          .map(
+                            (name) => ActionChip(
+                              label: Text(name),
+                              onPressed: () {
+                                ref
+                                    .read(platformsProvider.notifier)
+                                    .addCustomPlatform(name);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(height: 1, color: Theme.of(ctx).dividerColor),
+                    const SizedBox(height: 12),
+                  ],
                   Text(
                     tr('platforms.createNew'),
                     style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
@@ -165,7 +216,8 @@ class PlatformsPage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   TextField(
                     controller: newCtrl,
-                    autofocus: inactiveBuiltins.isEmpty,
+                    autofocus:
+                        inactiveBuiltins.isEmpty && otherCountryNames.isEmpty,
                     onChanged: (_) => setModalState(() {}),
                     decoration: InputDecoration(
                       labelText: tr('platforms.newName'),
@@ -229,7 +281,10 @@ class _PlatformTile extends ConsumerWidget {
       if (platform.hasCommission)
         ref.watch(appLanguageProvider).tr(
           'platforms.commissionLabel',
-          args: {'value': _commissionText(platform, currency)},
+          args: {
+            'value': formatCommissionConfig(platform.commissionType,
+                platform.commissionValue ?? 0, currency),
+          },
         ),
     ];
 
@@ -250,15 +305,27 @@ class _PlatformTile extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
+          TextButton.icon(
             icon: Icon(
               Icons.percent,
-              size: 20,
+              size: 16,
               color: platform.hasCommission
                   ? Theme.of(context).colorScheme.primary
                   : null,
             ),
-            tooltip: tr('platforms.commissionSet'),
+            label: Text(
+              tr('platforms.commissionSet'),
+              style: TextStyle(
+                fontSize: 12,
+                color: platform.hasCommission
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+            ),
             onPressed: () => _showCommissionDialog(context),
           ),
           if (platform.isCustom)
@@ -278,24 +345,13 @@ class _PlatformTile extends ConsumerWidget {
     );
   }
 
-  static String _commissionText(AppPlatformInfo p, AppCurrency currency) {
-    final value = p.commissionValue ?? 0;
-    if (p.commissionType == kCommissionPercent) {
-      return '${_trimNumber(value)}%';
-    }
-    return LocalizedCurrency.formatFor(value, currency);
-  }
-
-  static String _trimNumber(double v) =>
-      v % 1 == 0 ? v.toStringAsFixed(0) : v.toString();
-
   void _showCommissionDialog(BuildContext context) {
     final lang = ref.read(appLanguageProvider);
     final currency = ref.read(appCurrencyProvider);
     var type = platform.commissionType ?? kCommissionPercent;
     final valueCtrl = TextEditingController(
       text: platform.commissionValue != null
-          ? _trimNumber(platform.commissionValue!)
+          ? trimCommissionNumber(platform.commissionValue!)
           : '',
     );
 
@@ -310,7 +366,8 @@ class _PlatformTile extends ConsumerWidget {
               (type != kCommissionPercent || parsed <= 100);
 
           return AlertDialog(
-            title: Text('${lang.tr('platforms.commission')} — ${platform.name}'),
+            title:
+                Text('${lang.tr('platforms.commission')} — ${platform.name}'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,9 +396,8 @@ class _PlatformTile extends ConsumerWidget {
                   onChanged: (_) => setModalState(() {}),
                   decoration: InputDecoration(
                     labelText: lang.tr('platforms.commissionValue'),
-                    prefixText: type == kCommissionFixed
-                        ? '${currency.symbol} '
-                        : null,
+                    prefixText:
+                        type == kCommissionFixed ? '${currency.symbol} ' : null,
                     suffixText: type == kCommissionPercent ? '%' : null,
                     filled: true,
                     fillColor:
@@ -366,8 +422,7 @@ class _PlatformTile extends ConsumerWidget {
                   },
                   child: Text(
                     lang.tr('platforms.commissionRemove'),
-                    style:
-                        TextStyle(color: Theme.of(ctx).colorScheme.error),
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.error),
                   ),
                 ),
               TextButton(

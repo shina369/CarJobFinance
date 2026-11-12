@@ -7,7 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:carjobfinance/core/settings/app_settings_notifier.dart';
 import 'package:carjobfinance/core/settings/country_data.dart';
 import 'package:carjobfinance/core/router/app_router.dart';
-import 'package:carjobfinance/data/datasources/local/app_database.dart' show CountryPlatformsDao;
+import 'package:carjobfinance/data/datasources/local/app_database.dart'
+    show CountryPlatformsDao;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 import 'package:carjobfinance/presentation/pages/onboarding/onboarding_page.dart';
 import 'package:carjobfinance/presentation/pages/rides/ride_form_page.dart';
@@ -18,8 +19,7 @@ import 'package:carjobfinance/core/settings/locale_helper.dart';
 /// never actually called by the e2e test.
 class _FakeAppDao implements AppDao {
   @override
-  noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError('FakeAppDao');
+  noSuchMethod(Invocation invocation) => throw UnimplementedError('FakeAppDao');
 }
 
 class _FakeCountryPlatformsDao implements CountryPlatformsDao {
@@ -31,7 +31,8 @@ class _FakeCountryPlatformsDao implements CountryPlatformsDao {
 /// Mock notifier for testing that doesn't touch a real database.
 class _MockAppSettingsNotifier extends AppSettingsNotifier {
   _MockAppSettingsNotifier(AppSettings initialState)
-      : super.forTesting(_FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
+      : super.forTesting(
+            _FakeAppDao(), _FakeCountryPlatformsDao(), initialState);
 
   @override
   Future<void> setCountry(String countryCode) async {
@@ -99,8 +100,8 @@ void main() {
               GoRoute(
                 path: '/expenses',
                 name: 'expenses',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Expenses', key: Key('expenses'))),
+                builder: (context, state) => const Scaffold(
+                    body: Text('Expenses', key: Key('expenses'))),
               ),
               // Relatórios (minimal stub)
               GoRoute(
@@ -113,8 +114,8 @@ void main() {
               GoRoute(
                 path: '/settings',
                 name: 'settings',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Settings', key: Key('settings'))),
+                builder: (context, state) => const Scaffold(
+                    body: Text('Settings', key: Key('settings'))),
               ),
             ],
           ),
@@ -214,15 +215,18 @@ void main() {
             break;
           }
         }
-        expect(foundEuroSymbol, isTrue, reason: 'Dashboard should display € currency symbol');
+        expect(foundEuroSymbol, isTrue,
+            reason: 'Dashboard should display € currency symbol');
 
         // =====================================================================
         // STEP 4: Navigate directly to ride form page using router
         // This avoids the RidesPage which has controller dependencies
         // =====================================================================
-        final router = tester.widget<MaterialApp>(
-          find.byType(MaterialApp),
-        ).routerConfig as GoRouter;
+        final router = tester
+            .widget<MaterialApp>(
+              find.byType(MaterialApp),
+            )
+            .routerConfig as GoRouter;
         router.go('/rides/new');
         await tester.pumpAndSettle();
 
@@ -230,7 +234,8 @@ void main() {
         // STEP 5: Now on RideFormPage - find the platform dropdown and verify its items
         // =====================================================================
         // The platform dropdown is the first DropdownButtonFormField on the page
-        final platformDropdown = find.byType(DropdownButtonFormField<String>).first;
+        final platformDropdown =
+            find.byType(DropdownButtonFormField<String>).first;
         await tester.tap(platformDropdown);
         await tester.pumpAndSettle();
 
@@ -238,14 +243,21 @@ void main() {
         // Note: effectivePlatforms may include the current _selectedPlatform if it's
         // not in the country's list (for editing rides from other countries).
         // We verify all 5 Portugal platforms are present.
-        final dropdownItems = find.byType(DropdownMenuItem<String>).evaluate().toList();
+        final dropdownItems =
+            find.byType(DropdownMenuItem<String>).evaluate().toList();
         final dropdownTexts = dropdownItems
             .map((e) => (e.widget as DropdownMenuItem<String>).child as Text)
             .map((t) => t.data ?? '')
             .toList();
 
         // Check that all 5 Portugal platforms are present
-        for (final platform in ['Uber', 'Bolt', 'IzzyMove', 'Taxi', 'Transfer']) {
+        for (final platform in [
+          'Uber',
+          'Bolt',
+          'IzzyMove',
+          'Taxi',
+          'Transfer'
+        ]) {
           expect(dropdownTexts, contains(platform),
               reason: 'Dropdown should contain Portugal platform: $platform');
         }
@@ -268,7 +280,8 @@ class _TestDashboardPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('CarJobFinance')),
       body: Center(
-        child: Text('Lucro no mês: ${LocalizedCurrency.formatWithSettings(0.0, settings)}'),
+        child: Text(
+            'Lucro no mês: ${LocalizedCurrency.formatWithSettings(0.0, settings)}'),
       ),
     );
   }
