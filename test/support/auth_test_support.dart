@@ -106,6 +106,14 @@ class FakeAuth implements AuthRepository {
     current = null;
     _changes.add(null);
   }
+
+  @override
+  Future<void> deleteAccount() async {
+    _maybeFail();
+    calls.add('deleteAccount');
+    current = null;
+    _changes.add(null);
+  }
 }
 
 class FakeCloud implements CloudBackupRepository {

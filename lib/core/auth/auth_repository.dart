@@ -74,6 +74,11 @@ abstract class AuthRepository {
   Future<void> ensureOnlineSession();
 
   Future<void> signOut();
+
+  /// Permanently erases the account on the server (login, profile and cloud
+  /// backup) and ends the session. Needs the network: throws [AuthFailure]
+  /// without erasing anything when the server cannot be reached.
+  Future<void> deleteAccount();
 }
 
 const int kMinPasswordLength = 8;

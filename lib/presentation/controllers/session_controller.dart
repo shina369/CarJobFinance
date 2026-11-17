@@ -204,6 +204,16 @@ class SessionController extends StateNotifier<SessionState> {
     state = const SessionState();
   }
 
+  /// Erases the account on the server, then everything it left on this
+  /// device. Nothing is erased locally if the server call fails.
+  Future<void> deleteAccount() async {
+    await _auth.deleteAccount();
+    await _ref.read(dataControllerProvider).clearAll();
+    await _store.delete(dataOwnerKey);
+    await _updateRememberedLogin(null);
+    state = const SessionState();
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();

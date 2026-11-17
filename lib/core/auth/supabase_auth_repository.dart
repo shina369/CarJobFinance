@@ -12,7 +12,7 @@ import '../storage/device_store.dart';
 import 'auth_repository.dart';
 
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository(this._auth, this._store) {
+  SupabaseAuthRepository(this._auth, this._store, this._functions) {
     _subscription = _auth.onAuthStateChange.listen(
       _onAuthState,
       // Refresh failures are also reported here; callers get them from the
@@ -23,8 +23,13 @@ class SupabaseAuthRepository implements AuthRepository {
 
   static const String sessionKey = 'auth_session';
 
+  /// Edge Function (`supabase/functions/delete-account`) that erases the
+  /// signed-in user's data and login with the service role.
+  static const String deleteAccountFunction = 'delete-account';
+
   final GoTrueClient _auth;
   final DeviceStore _store;
+  final FunctionsClient _functions;
   final _userChanges = StreamController<AuthUser?>.broadcast();
   late final StreamSubscription<AuthState> _subscription;
 
@@ -158,6 +163,22 @@ class SupabaseAuthRepository implements AuthRepository {
     await _store.delete(sessionKey);
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    await ensureOnlineSession();
+    await _guard(() async {
+      try {
+        await _functions.invoke(deleteAccountFunction);
+      } on FunctionException catch (e) {
+        final reason = e.status == 401
+            ? AuthFailureReason.invalidCredentials
+            : AuthFailureReason.unknown;
+        throw AuthFailure(reason, 'delete-account ${e.status}');
+      }
+    });
+    await signOut();
+  }
+
   Future<void> dispose() async {
     await _subscription.cancel();
     await _userChanges.close();
@@ -232,9 +253,11 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
   final repository = SupabaseAuthRepository(
-    ref.watch(supabaseClientProvider).auth,
+    client.auth,
     ref.watch(deviceStoreProvider),
+    client.functions,
   );
   ref.onDispose(repository.dispose);
   return repository;
