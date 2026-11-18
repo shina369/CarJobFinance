@@ -85,6 +85,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Excluir conta permanentemente?',
     'settings.deleteAccountMsg':
         'Sua conta, seu login e o backup na nuvem serão apagados dos nossos servidores, e todos os dados deste aparelho serão removidos. Esta ação não pode ser desfeita.',
+    'settings.deleteAccountPasswordHint': 'Por segurança, digite sua senha para confirmar.',
+    'settings.deleteAccountWrongPassword': 'Senha incorreta',
     'gate.foreignTitle': 'Dados de outra conta',
     'gate.foreignMsg':
         'Este aparelho tem corridas e despesas registradas em outra conta. Para entrar como {email}, esses dados serão apagados deste aparelho.',
@@ -442,6 +444,8 @@ class Strings {
     'settings.deleteAccountConfirm': '¿Eliminar la cuenta de forma permanente?',
     'settings.deleteAccountMsg':
         'Tu cuenta, tu acceso y la copia de seguridad en la nube se borrarán de nuestros servidores, y se eliminarán todos los datos de este dispositivo. Esta acción no se puede deshacer.',
+    'settings.deleteAccountPasswordHint': 'Por seguridad, escribe tu contraseña para confirmar.',
+    'settings.deleteAccountWrongPassword': 'Contraseña incorrecta',
     'gate.foreignTitle': 'Datos de otra cuenta',
     'gate.foreignMsg':
         'Este dispositivo tiene viajes y gastos registrados con otra cuenta. Para entrar como {email}, esos datos se borrarán de este dispositivo.',
@@ -836,6 +840,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Delete account permanently?',
     'settings.deleteAccountMsg':
         'Your account, login and cloud backup will be erased from our servers, and all data on this device will be removed. This action cannot be undone.',
+    'settings.deleteAccountPasswordHint': 'For your security, enter your password to confirm.',
+    'settings.deleteAccountWrongPassword': 'Incorrect password',
     'gate.foreignTitle': 'Data from another account',
     'gate.foreignMsg':
         'This device has rides and expenses recorded under another account. To sign in as {email}, that data will be erased from this device.',
@@ -1183,6 +1189,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Hapus akun secara permanen?',
     'settings.deleteAccountMsg':
         'Akun, login, dan cadangan cloud Anda akan dihapus dari server kami, dan semua data di perangkat ini akan dihapus. Tindakan ini tidak dapat dibatalkan.',
+    'settings.deleteAccountPasswordHint': 'Demi keamanan, masukkan kata sandi Anda untuk mengonfirmasi.',
+    'settings.deleteAccountWrongPassword': 'Kata sandi salah',
     'gate.foreignTitle': 'Data dari akun lain',
     'gate.foreignMsg':
         'Perangkat ini memiliki perjalanan dan pengeluaran yang dicatat dengan akun lain. Untuk masuk sebagai {email}, data tersebut akan dihapus dari perangkat ini.',
@@ -1529,6 +1537,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'खाता स्थायी रूप से हटाएँ?',
     'settings.deleteAccountMsg':
         'आपका खाता, लॉगिन और क्लाउड बैकअप हमारे सर्वर से मिटा दिए जाएँगे, और इस डिवाइस का सारा डेटा हट जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।',
+    'settings.deleteAccountPasswordHint': 'सुरक्षा के लिए, पुष्टि करने हेतु अपना पासवर्ड दर्ज करें।',
+    'settings.deleteAccountWrongPassword': 'पासवर्ड गलत है',
     'gate.foreignTitle': 'किसी दूसरे खाते का डेटा',
     'gate.foreignMsg':
         'इस डिवाइस पर किसी दूसरे खाते की राइड और खर्च दर्ज हैं। {email} के रूप में साइन इन करने के लिए वह डेटा इस डिवाइस से मिटा दिया जाएगा।',

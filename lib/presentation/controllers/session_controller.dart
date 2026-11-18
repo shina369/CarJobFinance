@@ -205,8 +205,14 @@ class SessionController extends StateNotifier<SessionState> {
   }
 
   /// Erases the account on the server, then everything it left on this
-  /// device. Nothing is erased locally if the server call fails.
-  Future<void> deleteAccount() async {
+  /// device. The [password] is checked against the server first (throwing
+  /// [AuthFailure] when wrong), and nothing is erased if any server call fails.
+  Future<void> deleteAccount(String password) async {
+    final email = state.user?.email;
+    if (email == null) {
+      throw const AuthFailure(AuthFailureReason.invalidCredentials);
+    }
+    await _auth.signIn(email, password);
     await _auth.deleteAccount();
     await _ref.read(dataControllerProvider).clearAll();
     await _store.delete(dataOwnerKey);

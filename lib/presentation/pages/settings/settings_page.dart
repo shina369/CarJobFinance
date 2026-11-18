@@ -1,7 +1,5 @@
 // ignore_for_file: deprecated_member_use
 // Settings Page - Configurações
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/currency_provider.dart';
-import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
@@ -18,7 +15,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../controllers/data_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../widgets/export_actions.dart';
-import '../auth/auth_widgets.dart';
+import 'delete_account_dialog.dart';
 
 /// Opens a link outside the app. Overridable in tests.
 final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
@@ -243,7 +240,7 @@ class SettingsPage extends ConsumerWidget {
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                  onTap: () => _showDeleteAccountDialog(context, ref, lang),
+                  onTap: () => _showDeleteAccountDialog(context),
                 ),
               ],
             ),
@@ -425,50 +422,12 @@ class SettingsPage extends ConsumerWidget {
     if (confirmed == true) await session.signOut();
   }
 
-  Future<void> _showDeleteAccountDialog(
-      BuildContext context, WidgetRef ref, AppLanguage lang) async {
-    final session = ref.read(sessionProvider.notifier);
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context, rootNavigator: true);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(lang.tr('settings.deleteAccountConfirm')),
-        content: Text(lang.tr('settings.deleteAccountMsg')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(lang.tr('dash.cancel')),
-          ),
-          FilledButton(
-            key: const Key('settings-delete-account-confirm'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(lang.tr('settings.deleteAccount')),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-
-    unawaited(showDialog<void>(
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
-      useRootNavigator: true,
-      builder: (_) => const PopScope(
-        canPop: false,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    ));
-    try {
-      await session.deleteAccount();
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(authErrorMessage(lang, e))));
-    } finally {
-      navigator.pop();
-    }
+      builder: (_) => const DeleteAccountDialog(),
+    );
   }
 
   void _showClearDataDialog(

@@ -69,6 +69,7 @@ class _CountingDataController implements DataController {
 
   @override
   Future<void> clearAll() async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     clears++;
   }
 
@@ -97,30 +98,67 @@ void main() {
         dataControllerProvider.overrideWithValue(data),
         appLanguageProvider.overrideWithValue(ptBr),
         languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
-        appSettingsProvider.overrideWith((ref) => AppSettingsNotifier.forTesting(
-              _InMemoryAppDao(),
-              _StubCountryPlatformsDao(),
-              AppSettings.defaultBrazil(),
-            )),
-        sessionProvider.overrideWith(
-            (ref) => SessionController(ref, const SessionState(user: testAccount))),
+        appSettingsProvider
+            .overrideWith((ref) => AppSettingsNotifier.forTesting(
+                  _InMemoryAppDao(),
+                  _StubCountryPlatformsDao(),
+                  AppSettings.defaultBrazil(),
+                )),
+        sessionProvider.overrideWith((ref) =>
+            SessionController(ref, const SessionState(user: testAccount))),
       ]);
       addTearDown(container.dispose);
+      await container.read(sessionProvider.notifier).initialize();
+
+      final refresh = ValueNotifier<int>(0);
+      container.listen(sessionProvider, (_, __) => refresh.value++);
+      final router = GoRouter(
+        refreshListenable: refresh,
+        redirect: (_, state) =>
+            container.read(sessionProvider).isAuthenticated ||
+                    state.matchedLocation == '/login'
+                ? null
+                : '/login',
+        routes: [
+          ShellRoute(
+            builder: (_, __, child) => Scaffold(body: child),
+            routes: [
+              GoRoute(path: '/', builder: (_, __) => const SettingsPage()),
+            ],
+          ),
+          GoRoute(
+            path: '/login',
+            builder: (_, __) => const Scaffold(body: Text('login-page')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
 
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: lightTheme, home: const SettingsPage()),
+        child: MaterialApp.router(theme: lightTheme, routerConfig: router),
       ));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> openDialog(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('settings-delete-account')));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> confirmWith(WidgetTester tester, String password) async {
+      await tester.enterText(
+          find.byKey(const Key('settings-delete-account-password')), password);
+      await tester
+          .tap(find.byKey(const Key('settings-delete-account-confirm')));
       await tester.pumpAndSettle();
     }
 
     testWidgets('cancelling the confirmation keeps the account',
         (tester) async {
       await pumpSettings(tester);
-
-      await tester.tap(find.byKey(const Key('settings-delete-account')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('settings-delete-account-confirm')),
+      await openDialog(tester);
+      expect(find.byKey(const Key('settings-delete-account-password')),
           findsOneWidget);
 
       await tester.tap(find.text('Cancelar'));
@@ -130,38 +168,67 @@ void main() {
       expect(container.read(sessionProvider).isAuthenticated, isTrue);
     });
 
-    testWidgets('confirming erases the account and signs the user out',
+    testWidgets('an empty password is rejected without calling the server',
         (tester) async {
       await pumpSettings(tester);
+      await openDialog(tester);
 
-      await tester.tap(find.byKey(const Key('settings-delete-account')));
-      await tester.pumpAndSettle();
-      await tester
-          .tap(find.byKey(const Key('settings-delete-account-confirm')));
-      await tester.pumpAndSettle();
+      await confirmWith(tester, '');
+
+      final lang = container.read(appLanguageProvider);
+      expect(find.text(lang.tr('settings.deleteAccountWrongPassword')),
+          findsOneWidget);
+      expect(h.auth.calls, isEmpty);
+      expect(container.read(sessionProvider).isAuthenticated, isTrue);
+    });
+
+    testWidgets('a wrong password keeps the account and the dialog open',
+        (tester) async {
+      await pumpSettings(tester);
+      h.auth.requiredPassword = 'correct-horse';
+      await openDialog(tester);
+
+      await confirmWith(tester, 'wrong-password');
+
+      final lang = container.read(appLanguageProvider);
+      expect(find.byKey(const Key('settings-delete-account-error')),
+          findsOneWidget);
+      expect(find.text(lang.tr('settings.deleteAccountWrongPassword')),
+          findsOneWidget);
+      expect(h.auth.calls, isNot(contains('deleteAccount')));
+      expect(data.clears, 0);
+      expect(container.read(sessionProvider).isAuthenticated, isTrue);
+    });
+
+    testWidgets('the right password erases the account and shows the login',
+        (tester) async {
+      await pumpSettings(tester);
+      h.auth.requiredPassword = 'correct-horse';
+      await openDialog(tester);
+
+      await confirmWith(tester, 'correct-horse');
 
       expect(h.auth.calls, contains('deleteAccount'));
       expect(data.clears, 1);
       expect(container.read(sessionProvider).isAuthenticated, isFalse);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('login-page'), findsOneWidget);
     });
 
     testWidgets('a network failure shows a message and keeps everything',
         (tester) async {
       await pumpSettings(tester);
       h.auth.failure = const AuthFailure(AuthFailureReason.network);
+      await openDialog(tester);
 
-      await tester.tap(find.byKey(const Key('settings-delete-account')));
-      await tester.pumpAndSettle();
-      await tester
-          .tap(find.byKey(const Key('settings-delete-account-confirm')));
-      await tester.pumpAndSettle();
+      await confirmWith(tester, 'any-password');
 
       final lang = container.read(appLanguageProvider);
       expect(find.text(lang.tr('auth.err.network')), findsOneWidget);
       expect(data.clears, 0);
       expect(container.read(sessionProvider).isAuthenticated, isTrue);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(AlertDialog), findsOneWidget);
     });
   });
 

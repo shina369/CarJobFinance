@@ -27,6 +27,9 @@ class FakeAuth implements AuthRepository {
   AuthUser? current;
   AuthUser account = testAccount;
   bool signUpNeedsCode = false;
+
+  /// When set, [signIn] rejects any other password.
+  String? requiredPassword;
   String? lastFirstName;
   String? lastLastName;
 
@@ -51,6 +54,10 @@ class FakeAuth implements AuthRepository {
   @override
   Future<AuthUser> signIn(String email, String password) async {
     _maybeFail();
+    final required = requiredPassword;
+    if (required != null && password != required) {
+      throw const AuthFailure(AuthFailureReason.invalidCredentials);
+    }
     calls.add('signIn:$email');
     return current = account;
   }

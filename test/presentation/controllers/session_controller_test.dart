@@ -223,7 +223,7 @@ void main() {
     test('erases the account, the local data and the saved login', () async {
       final session = deletingController();
       await session.signIn('ana@example.com', 'senha1234', remember: true);
-      await session.deleteAccount();
+      await session.deleteAccount('senha1234');
 
       expect(h.auth.calls, contains('deleteAccount'));
       expect(data.clears, 1);
@@ -239,14 +239,31 @@ void main() {
       h.auth.failure = const AuthFailure(AuthFailureReason.network);
 
       await expectLater(
-        session.deleteAccount(),
+        session.deleteAccount('senha1234'),
         throwsA(isA<AuthFailure>()
             .having((f) => f.reason, 'reason', AuthFailureReason.network)),
       );
 
       expect(data.clears, 0);
-      expect(await h.store.read(SessionController.dataOwnerKey),
-          testAccount.id);
+      expect(
+          await h.store.read(SessionController.dataOwnerKey), testAccount.id);
+      expect(h.credentials.saved, isNotNull);
+      expect(session.state.user, testAccount);
+    });
+
+    test('a wrong password erases nothing', () async {
+      final session = deletingController();
+      await session.signIn('ana@example.com', 'senha1234', remember: true);
+      h.auth.requiredPassword = 'senha1234';
+
+      await expectLater(
+        session.deleteAccount('outra-senha'),
+        throwsA(isA<AuthFailure>().having(
+            (f) => f.reason, 'reason', AuthFailureReason.invalidCredentials)),
+      );
+
+      expect(h.auth.calls, isNot(contains('deleteAccount')));
+      expect(data.clears, 0);
       expect(h.credentials.saved, isNotNull);
       expect(session.state.user, testAccount);
     });
