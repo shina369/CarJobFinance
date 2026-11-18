@@ -3,8 +3,10 @@ Supabase Dashboard > Authentication > Email Templates > "Reset password".
 The language comes from user metadata `lang`, set by the app on sign-up and
 refreshed on every sign-in. Anything else falls back to English.
 
-Subject:
-{{ $l := "" }}{{ with .Data }}{{ with .lang }}{{ $l = . }}{{ end }}{{ end }}{{ if eq $l "pt" }}Seu código para redefinir a senha{{ else if eq $l "es" }}Tu código para restablecer la contraseña{{ else if eq $l "id" }}Kode untuk mengatur ulang kata sandi{{ else if eq $l "hi" }}पासवर्ड रीसेट करने का कोड{{ else }}Your password reset code{{ end }}
+Paste only what follows this comment into the Body field. The Subject field
+is limited to 255 characters, so it is kept compact:
+
+{{$l:=""}}{{with .Data}}{{with .lang}}{{$l=.}}{{end}}{{end}}{{if eq $l "pt"}}Código de nova senha{{else if eq $l "es"}}Código de nueva clave{{else if eq $l "id"}}Kode sandi baru{{else if eq $l "hi"}}पासवर्ड रीसेट कोड{{else}}Password reset code{{end}}
 -->
 {{ $l := "" }}{{ with .Data }}{{ with .lang }}{{ $l = . }}{{ end }}{{ end }}
 {{ if eq $l "pt" }}
