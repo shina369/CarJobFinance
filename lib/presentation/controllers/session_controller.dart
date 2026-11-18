@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/credential_store.dart';
 import '../../core/auth/supabase_auth_repository.dart';
+import '../../core/l10n/language_provider.dart';
 import '../../core/storage/device_store.dart';
 import 'cloud_backup_controller.dart';
 import 'data_controller.dart';
@@ -81,11 +82,15 @@ class SessionController extends StateNotifier<SessionState> {
     bool remember = false,
   }) async {
     final user = await _auth.signIn(email, password);
+    unawaited(_auth.updateLanguage(_languageCode));
     await _updateRememberedLogin(
       remember ? SavedLogin(email: email.trim(), password: password) : null,
     );
     await _enter(user);
   }
+
+  String get _languageCode =>
+      _ref.read(appLanguageProvider).locale.languageCode;
 
   Future<void> _updateRememberedLogin(SavedLogin? login) async {
     try {
@@ -112,6 +117,7 @@ class SessionController extends StateNotifier<SessionState> {
       password,
       firstName: firstName,
       lastName: lastName,
+      languageCode: _languageCode,
     );
     if (user == null) return false;
     await _enter(user);

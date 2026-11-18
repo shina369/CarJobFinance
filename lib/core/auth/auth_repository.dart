@@ -53,13 +53,19 @@ abstract class AuthRepository {
 
   /// Creates the account. Returns the user when it is usable right away, or
   /// null when a confirmation code was e-mailed and must be passed to
-  /// [confirmSignUp] first.
+  /// [confirmSignUp] first. [languageCode] (e.g. `pt`) is stored on the
+  /// account so the server writes its e-mails in that language.
   Future<AuthUser?> signUp(
     String email,
     String password, {
     required String firstName,
     required String lastName,
+    required String languageCode,
   });
+
+  /// Updates the language the server uses for e-mails to the signed-in
+  /// account. Best effort: never throws.
+  Future<void> updateLanguage(String languageCode);
 
   Future<AuthUser> confirmSignUp(String email, String code);
 

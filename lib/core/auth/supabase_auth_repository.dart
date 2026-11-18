@@ -27,6 +27,9 @@ class SupabaseAuthRepository implements AuthRepository {
   /// signed-in user's data and login with the service role.
   static const String deleteAccountFunction = 'delete-account';
 
+  /// User metadata key read by the e-mail templates (`{{ .Data.lang }}`).
+  static const String languageMetadataKey = 'lang';
+
   final GoTrueClient _auth;
   final DeviceStore _store;
   final FunctionsClient _functions;
@@ -80,6 +83,7 @@ class SupabaseAuthRepository implements AuthRepository {
     String password, {
     required String firstName,
     required String lastName,
+    required String languageCode,
   }) =>
       _guard(() async {
         final response = await _auth.signUp(
@@ -88,6 +92,7 @@ class SupabaseAuthRepository implements AuthRepository {
           data: {
             'first_name': firstName.trim(),
             'last_name': lastName.trim(),
+            languageMetadataKey: languageCode,
           },
         );
         final user = response.user;
@@ -98,6 +103,19 @@ class SupabaseAuthRepository implements AuthRepository {
         }
         return response.session == null ? null : _requireUser(response);
       });
+
+  @override
+  Future<void> updateLanguage(String languageCode) async {
+    if (_auth.currentUser?.userMetadata?[languageMetadataKey] == languageCode) {
+      return;
+    }
+    try {
+      await _auth
+          .updateUser(UserAttributes(data: {languageMetadataKey: languageCode}));
+    } catch (_) {
+      // Only affects the language of future e-mails.
+    }
+  }
 
   @override
   Future<AuthUser> confirmSignUp(String email, String code) => _guard(() async {
