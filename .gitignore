@@ -46,3 +46,7 @@ app.*.map.json
 
 # Local configuration (see .env.example)
 .env
+
+# Local build output and Supabase CLI state
+/android/build/
+/supabase/.temp/
