@@ -36,28 +36,28 @@ const _ana = AuthUser(id: 'u1', email: 'ana@example.com', firstName: 'Ana');
 void main() {
   testWidgets('morning: Bom dia, name and a sun on one line', (tester) async {
     await _pump(tester, now: DateTime(2026, 11, 19, 8), user: _ana);
-    expect(_text(tester, 'dash.greeting'), 'Bom dia, Ana ☀️');
+    expect(_text(tester, 'dash.greeting'), '☀️ Bom dia, Ana');
     expect(find.textContaining('Bem-vindo'), findsNothing);
   });
 
   testWidgets('afternoon: Boa tarde with a sun', (tester) async {
     await _pump(tester, now: DateTime(2026, 11, 19, 15), user: _ana);
-    expect(_text(tester, 'dash.greeting'), 'Boa tarde, Ana ☀️');
+    expect(_text(tester, 'dash.greeting'), '☀️ Boa tarde, Ana');
   });
 
   testWidgets('night: Boa noite with a moon', (tester) async {
     await _pump(tester, now: DateTime(2026, 11, 19, 22), user: _ana);
-    expect(_text(tester, 'dash.greeting'), 'Boa noite, Ana 🌙');
+    expect(_text(tester, 'dash.greeting'), '🌙 Boa noite, Ana');
   });
 
   testWidgets('without a first name shows only the greeting', (tester) async {
     await _pump(tester, now: DateTime(2026, 11, 19, 8));
-    expect(_text(tester, 'dash.greeting'), 'Bom dia ☀️');
+    expect(_text(tester, 'dash.greeting'), '☀️ Bom dia');
   });
 
   testWidgets('follows the app language', (tester) async {
     await _pump(tester,
         now: DateTime(2026, 11, 19, 22), user: _ana, languageTag: 'en_US');
-    expect(_text(tester, 'dash.greeting'), 'Good evening, Ana 🌙');
+    expect(_text(tester, 'dash.greeting'), '🌙 Good evening, Ana');
   });
 }

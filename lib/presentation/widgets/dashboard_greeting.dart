@@ -43,17 +43,20 @@ class _DashboardGreetingState extends ConsumerState<DashboardGreeting> {
 
     final greeting = lang.tr(period.greetingKey);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        '${name == null ? greeting : '$greeting, $name'} ${period.emoji}',
-        key: const Key('dash.greeting'),
-        style: ts.titleLarge?.copyWith(
-          color: cs.onSurface,
-          fontWeight: FontWeight.w700,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          '${period.emoji} ${name == null ? greeting : '$greeting, $name'}',
+          key: const Key('dash.greeting'),
+          textAlign: TextAlign.center,
+          style: ts.titleLarge?.copyWith(
+            color: cs.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }
