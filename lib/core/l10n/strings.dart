@@ -85,7 +85,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Excluir conta permanentemente?',
     'settings.deleteAccountMsg':
         'Sua conta, seu login e o backup na nuvem serão apagados dos nossos servidores, e todos os dados deste aparelho serão removidos. Esta ação não pode ser desfeita.',
-    'settings.deleteAccountPasswordHint': 'Por segurança, digite sua senha para confirmar.',
+    'settings.deleteAccountPasswordHint':
+        'Por segurança, digite sua senha para confirmar.',
     'settings.deleteAccountWrongPassword': 'Senha incorreta',
     'gate.foreignTitle': 'Dados de outra conta',
     'gate.foreignMsg':
@@ -376,7 +377,7 @@ class Strings {
     'reports.commissions': 'Comissões de plataforma',
     'reports.otherExpenses': 'Outras despesas',
     // Onboarding
-    'onboarding.welcome': 'Bem-vindo ao CarJobFinance',
+    'onboarding.welcome': 'Bem-vindo ao CarJob - Driver Finances',
     'onboarding.subtitle':
         'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.',
     'onboarding.country': 'País',
@@ -447,7 +448,8 @@ class Strings {
     'settings.deleteAccountConfirm': '¿Eliminar la cuenta de forma permanente?',
     'settings.deleteAccountMsg':
         'Tu cuenta, tu acceso y la copia de seguridad en la nube se borrarán de nuestros servidores, y se eliminarán todos los datos de este dispositivo. Esta acción no se puede deshacer.',
-    'settings.deleteAccountPasswordHint': 'Por seguridad, escribe tu contraseña para confirmar.',
+    'settings.deleteAccountPasswordHint':
+        'Por seguridad, escribe tu contraseña para confirmar.',
     'settings.deleteAccountWrongPassword': 'Contraseña incorrecta',
     'gate.foreignTitle': 'Datos de otra cuenta',
     'gate.foreignMsg':
@@ -739,7 +741,7 @@ class Strings {
     'reports.commissions': 'Comisiones de plataforma',
     'reports.otherExpenses': 'Otros gastos',
     // Onboarding
-    'onboarding.welcome': 'Bienvenido a CarJobFinance',
+    'onboarding.welcome': 'Bienvenido a CarJob - Driver Finances',
     'onboarding.subtitle':
         'Selecciona tu país para configurar moneda, idioma y plataformas disponibles.',
     'onboarding.country': 'País',
@@ -846,7 +848,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Delete account permanently?',
     'settings.deleteAccountMsg':
         'Your account, login and cloud backup will be erased from our servers, and all data on this device will be removed. This action cannot be undone.',
-    'settings.deleteAccountPasswordHint': 'For your security, enter your password to confirm.',
+    'settings.deleteAccountPasswordHint':
+        'For your security, enter your password to confirm.',
     'settings.deleteAccountWrongPassword': 'Incorrect password',
     'gate.foreignTitle': 'Data from another account',
     'gate.foreignMsg':
@@ -1136,7 +1139,7 @@ class Strings {
     'reports.commissions': 'Platform commissions',
     'reports.otherExpenses': 'Other expenses',
     // Onboarding
-    'onboarding.welcome': 'Welcome to CarJobFinance',
+    'onboarding.welcome': 'Welcome to CarJob - Driver Finances',
     'onboarding.subtitle':
         'Select your country to configure currency, language and available platforms.',
     'onboarding.country': 'Country',
@@ -1198,7 +1201,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'Hapus akun secara permanen?',
     'settings.deleteAccountMsg':
         'Akun, login, dan cadangan cloud Anda akan dihapus dari server kami, dan semua data di perangkat ini akan dihapus. Tindakan ini tidak dapat dibatalkan.',
-    'settings.deleteAccountPasswordHint': 'Demi keamanan, masukkan kata sandi Anda untuk mengonfirmasi.',
+    'settings.deleteAccountPasswordHint':
+        'Demi keamanan, masukkan kata sandi Anda untuk mengonfirmasi.',
     'settings.deleteAccountWrongPassword': 'Kata sandi salah',
     'gate.foreignTitle': 'Data dari akun lain',
     'gate.foreignMsg':
@@ -1488,7 +1492,7 @@ class Strings {
     'reports.commissions': 'Komisi platform',
     'reports.otherExpenses': 'Pengeluaran lainnya',
     // Onboarding
-    'onboarding.welcome': 'Selamat datang di CarJobFinance',
+    'onboarding.welcome': 'Selamat datang di CarJob - Driver Finances',
     'onboarding.subtitle':
         'Pilih negara Anda untuk mengatur mata uang, bahasa, dan platform yang tersedia.',
     'onboarding.country': 'Negara',
@@ -1549,7 +1553,8 @@ class Strings {
     'settings.deleteAccountConfirm': 'खाता स्थायी रूप से हटाएँ?',
     'settings.deleteAccountMsg':
         'आपका खाता, लॉगिन और क्लाउड बैकअप हमारे सर्वर से मिटा दिए जाएँगे, और इस डिवाइस का सारा डेटा हट जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।',
-    'settings.deleteAccountPasswordHint': 'सुरक्षा के लिए, पुष्टि करने हेतु अपना पासवर्ड दर्ज करें।',
+    'settings.deleteAccountPasswordHint':
+        'सुरक्षा के लिए, पुष्टि करने हेतु अपना पासवर्ड दर्ज करें।',
     'settings.deleteAccountWrongPassword': 'पासवर्ड गलत है',
     'gate.foreignTitle': 'किसी दूसरे खाते का डेटा',
     'gate.foreignMsg':
@@ -1838,7 +1843,7 @@ class Strings {
     'reports.commissions': 'प्लेटफोर्म कमीशन',
     'reports.otherExpenses': 'अन्य खर्च',
     // Onboarding
-    'onboarding.welcome': 'CarJobFinance में आपका स्वागत है',
+    'onboarding.welcome': 'CarJob - Driver Finances में आपका स्वागत है',
     'onboarding.subtitle':
         'मुद्रा, भाषा और उपलब्ध प्लेटफ़ॉर्म कॉन्फ़िगर करने के लिए अपना देश चुनें।',
     'onboarding.country': 'देश',

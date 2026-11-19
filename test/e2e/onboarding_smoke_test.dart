@@ -177,7 +177,8 @@ void main() {
         // =====================================================================
         // STEP 1: Verify we land on /onboarding (unconfigured state)
         // =====================================================================
-        expect(find.text('Bem-vindo ao CarJobFinance'), findsOneWidget);
+        expect(
+            find.text('Bem-vindo ao CarJob - Driver Finances'), findsOneWidget);
         expect(
           find.text(
               'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.'),
@@ -278,7 +279,7 @@ class _TestDashboardPage extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     // Use LocalizedCurrency to format a value - this will show € for Portugal
     return Scaffold(
-      appBar: AppBar(title: const Text('CarJobFinance')),
+      appBar: AppBar(title: const Text('CarJob - Driver Finances')),
       body: Center(
         child: Text(
             'Lucro no mês: ${LocalizedCurrency.formatWithSettings(0.0, settings)}'),

@@ -56,7 +56,7 @@ class CarJobFinanceApp extends ConsumerWidget {
     final locale = ref.watch(appLocaleProvider);
 
     return MaterialApp.router(
-      title: 'CarJobFinance',
+      title: 'CarJob - Driver Finances',
       debugShowCheckedModeBanner: false,
       locale: locale,
       supportedLocales: SUPPORTED_LANGUAGES.map((l) => l.locale).toList(),

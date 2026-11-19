@@ -144,7 +144,7 @@ class LocalNotificationService implements NotificationService {
         channel.name,
         importance: Importance.max,
         priority: Priority.high,
-        ticker: 'CarJobFinance',
+        ticker: 'CarJob - Driver Finances',
         playSound: true,
         enableVibration: true,
         sound: channel.sound,
