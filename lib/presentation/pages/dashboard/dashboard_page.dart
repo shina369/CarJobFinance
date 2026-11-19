@@ -13,6 +13,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../presentation/widgets/dashboard_greeting.dart';
+import '../../../presentation/widgets/sky_backdrop.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -328,13 +329,11 @@ class _MonthData {
 
 Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
     AppCurrency currency) {
-  final ts = Theme.of(context).textTheme;
-  final profit = t.earnings - t.expenses;
-  final isPositive = profit >= 0;
+  final isPositive = t.earnings - t.expenses >= 0;
 
   return Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(14),
+    clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -360,133 +359,150 @@ Widget _todayCard(BuildContext context, _TodayData t, AppLanguage lang,
         ),
       ],
     ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    child: Stack(
       children: [
-        // Header: date + icon
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isPositive
-                    ? Icons.account_balance_wallet
-                    : Icons.warning_amber_rounded,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lang.tr('dash.todayProfit'),
-                    style: ts.labelMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      letterSpacing: 0.8,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    t.label,
-                    style: ts.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Small badge with ride count
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${t.rides} ${t.rides == 1 ? lang.tr('dash.rideSingular') : lang.tr('dash.ridePlural')}',
-                style: ts.labelSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Big profit number
-        Consumer(
-          builder: (context, ref, _) {
-            return Row(
-              children: [
-                Text(
-                  isPositive ? '+' : '',
-                  style: ts.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Flexible(
-                  child: Text(
-                    LocalizedCurrency.formatFor(profit, currency),
-                    style: ts.displaySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        // Three metric pills in a row
-        LayoutBuilder(
-          builder: (ctx, constraints) {
-            final pillWidth = (constraints.maxWidth - 16) / 3;
-            return Row(
-              children: [
-                _MetricPill(
-                  icon: Icons.trending_up,
-                  label: lang.tr('dash.earnings'),
-                  value: t.earnings,
-                  pillWidth: pillWidth,
-                  currency: currency,
-                ),
-                const SizedBox(width: 8),
-                _MetricPill(
-                  icon: Icons.money_off,
-                  label: lang.tr('dash.expenses'),
-                  value: t.expenses,
-                  pillWidth: pillWidth,
-                  isExpense: true,
-                  currency: currency,
-                ),
-                const SizedBox(width: 8),
-                _MetricPill(
-                  icon: Icons.speed,
-                  label: lang.tr('dash.kmDriven'),
-                  value: t.km,
-                  pillWidth: pillWidth,
-                  isCount: true,
-                  currency: currency,
-                ),
-              ],
-            );
-          },
+        const Positioned.fill(child: SkyBackdrop()),
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: _todayContent(context, t, lang, currency, isPositive),
         ),
       ],
     ),
+  );
+}
+
+Widget _todayContent(BuildContext context, _TodayData t, AppLanguage lang,
+    AppCurrency currency, bool isPositive) {
+  final ts = Theme.of(context).textTheme;
+  final profit = t.earnings - t.expenses;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Header: date + icon
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isPositive
+                  ? Icons.account_balance_wallet
+                  : Icons.warning_amber_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lang.tr('dash.todayProfit'),
+                  style: ts.titleMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    letterSpacing: 0.4,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  t.label,
+                  style: ts.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    letterSpacing: 0.3,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Small badge with ride count
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${t.rides} ${t.rides == 1 ? lang.tr('dash.rideSingular') : lang.tr('dash.ridePlural')}',
+              style: ts.labelSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      // Big profit number
+      Consumer(
+        builder: (context, ref, _) {
+          return Row(
+            children: [
+              Text(
+                isPositive ? '+' : '',
+                style: ts.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Flexible(
+                child: Text(
+                  LocalizedCurrency.formatFor(profit, currency),
+                  style: ts.displaySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      const SizedBox(height: 12),
+      // Three metric pills in a row
+      LayoutBuilder(
+        builder: (ctx, constraints) {
+          final pillWidth = (constraints.maxWidth - 16) / 3;
+          return Row(
+            children: [
+              _MetricPill(
+                icon: Icons.trending_up,
+                label: lang.tr('dash.earnings'),
+                value: t.earnings,
+                pillWidth: pillWidth,
+                currency: currency,
+              ),
+              const SizedBox(width: 8),
+              _MetricPill(
+                icon: Icons.money_off,
+                label: lang.tr('dash.expenses'),
+                value: t.expenses,
+                pillWidth: pillWidth,
+                isExpense: true,
+                currency: currency,
+              ),
+              const SizedBox(width: 8),
+              _MetricPill(
+                icon: Icons.speed,
+                label: lang.tr('dash.kmDriven'),
+                value: t.km,
+                pillWidth: pillWidth,
+                isCount: true,
+                currency: currency,
+              ),
+            ],
+          );
+        },
+      ),
+    ],
   );
 }
 

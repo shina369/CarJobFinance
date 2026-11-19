@@ -13,6 +13,7 @@ Future<void> _pump(
   required DateTime now,
   AuthUser? user,
   String languageTag = 'pt_BR',
+  Brightness brightness = Brightness.light,
 }) {
   return tester.pumpWidget(
     ProviderScope(
@@ -23,7 +24,10 @@ Future<void> _pump(
           (ref) => SessionController(ref, SessionState(user: user)),
         ),
       ],
-      child: const MaterialApp(home: Scaffold(body: DashboardGreeting())),
+      child: MaterialApp(
+        theme: ThemeData(brightness: brightness),
+        home: const Scaffold(body: DashboardGreeting()),
+      ),
     ),
   );
 }
@@ -59,5 +63,13 @@ void main() {
     await _pump(tester,
         now: DateTime(2026, 11, 19, 22), user: _ana, languageTag: 'en_US');
     expect(_text(tester, 'dash.greeting'), '🌙 Good evening, Ana');
+  });
+
+  testWidgets('dark theme drops the emoji from the greeting', (tester) async {
+    await _pump(tester,
+        now: DateTime(2026, 11, 19, 22),
+        user: _ana,
+        brightness: Brightness.dark);
+    expect(_text(tester, 'dash.greeting'), 'Boa noite, Ana');
   });
 }
