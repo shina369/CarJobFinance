@@ -1,13 +1,3 @@
-<!--
-Supabase Dashboard > Authentication > Email Templates > "Confirm sign up".
-The language comes from user metadata `lang`, set by the app on sign-up and
-refreshed on every sign-in. Anything else falls back to English.
-
-Paste only what follows this comment into the Body field. The Subject field
-is limited to 255 characters, so it is kept compact:
-
-{{$l:=""}}{{with .Data}}{{with .lang}}{{$l=.}}{{end}}{{end}}{{if eq $l "pt"}}Código de confirmação{{else if eq $l "es"}}Código de confirmación{{else if eq $l "id"}}Kode konfirmasi{{else if eq $l "hi"}}पुष्टि कोड{{else}}Confirmation code{{end}}
--->
 {{ $l := "" }}{{ with .Data }}{{ with .lang }}{{ $l = . }}{{ end }}{{ end }}
 {{ if eq $l "pt" }}
 <h2>Confirme seu e-mail</h2>
