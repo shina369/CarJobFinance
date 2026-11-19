@@ -164,6 +164,8 @@ void main() {
     testWidgets(
       'Full flow: fresh start -> onboarding -> Portugal -> dashboard € -> rides page PT platforms',
       (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 1000));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
         // Start with unconfigured settings (Brazil default, configured: false)
         final unconfiguredSettings = AppSettings.defaultBrazil();
 
