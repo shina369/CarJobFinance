@@ -83,13 +83,17 @@ class AuthScaffold extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!showBack) ...[
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(
-                        Icons.directions_car,
-                        size: 36,
-                        color: theme.colorScheme.onPrimaryContainer,
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/icons/logo.png',
+                          key: const Key('auth-logo'),
+                          width: 72,
+                          height: 72,
+                          filterQuality: FilterQuality.medium,
+                          semanticLabel: AppConstants.appName,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
