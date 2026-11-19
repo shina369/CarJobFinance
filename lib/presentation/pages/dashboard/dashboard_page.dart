@@ -12,6 +12,7 @@ import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
+import '../../../presentation/widgets/dashboard_greeting.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 import '../../../domain/entities/expense.dart' as entity_expense;
 
@@ -179,7 +180,8 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Today summary card
+          const DashboardGreeting(),
+          const SizedBox(height: 12),
           _todayCard(context, today, lang, _currency),
           const SizedBox(height: 12),
           // Action buttons above month panel

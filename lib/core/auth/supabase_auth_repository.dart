@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase/supabase.dart' hide AuthUser;
@@ -210,7 +211,19 @@ class SupabaseAuthRepository implements AuthRepository {
     return _toUser(user);
   }
 
-  AuthUser _toUser(User user) => AuthUser(id: user.id, email: user.email ?? '');
+  AuthUser _toUser(User user) => toAuthUser(user);
+
+  @visibleForTesting
+  static AuthUser toAuthUser(User user) {
+    final firstName = user.userMetadata?['first_name'];
+    return AuthUser(
+      id: user.id,
+      email: user.email ?? '',
+      firstName: firstName is String && firstName.trim().isNotEmpty
+          ? firstName.trim()
+          : null,
+    );
+  }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
     try {

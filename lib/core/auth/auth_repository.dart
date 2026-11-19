@@ -5,17 +5,23 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class AuthUser {
-  const AuthUser({required this.id, required this.email});
+  const AuthUser({required this.id, required this.email, this.firstName});
 
   final String id;
   final String email;
 
-  @override
-  bool operator ==(Object other) =>
-      other is AuthUser && other.id == id && other.email == email;
+  /// Given at sign-up; null for accounts without one.
+  final String? firstName;
 
   @override
-  int get hashCode => Object.hash(id, email);
+  bool operator ==(Object other) =>
+      other is AuthUser &&
+      other.id == id &&
+      other.email == email &&
+      other.firstName == firstName;
+
+  @override
+  int get hashCode => Object.hash(id, email, firstName);
 
   @override
   String toString() => 'AuthUser($id, $email)';
