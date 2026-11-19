@@ -111,8 +111,8 @@ class SupabaseAuthRepository implements AuthRepository {
       return;
     }
     try {
-      await _auth
-          .updateUser(UserAttributes(data: {languageMetadataKey: languageCode}));
+      await _auth.updateUser(
+          UserAttributes(data: {languageMetadataKey: languageCode}));
     } catch (_) {
       // Only affects the language of future e-mails.
     }
