@@ -481,7 +481,8 @@ void main() {
 
       expect(service.scheduled.single, startsWith('now '));
     });
-    testWidgets('Clear All Data wipes only after confirmation', (tester) async {
+    testWidgets('Clear All Data is kept when the dialog is cancelled',
+        (tester) async {
       final data = _FakeDataController();
       await pumpSettings(tester, data: data);
 
@@ -489,15 +490,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(ptBr.tr('dash.cancel')));
       await tester.pumpAndSettle();
+
       expect(data.clears, 0);
-
-      await tester.tap(find.text(ptBr.tr('settings.clearData')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(ptBr.tr('settings.deleteAll')));
-      await tester.pumpAndSettle();
-
-      expect(data.clears, 1);
-      expect(find.text(ptBr.tr('settings.dataCleared')), findsOneWidget);
     });
 
     testWidgets('Report Issue opens the issue tracker', (tester) async {

@@ -232,6 +232,83 @@ void main() {
     });
   });
 
+  group('SettingsPage clear all data', () {
+    late AuthHarness h;
+    late _CountingDataController data;
+    late ProviderContainer container;
+
+    Future<void> pumpSettings(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 5000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      h = AuthHarness();
+      h.auth.current = testAccount;
+      data = _CountingDataController();
+      final ptBr = languageForTag('pt_BR')!;
+      container = ProviderContainer(overrides: [
+        ...h.overrides,
+        dataControllerProvider.overrideWithValue(data),
+        appLanguageProvider.overrideWithValue(ptBr),
+        languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+        appSettingsProvider
+            .overrideWith((ref) => AppSettingsNotifier.forTesting(
+                  _InMemoryAppDao(),
+                  _StubCountryPlatformsDao(),
+                  AppSettings.defaultBrazil(),
+                )),
+        sessionProvider.overrideWith((ref) =>
+            SessionController(ref, const SessionState(user: testAccount))),
+      ]);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: SettingsPage())),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> confirmClearWith(WidgetTester tester, String password) async {
+      final lang = container.read(appLanguageProvider);
+      await tester.tap(find.text(lang.tr('settings.clearData')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.byKey(const Key('settings-clear-data-password')), password);
+      await tester.tap(find.byKey(const Key('settings-clear-data-confirm')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a wrong password erases nothing and keeps the dialog open',
+        (tester) async {
+      await pumpSettings(tester);
+      h.auth.requiredPassword = 'correct-horse';
+
+      await confirmClearWith(tester, 'wrong-password');
+
+      final lang = container.read(appLanguageProvider);
+      expect(
+          find.byKey(const Key('settings-clear-data-error')), findsOneWidget);
+      expect(find.text(lang.tr('settings.clearDataWrongPassword')),
+          findsOneWidget);
+      expect(data.clears, 0);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('the right password erases all data once', (tester) async {
+      await pumpSettings(tester);
+      h.auth.requiredPassword = 'correct-horse';
+
+      await confirmClearWith(tester, 'correct-horse');
+
+      final lang = container.read(appLanguageProvider);
+      expect(data.clears, 1);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(container.read(sessionProvider).isAuthenticated, isTrue);
+      expect(find.text(lang.tr('settings.dataCleared')), findsOneWidget);
+    });
+  });
+
   group('SettingsPage language dialog', () {
     Future<ProviderContainer> buildSettingsPage(
         WidgetTester tester, AppLanguage lang) async {

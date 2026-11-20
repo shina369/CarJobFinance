@@ -248,6 +248,9 @@ class Strings {
     'settings.clearDataMsg':
         'Esta ação é irreversível. Todas as suas corridas, despesas e configurações serão apagadas permanentemente.',
     'settings.deleteAll': 'Apagar Tudo',
+    'settings.clearDataPasswordHint':
+        'Digite sua senha para confirmar que deseja apagar tudo.',
+    'settings.clearDataWrongPassword': 'Senha incorreta.',
     'settings.notifications': 'Notificações',
     'settings.notificationsActive': 'Notificações Ativas',
     'settings.notificationsActiveSub': 'Receber lembretes e alertas',
@@ -620,6 +623,9 @@ class Strings {
     'settings.clearDataMsg':
         'Esta acción es irreversible. Todas tus rides, gastos y configuración serán eliminados permanentemente.',
     'settings.deleteAll': 'Borrar todo',
+    'settings.clearDataPasswordHint':
+        'Escribe tu contraseña para confirmar que quieres borrar todo.',
+    'settings.clearDataWrongPassword': 'Contraseña incorrecta.',
     'settings.notifications': 'Notificaciones',
     'settings.notificationsActive': 'Notificaciones activas',
     'settings.notificationsActiveSub': 'Recibir recordatorios y alertas',
@@ -1028,6 +1034,9 @@ class Strings {
     'settings.clearDataMsg':
         'This action is irreversible. All your rides, expenses and settings will be permanently deleted.',
     'settings.deleteAll': 'Delete all',
+    'settings.clearDataPasswordHint':
+        'Enter your password to confirm you want to delete everything.',
+    'settings.clearDataWrongPassword': 'Incorrect password.',
     'settings.notifications': 'Notifications',
     'settings.notificationsActive': 'Active notifications',
     'settings.notificationsActiveSub': 'Receive reminders and alerts',
@@ -1390,6 +1399,9 @@ class Strings {
     'settings.clearDataMsg':
         'Tindakan ini tidak dapat dibatalkan. Semua perjalanan, pembayaran, dan setelan Anda akan dihapus permanen.',
     'settings.deleteAll': 'Hapus semua',
+    'settings.clearDataPasswordHint':
+        'Masukkan kata sandi Anda untuk mengonfirmasi bahwa Anda ingin menghapus semua data.',
+    'settings.clearDataWrongPassword': 'Kata sandi salah.',
     'settings.notifications': 'Notifikasi',
     'settings.notificationsActive': 'Notifikasi aktif',
     'settings.notificationsActiveSub': 'Terima pengingat dan peringatan',
@@ -1751,6 +1763,9 @@ class Strings {
     'settings.clearDataMsg':
         'यह कार्रवाई अलटन नहीं की जा सकती। आपकी सभी सवारी, खर्च और सेटिंग स्थायी रूप से हट जाएंगी।',
     'settings.deleteAll': 'सभी हटाएँ',
+    'settings.clearDataPasswordHint':
+        'सभी डेटा हटाने की पुष्टि के लिए अपना पासवर्ड दर्ज करें।',
+    'settings.clearDataWrongPassword': 'पासवर्ड गलत है।',
     'settings.notifications': 'सूचनाएँ',
     'settings.notificationsActive': 'सक्रिय सूचनाएँ',
     'settings.notificationsActiveSub': 'रिमाइंडर और अलर्ट प्राप्त करें',

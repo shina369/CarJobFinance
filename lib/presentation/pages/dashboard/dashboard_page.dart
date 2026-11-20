@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/l10n/currencies.dart';
 import '../../../core/l10n/language_provider.dart';
@@ -15,6 +14,7 @@ import '../../../presentation/controllers/controllers.dart';
 import '../../../presentation/widgets/dashboard_greeting.dart';
 import '../../../presentation/widgets/sky_backdrop.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
+import '../rides/rides_page.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
 class DashboardPage extends ConsumerWidget {
@@ -27,22 +27,20 @@ class DashboardPage extends ConsumerWidget {
     final goalState = ref.watch(monthlyGoalControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppConstants.appName),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(monthlyGoalControllerProvider),
-          ),
-        ],
-      ),
-      body: ridesState.when(
-        data: (rides) => expensesState.when(
-          data: (expenses) => goalState.when(
-            data: (goal) => _StaticDashboardBody(
-              rides: rides,
-              expenses: expenses,
-              monthlyGoal: goal,
+      body: SafeArea(
+        bottom: false,
+        child: ridesState.when(
+          data: (rides) => expensesState.when(
+            data: (expenses) => goalState.when(
+              data: (goal) => _StaticDashboardBody(
+                rides: rides,
+                expenses: expenses,
+                monthlyGoal: goal,
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                  child: Text(_trFor(context, 'error.generic',
+                      args: {'error': '$error'}))),
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(
@@ -54,10 +52,6 @@ class DashboardPage extends ConsumerWidget {
               child: Text(
                   _trFor(context, 'error.generic', args: {'error': '$error'}))),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-            child: Text(
-                _trFor(context, 'error.generic', args: {'error': '$error'}))),
       ),
     );
   }
@@ -175,6 +169,7 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
     final locale = ref.watch(appLocaleProvider);
     final today = _computeTodayData(locale);
     final month = _computeMonthData(locale);
+    final recent = _recentRides();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -237,10 +232,37 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             lang: lang,
             currency: _currency,
           ),
+          if (recent.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    lang.tr('dash.recentRides'),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/rides'),
+                  child: Text(lang.tr('dash.seeAll')),
+                ),
+              ],
+            ),
+            for (final ride in recent) RideCard(ride: ride),
+          ],
           const SizedBox(height: 8),
         ],
       ),
     );
+  }
+
+  List<entity_ride.Ride> _recentRides() {
+    final sorted = [
+      ...widget.rides
+    ]..sort((a, b) => (b.createdAt ?? b.date).compareTo(a.createdAt ?? a.date));
+    return sorted.take(3).toList();
   }
 
   _TodayData _computeTodayData(Locale locale) {

@@ -12,9 +12,9 @@ import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/notifications/notification_settings.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../controllers/data_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../widgets/export_actions.dart';
+import 'clear_data_dialog.dart';
 import 'delete_account_dialog.dart';
 
 /// Opens a link outside the app. Overridable in tests.
@@ -118,39 +118,6 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Dados
-          _SectionHeader(tr('settings.data')),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.backup_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(tr('settings.backup')),
-                  subtitle: Text(tr('settings.backupSub')),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/settings/backup'),
-                ),
-                const Divider(height: 1, indent: 72),
-                const ExportTiles(),
-                const Divider(height: 1, indent: 72),
-                ListTile(
-                  leading: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  title: Text(tr('settings.clearData')),
-                  subtitle: Text(tr('settings.clearDataSub')),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showClearDataDialog(context, ref, tr),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
           // Notificações
           _SectionHeader(tr('settings.notifications')),
           Card(
@@ -192,6 +159,39 @@ class SettingsPage extends ConsumerWidget {
                       onTap: () => context.push('/settings/reminders'),
                     );
                   },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Dados
+          _SectionHeader(tr('settings.data')),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.backup_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(tr('settings.backup')),
+                  subtitle: Text(tr('settings.backupSub')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/settings/backup'),
+                ),
+                const Divider(height: 1, indent: 72),
+                const ExportTiles(),
+                const Divider(height: 1, indent: 72),
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(tr('settings.clearData')),
+                  subtitle: Text(tr('settings.clearDataSub')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showClearDataDialog(context),
                 ),
               ],
             ),
@@ -430,40 +430,11 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  void _showClearDataDialog(
-      BuildContext context, WidgetRef ref, String Function(String) tr) {
-    final messenger = ScaffoldMessenger.of(context);
-    showDialog(
+  void _showClearDataDialog(BuildContext context) {
+    showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr('settings.clearDataConfirm')),
-        content: Text(tr('settings.clearDataMsg')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr('dash.cancel')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await ref.read(dataControllerProvider).clearAll();
-                messenger.showSnackBar(
-                    SnackBar(content: Text(tr('settings.dataCleared'))));
-              } catch (e) {
-                messenger.showSnackBar(SnackBar(
-                  content:
-                      Text(tr('export.failed').replaceAll('{error}', '$e')),
-                ));
-              }
-            },
-            child: Text(tr('settings.deleteAll')),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (_) => const ClearDataDialog(),
     );
   }
 }
