@@ -85,12 +85,15 @@ variants = {
         '<circle cx="930" cy="-40" r="220" fill="#ffffff" opacity="0.06"/>'
         '<circle cx="1000" cy="520" r="180" fill="#ffffff" opacity="0.05"/>'
         + mark(0.5, 250, 250)
-        + '<text x="470" y="225" font-family="Segoe UI, Roboto, sans-serif" font-weight="700" '
-        'font-size="72" fill="#ffffff">CarJobFinance</text>'
-        '<text x="472" y="290" font-family="Segoe UI, Roboto, sans-serif" font-weight="400" '
-        'font-size="34" fill="#eafff2">Corridas, despesas e lucro real</text>'
-        '<text x="472" y="336" font-family="Segoe UI, Roboto, sans-serif" font-weight="400" '
-        'font-size="34" fill="#eafff2">na palma da mão.</text>',
+        + '<text x="468" y="190" font-family="Segoe UI, Roboto, sans-serif" font-weight="800" '
+        'font-size="84" fill="#ffffff">CarJob</text>'
+        '<text x="472" y="243" font-family="Segoe UI, Roboto, sans-serif" font-weight="600" '
+        'font-size="38" fill="#fde68a" letter-spacing="0.5">Driver Finances</text>'
+        '<rect x="472" y="270" width="64" height="4" rx="2" fill="#ffffff" opacity="0.55"/>'
+        '<text x="472" y="322" font-family="Segoe UI, Roboto, sans-serif" font-weight="400" '
+        'font-size="32" fill="#eafff2">Corridas, despesas e lucro real</text>'
+        '<text x="472" y="364" font-family="Segoe UI, Roboto, sans-serif" font-weight="400" '
+        'font-size="32" fill="#eafff2">na palma da mão.</text>',
     ),
 }
 
