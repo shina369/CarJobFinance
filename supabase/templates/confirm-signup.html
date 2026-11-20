@@ -1,0 +1,27 @@
+{{ $l := "" }}{{ with .Data }}{{ with .lang }}{{ $l = . }}{{ end }}{{ end }}
+{{ if eq $l "pt" }}
+<h2>Confirme seu e-mail</h2>
+<p>Seu código de confirmação:</p>
+<h1>{{ .Token }}</h1>
+<p>Digite-o no CarJobFinance. Se você não criou esta conta, ignore este e-mail.</p>
+{{ else if eq $l "es" }}
+<h2>Confirma tu correo</h2>
+<p>Tu código de confirmación:</p>
+<h1>{{ .Token }}</h1>
+<p>Escríbelo en CarJobFinance. Si no creaste esta cuenta, ignora este correo.</p>
+{{ else if eq $l "id" }}
+<h2>Konfirmasi email Anda</h2>
+<p>Kode konfirmasi Anda:</p>
+<h1>{{ .Token }}</h1>
+<p>Masukkan kode ini di CarJobFinance. Jika Anda tidak membuat akun ini, abaikan email ini.</p>
+{{ else if eq $l "hi" }}
+<h2>अपना ईमेल पुष्टि करें</h2>
+<p>आपका पुष्टि कोड:</p>
+<h1>{{ .Token }}</h1>
+<p>इसे CarJobFinance में दर्ज करें। यदि आपने यह खाता नहीं बनाया है, तो इस ईमेल को अनदेखा करें।</p>
+{{ else }}
+<h2>Confirm your email</h2>
+<p>Your confirmation code:</p>
+<h1>{{ .Token }}</h1>
+<p>Enter it in CarJobFinance. If you did not create this account, ignore this email.</p>
+{{ end }}

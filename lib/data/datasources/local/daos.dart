@@ -12,9 +12,15 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
 
   // ===== RIDES =====
 
-  Future<List<Ride>> getAllRides() => select(rides).get();
+  SimpleSelectStatement<$RidesTable, Ride> _ridesNewestFirst() => select(rides)
+    ..orderBy([
+      (r) => OrderingTerm.desc(r.date),
+      (r) => OrderingTerm.desc(r.createdAt),
+    ]);
 
-  Stream<List<Ride>> watchAllRides() => select(rides).watch();
+  Future<List<Ride>> getAllRides() => _ridesNewestFirst().get();
+
+  Stream<List<Ride>> watchAllRides() => _ridesNewestFirst().watch();
 
   Future<List<Ride>> getRidesByDateRange(DateTime start, DateTime end) =>
       (select(rides)
@@ -45,9 +51,16 @@ class AppDao extends DatabaseAccessor<AppDatabase> with _$AppDaoMixin {
 
   // ===== EXPENSES =====
 
-  Future<List<Expense>> getAllExpenses() => select(expenses).get();
+  SimpleSelectStatement<$ExpensesTable, Expense> _expensesNewestFirst() =>
+      select(expenses)
+        ..orderBy([
+          (e) => OrderingTerm.desc(e.date),
+          (e) => OrderingTerm.desc(e.createdAt),
+        ]);
 
-  Stream<List<Expense>> watchAllExpenses() => select(expenses).watch();
+  Future<List<Expense>> getAllExpenses() => _expensesNewestFirst().get();
+
+  Stream<List<Expense>> watchAllExpenses() => _expensesNewestFirst().watch();
 
   Future<List<Expense>> getExpensesByDateRange(DateTime start, DateTime end) =>
       (select(expenses)

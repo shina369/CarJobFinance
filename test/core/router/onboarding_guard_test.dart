@@ -171,7 +171,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should be redirected back to /onboarding
-      expect(find.text('Bem-vindo ao CarJobFinance'), findsOneWidget);
+      expect(
+          find.text('Bem-vindo ao CarJob - Driver Finances'), findsOneWidget);
       expect(
           find.text(
               'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.'),

@@ -10,9 +10,10 @@ import 'package:carjobfinance/data/datasources/local/app_database.dart'
     show CountryPlatformsDao;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
 import 'package:carjobfinance/domain/entities/expense.dart';
+import 'package:carjobfinance/domain/entities/ride.dart';
 import 'package:carjobfinance/domain/repositories/repositories.dart';
 import 'package:carjobfinance/presentation/controllers/controllers.dart'
-    show expenseRepositoryProvider;
+    show expenseRepositoryProvider, rideRepositoryProvider;
 import 'package:carjobfinance/presentation/pages/expenses/expenses_page.dart';
 
 class _InMemoryAppDao implements AppDao {
@@ -66,6 +67,15 @@ class _FakeExpenseRepository implements ExpenseRepository {
       throw UnimplementedError('FakeExpenseRepository');
 }
 
+class _FakeRideRepository implements RideRepository {
+  @override
+  Stream<List<Ride>> watchAll() => Stream.value(const []);
+
+  @override
+  noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('FakeRideRepository');
+}
+
 void main() {
   testWidgets(
       'expense amounts use the user-selected currency instead of hardcoded R\$',
@@ -87,6 +97,7 @@ void main() {
           languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
           expenseRepositoryProvider
               .overrideWithValue(_FakeExpenseRepository([expense])),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
           currency_pkg.appCurrencyProvider.overrideWithValue(euro),
         ],
         child: const MaterialApp(home: ExpensesPage()),
@@ -96,5 +107,45 @@ void main() {
 
     expect(find.textContaining('€'), findsOneWidget);
     expect(find.textContaining(r'R$'), findsNothing);
+  });
+
+  testWidgets('each expense shows its category icon and the filter works',
+      (tester) async {
+    final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appSettingsProvider.overrideWith((ref) => _MockAppSettingsNotifier(
+              AppSettings.fromCountry(br, br.platforms))),
+          languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+          expenseRepositoryProvider.overrideWithValue(_FakeExpenseRepository([
+            Expense(
+                id: 'e1',
+                date: DateTime(2026, 11, 2),
+                category: 'Combustível',
+                amount: 200),
+            Expense(
+                id: 'e2',
+                date: DateTime(2026, 11, 5),
+                category: 'Lavagem',
+                amount: 40),
+          ])),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+        ],
+        child: const MaterialApp(home: ExpensesPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.local_gas_station), findsOneWidget);
+    expect(find.byIcon(Icons.local_car_wash), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('list-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lavagem').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.local_car_wash), findsOneWidget);
+    expect(find.byIcon(Icons.local_gas_station), findsNothing);
   });
 }

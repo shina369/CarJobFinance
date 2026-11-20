@@ -1,0 +1,42 @@
+# Supabase CLI configuration. Used to push the auth e-mail templates:
+#
+#   supabase link --project-ref <ref>
+#   supabase config push
+#
+# `config push` shows a diff per service and asks before applying it. Every
+# setting missing here is pushed with the CLI default, so read the diff and
+# accept only the auth changes you expect (decline the others, or add the
+# remote value here first).
+
+project_id = "carjobfinance"
+
+[auth]
+enabled = true
+enable_signup = true
+# The app checks the same minimum (kMinPasswordLength).
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+# Sign-up waits for the code from the confirmation e-mail.
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = false
+max_frequency = "60s"
+# The app accepts 6 to 10 digits (isValidCode).
+otp_length = 6
+otp_expiry = 3600
+
+# Subjects are limited to 255 characters, so they stay on one line. Keep the
+# spaces in `$l = .`: Go templates reject `$l=` and Supabase then silently
+# sends its default link e-mail instead of the whole template. The
+# language comes from user metadata `lang`, set by the app on sign-up and
+# refreshed on every sign-in; anything else falls back to English.
+
+[auth.email.template.confirmation]
+subject = '{{$l:=""}}{{with .Data}}{{with .lang}}{{$l = .}}{{end}}{{end}}{{if eq $l "pt"}}Código de confirmação{{else if eq $l "es"}}Código de confirmación{{else if eq $l "id"}}Kode konfirmasi{{else if eq $l "hi"}}पुष्टि कोड{{else}}Confirmation code{{end}}'
+content_path = "./supabase/templates/confirm-signup.html"
+
+[auth.email.template.recovery]
+subject = '{{$l:=""}}{{with .Data}}{{with .lang}}{{$l = .}}{{end}}{{end}}{{if eq $l "pt"}}Código de nova senha{{else if eq $l "es"}}Código de nueva clave{{else if eq $l "id"}}Kode sandi baru{{else if eq $l "hi"}}पासवर्ड रीसेट कोड{{else}}Password reset code{{end}}'
+content_path = "./supabase/templates/recovery.html"

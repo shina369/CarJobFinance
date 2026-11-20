@@ -5,17 +5,23 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class AuthUser {
-  const AuthUser({required this.id, required this.email});
+  const AuthUser({required this.id, required this.email, this.firstName});
 
   final String id;
   final String email;
 
-  @override
-  bool operator ==(Object other) =>
-      other is AuthUser && other.id == id && other.email == email;
+  /// Given at sign-up; null for accounts without one.
+  final String? firstName;
 
   @override
-  int get hashCode => Object.hash(id, email);
+  bool operator ==(Object other) =>
+      other is AuthUser &&
+      other.id == id &&
+      other.email == email &&
+      other.firstName == firstName;
+
+  @override
+  int get hashCode => Object.hash(id, email, firstName);
 
   @override
   String toString() => 'AuthUser($id, $email)';
@@ -53,13 +59,19 @@ abstract class AuthRepository {
 
   /// Creates the account. Returns the user when it is usable right away, or
   /// null when a confirmation code was e-mailed and must be passed to
-  /// [confirmSignUp] first.
+  /// [confirmSignUp] first. [languageCode] (e.g. `pt`) is stored on the
+  /// account so the server writes its e-mails in that language.
   Future<AuthUser?> signUp(
     String email,
     String password, {
     required String firstName,
     required String lastName,
+    required String languageCode,
   });
+
+  /// Updates the language the server uses for e-mails to the signed-in
+  /// account. Best effort: never throws.
+  Future<void> updateLanguage(String languageCode);
 
   Future<AuthUser> confirmSignUp(String email, String code);
 
@@ -74,6 +86,11 @@ abstract class AuthRepository {
   Future<void> ensureOnlineSession();
 
   Future<void> signOut();
+
+  /// Permanently erases the account on the server (login, profile and cloud
+  /// backup) and ends the session. Needs the network: throws [AuthFailure]
+  /// without erasing anything when the server cannot be reached.
+  Future<void> deleteAccount();
 }
 
 const int kMinPasswordLength = 8;

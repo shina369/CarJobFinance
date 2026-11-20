@@ -9,6 +9,8 @@ import '../../../core/l10n/languages.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
+import '../../../presentation/controllers/list_view_options.dart';
+import '../../../presentation/widgets/list_sort_filter_actions.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 
 class RidesPage extends ConsumerWidget {
@@ -18,6 +20,10 @@ class RidesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ridesState = ref.watch(ridesControllerProvider);
     final lang = ref.watch(appLanguageProvider);
+    final options = ref.watch(ridesViewOptionsProvider);
+    void setOptions(ListViewOptions o) =>
+        ref.read(ridesViewOptionsProvider.notifier).state = o;
+    final allRides = ridesState.valueOrNull ?? const <entity_ride.Ride>[];
 
     final isLight = Theme.of(context).brightness == Brightness.light;
 
@@ -25,18 +31,25 @@ class RidesPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(lang.tr('rides.title')),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () {},
+          ListSortFilterActions(
+            options: options,
+            filterOptions: filterValues(allRides.map((r) => r.platform)),
+            onChanged: setOptions,
+            lang: lang,
           ),
         ],
       ),
       body: ridesState.when(
-        data: (rides) => _RidesList(rides: rides, lang: lang),
+        data: (rides) {
+          final view = applyRideView(rides, options);
+          if (view.isEmpty && rides.isNotEmpty) {
+            return FilteredEmptyState(
+              lang: lang,
+              onClear: () => setOptions(options.withFilter(null)),
+            );
+          }
+          return _RidesList(rides: view, lang: lang);
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
             child: Text(lang.tr('error.generic', args: {'error': '$error'}))),

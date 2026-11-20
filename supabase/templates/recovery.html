@@ -1,0 +1,27 @@
+{{ $l := "" }}{{ with .Data }}{{ with .lang }}{{ $l = . }}{{ end }}{{ end }}
+{{ if eq $l "pt" }}
+<h2>Redefinir senha</h2>
+<p>Seu código para redefinir a senha:</p>
+<h1>{{ .Token }}</h1>
+<p>Digite-o no CarJobFinance. Se você não pediu isso, ignore este e-mail.</p>
+{{ else if eq $l "es" }}
+<h2>Restablecer contraseña</h2>
+<p>Tu código para restablecer la contraseña:</p>
+<h1>{{ .Token }}</h1>
+<p>Escríbelo en CarJobFinance. Si no lo solicitaste, ignora este correo.</p>
+{{ else if eq $l "id" }}
+<h2>Atur ulang kata sandi</h2>
+<p>Kode untuk mengatur ulang kata sandi Anda:</p>
+<h1>{{ .Token }}</h1>
+<p>Masukkan kode ini di CarJobFinance. Jika Anda tidak memintanya, abaikan email ini.</p>
+{{ else if eq $l "hi" }}
+<h2>पासवर्ड रीसेट करें</h2>
+<p>आपका पासवर्ड रीसेट कोड:</p>
+<h1>{{ .Token }}</h1>
+<p>इसे CarJobFinance में दर्ज करें। यदि आपने इसका अनुरोध नहीं किया है, तो इस ईमेल को अनदेखा करें।</p>
+{{ else }}
+<h2>Reset your password</h2>
+<p>Your password reset code:</p>
+<h1>{{ .Token }}</h1>
+<p>Enter it in CarJobFinance. If you did not request this, ignore this email.</p>
+{{ end }}

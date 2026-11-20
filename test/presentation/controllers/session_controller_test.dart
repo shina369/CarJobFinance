@@ -1,8 +1,11 @@
 import 'package:carjobfinance/core/auth/auth_repository.dart';
 import 'package:carjobfinance/core/auth/credential_store.dart';
+import 'package:carjobfinance/core/l10n/languages.dart';
 import 'package:carjobfinance/data/datasources/local/app_database.dart';
 import 'package:carjobfinance/data/datasources/local/backup_data.dart';
+import 'package:carjobfinance/presentation/controllers/data_controller.dart';
 import 'package:carjobfinance/presentation/controllers/session_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/auth_test_support.dart';
@@ -99,6 +102,27 @@ void main() {
     expect(h.credentials.saved, isNull);
     expect(h.auth.lastFirstName, 'Ana');
     expect(h.auth.lastLastName, 'Silva');
+  });
+
+  test('sign-up stores the language selected in the app', () async {
+    h.language = languageForTag('es_MX')!;
+    final session = controllerOf(h);
+    await session.signUp(
+      'ana@example.com',
+      'senha1234',
+      firstName: 'Ana',
+      lastName: 'Silva',
+    );
+
+    expect(h.auth.lastLanguageCode, 'es');
+  });
+
+  test('signing in syncs the selected language to the account', () async {
+    h.language = languageForTag('en_US')!;
+    final session = controllerOf(h);
+    await session.signIn('ana@example.com', 'senha1234');
+
+    expect(h.auth.calls, contains('language:en'));
   });
 
   test('an empty device with a cloud backup is offered a restore', () async {
@@ -204,4 +228,79 @@ void main() {
 
     expect(h.cloud.uploads, isEmpty);
   });
+
+  group('deleting the account', () {
+    late _CountingDataController data;
+
+    SessionController deletingController() {
+      data = _CountingDataController();
+      final container = ProviderContainer(overrides: [
+        ...h.overrides,
+        dataControllerProvider.overrideWithValue(data),
+      ]);
+      addTearDown(container.dispose);
+      return container.read(sessionProvider.notifier);
+    }
+
+    test('erases the account, the local data and the saved login', () async {
+      final session = deletingController();
+      await session.signIn('ana@example.com', 'senha1234', remember: true);
+      await session.deleteAccount('senha1234');
+
+      expect(h.auth.calls, contains('deleteAccount'));
+      expect(data.clears, 1);
+      expect(await h.store.read(SessionController.dataOwnerKey), isNull);
+      expect(h.credentials.saved, isNull);
+      expect(h.cloud.uploads, isEmpty);
+      expect(session.state.isAuthenticated, isFalse);
+    });
+
+    test('keeps everything when the server cannot be reached', () async {
+      final session = deletingController();
+      await session.signIn('ana@example.com', 'senha1234', remember: true);
+      h.auth.failure = const AuthFailure(AuthFailureReason.network);
+
+      await expectLater(
+        session.deleteAccount('senha1234'),
+        throwsA(isA<AuthFailure>()
+            .having((f) => f.reason, 'reason', AuthFailureReason.network)),
+      );
+
+      expect(data.clears, 0);
+      expect(
+          await h.store.read(SessionController.dataOwnerKey), testAccount.id);
+      expect(h.credentials.saved, isNotNull);
+      expect(session.state.user, testAccount);
+    });
+
+    test('a wrong password erases nothing', () async {
+      final session = deletingController();
+      await session.signIn('ana@example.com', 'senha1234', remember: true);
+      h.auth.requiredPassword = 'senha1234';
+
+      await expectLater(
+        session.deleteAccount('outra-senha'),
+        throwsA(isA<AuthFailure>().having(
+            (f) => f.reason, 'reason', AuthFailureReason.invalidCredentials)),
+      );
+
+      expect(h.auth.calls, isNot(contains('deleteAccount')));
+      expect(data.clears, 0);
+      expect(h.credentials.saved, isNotNull);
+      expect(session.state.user, testAccount);
+    });
+  });
+}
+
+class _CountingDataController implements DataController {
+  int clears = 0;
+
+  @override
+  Future<void> clearAll() async {
+    clears++;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('CountingDataController');
 }

@@ -145,6 +145,8 @@ void main() {
 
     testWidgets('After select + continue, navigates to /',
         (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       final router = GoRouter(
         initialLocation: '/onboarding',
         routes: [

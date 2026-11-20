@@ -109,7 +109,7 @@ Future<Uint8List> buildReportPdf(
       ),
       build: (context) => [
         pw.Text(
-          'CarJobFinance - ${tr('export.reportTitle')}',
+          'CarJob - Driver Finances - ${tr('export.reportTitle')}',
           style:
               const pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
         ),

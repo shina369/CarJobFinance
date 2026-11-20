@@ -15,6 +15,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../controllers/data_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../widgets/export_actions.dart';
+import 'delete_account_dialog.dart';
 
 /// Opens a link outside the app. Overridable in tests.
 final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
@@ -226,6 +227,21 @@ class SettingsPage extends ConsumerWidget {
                   title: Text(tr('settings.signOut')),
                   onTap: () => _showSignOutDialog(context, ref, tr),
                 ),
+                const Divider(height: 1, indent: 72),
+                ListTile(
+                  key: const Key('settings-delete-account'),
+                  leading: Icon(
+                    Icons.delete_forever_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(
+                    tr('settings.deleteAccount'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  onTap: () => _showDeleteAccountDialog(context),
+                ),
               ],
             ),
           ),
@@ -404,6 +420,14 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
     if (confirmed == true) await session.signOut();
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const DeleteAccountDialog(),
+    );
   }
 
   void _showClearDataDialog(

@@ -2,7 +2,7 @@
 
 class AppConstants {
   // App Info
-  static const String appName = 'CarJobFinance';
+  static const String appName = 'CarJob - Driver Finances';
   static const String appVersion = '1.0.0';
   static const String bundleId = 'com.carjobfinance.app';
   static const String issueTrackerUrl =
@@ -74,7 +74,7 @@ class AppConstants {
 
   // Notifications
   static const String notificationChannelId = 'carjobfinance_channel';
-  static const String notificationChannelName = 'CarJobFinance';
+  static const String notificationChannelName = 'CarJob - Driver Finances';
   static const String reminderChannelId = 'carjobfinance_reminders';
   static const String reminderChannelName = 'Lembretes';
 }

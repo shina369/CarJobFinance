@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/credential_store.dart';
 import '../../core/auth/supabase_auth_repository.dart';
+import '../../core/l10n/language_provider.dart';
 import '../../core/storage/device_store.dart';
 import 'cloud_backup_controller.dart';
 import 'data_controller.dart';
@@ -81,11 +82,15 @@ class SessionController extends StateNotifier<SessionState> {
     bool remember = false,
   }) async {
     final user = await _auth.signIn(email, password);
+    unawaited(_auth.updateLanguage(_languageCode));
     await _updateRememberedLogin(
       remember ? SavedLogin(email: email.trim(), password: password) : null,
     );
     await _enter(user);
   }
+
+  String get _languageCode =>
+      _ref.read(appLanguageProvider).locale.languageCode;
 
   Future<void> _updateRememberedLogin(SavedLogin? login) async {
     try {
@@ -112,6 +117,7 @@ class SessionController extends StateNotifier<SessionState> {
       password,
       firstName: firstName,
       lastName: lastName,
+      languageCode: _languageCode,
     );
     if (user == null) return false;
     await _enter(user);
@@ -201,6 +207,22 @@ class SessionController extends StateNotifier<SessionState> {
       // Offline or slow: signing out must still work.
     }
     await _auth.signOut();
+    state = const SessionState();
+  }
+
+  /// Erases the account on the server, then everything it left on this
+  /// device. The [password] is checked against the server first (throwing
+  /// [AuthFailure] when wrong), and nothing is erased if any server call fails.
+  Future<void> deleteAccount(String password) async {
+    final email = state.user?.email;
+    if (email == null) {
+      throw const AuthFailure(AuthFailureReason.invalidCredentials);
+    }
+    await _auth.signIn(email, password);
+    await _auth.deleteAccount();
+    await _ref.read(dataControllerProvider).clearAll();
+    await _store.delete(dataOwnerKey);
+    await _updateRememberedLogin(null);
     state = const SessionState();
   }
 

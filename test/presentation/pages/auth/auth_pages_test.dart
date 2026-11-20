@@ -41,6 +41,7 @@ void main() {
       final h = AuthHarness();
       await tester.pumpWidget(_app(const LoginPage(), h.overrides));
 
+      expect(find.byKey(const Key('auth-logo')), findsOneWidget);
       expect(find.byKey(const Key('auth-email')), findsOneWidget);
       expect(find.byKey(const Key('auth-password')), findsOneWidget);
       expect(find.byKey(const Key('auth-submit')), findsOneWidget);

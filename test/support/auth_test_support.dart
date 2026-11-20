@@ -4,6 +4,8 @@ import 'package:carjobfinance/core/auth/auth_repository.dart';
 import 'package:carjobfinance/core/auth/credential_store.dart';
 import 'package:carjobfinance/core/auth/supabase_auth_repository.dart';
 import 'package:carjobfinance/core/backup/cloud_backup_repository.dart';
+import 'package:carjobfinance/core/l10n/language_provider.dart';
+import 'package:carjobfinance/core/l10n/languages.dart';
 import 'package:carjobfinance/core/storage/device_store.dart';
 import 'package:carjobfinance/data/datasources/local/backup_data.dart';
 import 'package:carjobfinance/data/datasources/local/daos.dart';
@@ -27,8 +29,12 @@ class FakeAuth implements AuthRepository {
   AuthUser? current;
   AuthUser account = testAccount;
   bool signUpNeedsCode = false;
+
+  /// When set, [signIn] rejects any other password.
+  String? requiredPassword;
   String? lastFirstName;
   String? lastLastName;
+  String? lastLanguageCode;
 
   /// Thrown by the next call that can fail, then cleared.
   AuthFailure? failure;
@@ -51,6 +57,10 @@ class FakeAuth implements AuthRepository {
   @override
   Future<AuthUser> signIn(String email, String password) async {
     _maybeFail();
+    final required = requiredPassword;
+    if (required != null && password != required) {
+      throw const AuthFailure(AuthFailureReason.invalidCredentials);
+    }
     calls.add('signIn:$email');
     return current = account;
   }
@@ -61,13 +71,20 @@ class FakeAuth implements AuthRepository {
     String password, {
     required String firstName,
     required String lastName,
+    required String languageCode,
   }) async {
     _maybeFail();
     calls.add('signUp:$email');
     lastFirstName = firstName;
     lastLastName = lastName;
+    lastLanguageCode = languageCode;
     if (signUpNeedsCode) return null;
     return current = account;
+  }
+
+  @override
+  Future<void> updateLanguage(String languageCode) async {
+    calls.add('language:$languageCode');
   }
 
   @override
@@ -103,6 +120,14 @@ class FakeAuth implements AuthRepository {
   @override
   Future<void> signOut() async {
     calls.add('signOut');
+    current = null;
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    _maybeFail();
+    calls.add('deleteAccount');
     current = null;
     _changes.add(null);
   }
@@ -170,6 +195,7 @@ class AuthHarness {
   final FakeDao dao = FakeDao();
   final MemoryDeviceStore store = MemoryDeviceStore();
   final FakeCredentialStore credentials = FakeCredentialStore();
+  AppLanguage language = languageForTag('pt_BR')!;
 
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
@@ -177,6 +203,7 @@ class AuthHarness {
         appDaoProvider.overrideWithValue(dao),
         deviceStoreProvider.overrideWithValue(store),
         credentialStoreProvider.overrideWithValue(credentials),
+        appLanguageProvider.overrideWithValue(language),
       ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides);

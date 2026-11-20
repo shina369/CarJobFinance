@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase/supabase.dart' hide AuthUser;
@@ -12,7 +13,7 @@ import '../storage/device_store.dart';
 import 'auth_repository.dart';
 
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository(this._auth, this._store) {
+  SupabaseAuthRepository(this._auth, this._store, this._functions) {
     _subscription = _auth.onAuthStateChange.listen(
       _onAuthState,
       // Refresh failures are also reported here; callers get them from the
@@ -23,8 +24,16 @@ class SupabaseAuthRepository implements AuthRepository {
 
   static const String sessionKey = 'auth_session';
 
+  /// Edge Function (`supabase/functions/delete-account`) that erases the
+  /// signed-in user's data and login with the service role.
+  static const String deleteAccountFunction = 'delete-account';
+
+  /// User metadata key read by the e-mail templates (`{{ .Data.lang }}`).
+  static const String languageMetadataKey = 'lang';
+
   final GoTrueClient _auth;
   final DeviceStore _store;
+  final FunctionsClient _functions;
   final _userChanges = StreamController<AuthUser?>.broadcast();
   late final StreamSubscription<AuthState> _subscription;
 
@@ -75,6 +84,7 @@ class SupabaseAuthRepository implements AuthRepository {
     String password, {
     required String firstName,
     required String lastName,
+    required String languageCode,
   }) =>
       _guard(() async {
         final response = await _auth.signUp(
@@ -83,6 +93,7 @@ class SupabaseAuthRepository implements AuthRepository {
           data: {
             'first_name': firstName.trim(),
             'last_name': lastName.trim(),
+            languageMetadataKey: languageCode,
           },
         );
         final user = response.user;
@@ -93,6 +104,19 @@ class SupabaseAuthRepository implements AuthRepository {
         }
         return response.session == null ? null : _requireUser(response);
       });
+
+  @override
+  Future<void> updateLanguage(String languageCode) async {
+    if (_auth.currentUser?.userMetadata?[languageMetadataKey] == languageCode) {
+      return;
+    }
+    try {
+      await _auth.updateUser(
+          UserAttributes(data: {languageMetadataKey: languageCode}));
+    } catch (_) {
+      // Only affects the language of future e-mails.
+    }
+  }
 
   @override
   Future<AuthUser> confirmSignUp(String email, String code) => _guard(() async {
@@ -158,6 +182,22 @@ class SupabaseAuthRepository implements AuthRepository {
     await _store.delete(sessionKey);
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    await ensureOnlineSession();
+    await _guard(() async {
+      try {
+        await _functions.invoke(deleteAccountFunction);
+      } on FunctionException catch (e) {
+        final reason = e.status == 401
+            ? AuthFailureReason.invalidCredentials
+            : AuthFailureReason.unknown;
+        throw AuthFailure(reason, 'delete-account ${e.status}');
+      }
+    });
+    await signOut();
+  }
+
   Future<void> dispose() async {
     await _subscription.cancel();
     await _userChanges.close();
@@ -171,7 +211,19 @@ class SupabaseAuthRepository implements AuthRepository {
     return _toUser(user);
   }
 
-  AuthUser _toUser(User user) => AuthUser(id: user.id, email: user.email ?? '');
+  AuthUser _toUser(User user) => toAuthUser(user);
+
+  @visibleForTesting
+  static AuthUser toAuthUser(User user) {
+    final firstName = user.userMetadata?['first_name'];
+    return AuthUser(
+      id: user.id,
+      email: user.email ?? '',
+      firstName: firstName is String && firstName.trim().isNotEmpty
+          ? firstName.trim()
+          : null,
+    );
+  }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
     try {
@@ -232,9 +284,11 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
   final repository = SupabaseAuthRepository(
-    ref.watch(supabaseClientProvider).auth,
+    client.auth,
     ref.watch(deviceStoreProvider),
+    client.functions,
   );
   ref.onDispose(repository.dispose);
   return repository;

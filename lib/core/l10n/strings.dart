@@ -81,6 +81,13 @@ class Strings {
     'settings.signOutConfirm': 'Sair da conta?',
     'settings.signOutMsg':
         'Seus dados continuam neste aparelho. Se houver internet, um backup é enviado para a nuvem antes de sair.',
+    'settings.deleteAccount': 'Excluir conta',
+    'settings.deleteAccountConfirm': 'Excluir conta permanentemente?',
+    'settings.deleteAccountMsg':
+        'Sua conta, seu login e o backup na nuvem serão apagados dos nossos servidores, e todos os dados deste aparelho serão removidos. Esta ação não pode ser desfeita.',
+    'settings.deleteAccountPasswordHint':
+        'Por segurança, digite sua senha para confirmar.',
+    'settings.deleteAccountWrongPassword': 'Senha incorreta',
     'gate.foreignTitle': 'Dados de outra conta',
     'gate.foreignMsg':
         'Este aparelho tem corridas e despesas registradas em outra conta. Para entrar como {email}, esses dados serão apagados deste aparelho.',
@@ -138,6 +145,9 @@ class Strings {
         'Tem certeza que deseja salvar este objetivo do mês?',
     'dash.confirmYes': 'Sim',
     'dash.confirmNo': 'Não',
+    'dash.greetingMorning': 'Bom dia',
+    'dash.greetingAfternoon': 'Boa tarde',
+    'dash.greetingNight': 'Boa noite',
     // Rides
     'rides.title': 'Corridas',
     'rides.new': 'Nova Corrida',
@@ -331,9 +341,9 @@ class Strings {
     'notif.reminderTitle': 'Hora de registrar o seu dia',
     'notif.reminderBody': 'Registre as corridas e despesas de hoje.',
     'legal.termsBody':
-        '1. Sobre o app\nO CarJobFinance é uma ferramenta de registro e organização financeira para motoristas de aplicativo. Ao usar o app, você concorda com estes termos.\n\n2. Uso do app\nVocê é responsável pelas informações que registra (corridas, despesas, comissões e metas) e pela exatidão delas. Os cálculos e relatórios dependem inteiramente desses dados.\n\n3. Não é aconselhamento financeiro\nOs valores, médias e relatórios exibidos são apenas informativos. O app não oferece aconselhamento financeiro, contábil ou tributário e não substitui um profissional qualificado.\n\n4. Seus dados e backups\nOs dados ficam armazenados somente no seu dispositivo. Você é responsável por criar e guardar backups. Desinstalar o app ou usar "Limpar Todos os Dados" apaga as informações de forma permanente.\n\n5. Plataformas de terceiros\nO CarJobFinance não tem vínculo com as plataformas de transporte listadas no app. Os nomes e marcas pertencem aos respectivos proprietários e são usados apenas para identificação.\n\n6. Isenção de garantias\nO app é fornecido "no estado em que se encontra", sem garantias de qualquer tipo. Na medida permitida pela lei, não nos responsabilizamos por perdas decorrentes do uso do app ou da perda de dados.\n\n7. Alterações\nEstes termos podem ser atualizados em novas versões do app. O uso continuado após uma atualização significa que você aceita os termos revisados.\n\n8. Contato\nDúvidas ou problemas podem ser enviados pela opção "Reportar Problema".',
+        '1. Sobre o app\nO CarJobFinance é uma ferramenta de registro e organização financeira para motoristas de aplicativo. Ao usar o app, você concorda com estes termos.\n\n2. Uso do app\nVocê é responsável pelas informações que registra (corridas, despesas, comissões e metas) e pela exatidão delas. Os cálculos e relatórios dependem inteiramente desses dados.\n\n3. Não é aconselhamento financeiro\nOs valores, médias e relatórios exibidos são apenas informativos. O app não oferece aconselhamento financeiro, contábil ou tributário e não substitui um profissional qualificado.\n\n4. Seus dados e backups\nOs dados ficam no seu dispositivo, com cópia automática na nuvem vinculada à sua conta. Você continua responsável por guardar seus próprios backups. Desinstalar o app ou usar "Limpar Todos os Dados" apaga as informações de forma permanente.\n\n5. Plataformas de terceiros\nO CarJobFinance não tem vínculo com as plataformas de transporte listadas no app. Os nomes e marcas pertencem aos respectivos proprietários e são usados apenas para identificação.\n\n6. Isenção de garantias\nO app é fornecido "no estado em que se encontra", sem garantias de qualquer tipo. Na medida permitida pela lei, não nos responsabilizamos por perdas decorrentes do uso do app ou da perda de dados.\n\n7. Alterações\nEstes termos podem ser atualizados em novas versões do app. O uso continuado após uma atualização significa que você aceita os termos revisados.\n\n8. Contato\nDúvidas ou problemas podem ser enviados pela opção "Reportar Problema".',
     'legal.privacyBody':
-        '1. Dados que o app guarda\nCorridas, despesas, comissões, metas e preferências (país, idioma, moeda, plataformas e notificações) que você mesmo registra.\n\n2. Onde os dados ficam\nTudo é armazenado apenas no seu dispositivo. O app não exige conta, não envia seus dados para servidores e não usa publicidade nem ferramentas de rastreamento.\n\n3. Exportações e backups\nArquivos CSV, PDF e de backup são gerados somente quando você solicita e são salvos ou compartilhados no destino que você escolher. A partir daí, a guarda do arquivo é de sua responsabilidade. O backup contém todos os seus registros em texto legível.\n\n4. Notificações\nOs lembretes são agendados localmente no dispositivo. A permissão de notificações só é solicitada quando você ativa essa função e pode ser revogada a qualquer momento nas configurações do sistema.\n\n5. Links externos\n"Reportar Problema" abre uma página externa no navegador, sujeita à política de privacidade do serviço que a hospeda.\n\n6. Como apagar seus dados\nUse "Limpar Todos os Dados" nas configurações ou desinstale o app. Arquivos que você exportou precisam ser apagados manualmente.\n\n7. Alterações\nEsta política pode ser atualizada em novas versões do app.',
+        '1. Dados que o app guarda\nCorridas, despesas, comissões, metas e preferências (país, idioma, moeda, plataformas e notificações) que você mesmo registra. Para criar a conta, também coletamos seu nome, e-mail e senha.\n\n2. Onde os dados ficam\nSeus registros ficam no banco de dados do seu dispositivo. O app exige uma conta: o login é feito no Supabase (nosso provedor de autenticação e armazenamento), que guarda seu nome, e-mail e senha (protegida por hash). O backup na nuvem é enviado automaticamente, no máximo uma vez a cada 24 horas e quando seus dados mudam, e inclui seus registros (corridas, despesas e demais dados do app). Os dados trafegam por conexão criptografada (HTTPS) e cada conta só acessa o próprio backup. Não vendemos nem compartilhamos seus dados com terceiros, e o app não usa publicidade nem ferramentas de rastreamento.\n\n3. Exportações e backups\nArquivos CSV, PDF e de backup são gerados somente quando você solicita e são salvos ou compartilhados no destino que você escolher. A partir daí, a guarda do arquivo é de sua responsabilidade. O backup contém todos os seus registros em texto legível.\n\n4. Notificações\nOs lembretes são agendados localmente no dispositivo. A permissão de notificações só é solicitada quando você ativa essa função e pode ser revogada a qualquer momento nas configurações do sistema.\n\n5. Links externos\n"Reportar Problema" abre uma página externa no navegador, sujeita à política de privacidade do serviço que a hospeda.\n\n6. Como apagar seus dados\nUse "Limpar Todos os Dados" nas configurações para apagar os dados do dispositivo ou desinstale o app. Isso não apaga sua conta nem o backup na nuvem. Para apagar de uma vez a conta, o backup na nuvem e os dados do aparelho, use "Excluir conta" em Configurações, na seção Conta. A exclusão é permanente. Você também pode pedi-la pelo e-mail de suporte indicado na página do app na Google Play. Arquivos que você exportou precisam ser apagados manualmente.\n\n7. Alterações\nEsta política pode ser atualizada em novas versões do app.',
     'platforms.createNew': 'Criar nova',
     'platforms.newName': 'Nome da plataforma',
     'platforms.namePlaceholder': 'Ex: Maxim, Beat',
@@ -364,10 +374,19 @@ class Strings {
     'expenses.commissionAuto': 'Calculadas automaticamente das corridas',
     'expenses.others': 'Despesas gerais',
     'expenses.commissionTotal': 'Total de comissões',
+    'list.sort': 'Ordenar',
+    'list.filter': 'Filtrar',
+    'list.sortNewest': 'Mais recentes',
+    'list.sortOldest': 'Mais antigas',
+    'list.sortHighest': 'Maior valor',
+    'list.sortLowest': 'Menor valor',
+    'list.filterAll': 'Todas',
+    'list.noResults': 'Nenhum resultado para este filtro',
+    'list.clearFilter': 'Limpar filtro',
     'reports.commissions': 'Comissões de plataforma',
     'reports.otherExpenses': 'Outras despesas',
     // Onboarding
-    'onboarding.welcome': 'Bem-vindo ao CarJobFinance',
+    'onboarding.welcome': 'Bem-vindo ao CarJob - Driver Finances',
     'onboarding.subtitle':
         'Selecione seu país para configurar moeda, idioma e plataformas disponíveis.',
     'onboarding.country': 'País',
@@ -434,6 +453,13 @@ class Strings {
     'settings.signOutConfirm': '¿Cerrar sesión?',
     'settings.signOutMsg':
         'Tus datos permanecen en este dispositivo. Si hay internet, se envía un respaldo a la nube antes de salir.',
+    'settings.deleteAccount': 'Eliminar cuenta',
+    'settings.deleteAccountConfirm': '¿Eliminar la cuenta de forma permanente?',
+    'settings.deleteAccountMsg':
+        'Tu cuenta, tu acceso y la copia de seguridad en la nube se borrarán de nuestros servidores, y se eliminarán todos los datos de este dispositivo. Esta acción no se puede deshacer.',
+    'settings.deleteAccountPasswordHint':
+        'Por seguridad, escribe tu contraseña para confirmar.',
+    'settings.deleteAccountWrongPassword': 'Contraseña incorrecta',
     'gate.foreignTitle': 'Datos de otra cuenta',
     'gate.foreignMsg':
         'Este dispositivo tiene viajes y gastos registrados con otra cuenta. Para entrar como {email}, esos datos se borrarán de este dispositivo.',
@@ -491,6 +517,9 @@ class Strings {
     'dash.confirmGoalMsg': '¿Seguro que deseas guardar este objetivo del mes?',
     'dash.confirmYes': 'Sí',
     'dash.confirmNo': 'No',
+    'dash.greetingMorning': 'Buenos días',
+    'dash.greetingAfternoon': 'Buenas tardes',
+    'dash.greetingNight': 'Buenas noches',
     // Rides
     'rides.title': 'Rides',
     'rides.new': 'Nueva ride',
@@ -685,9 +714,9 @@ class Strings {
     'notif.reminderTitle': 'Hora de registrar tu día',
     'notif.reminderBody': 'Registra los viajes y gastos de hoy.',
     'legal.termsBody':
-        '1. Sobre la app\nCarJobFinance es una herramienta de registro y organización financiera para conductores de aplicaciones. Al usar la app, aceptas estos términos.\n\n2. Uso de la app\nEres responsable de la información que registras (viajes, gastos, comisiones y metas) y de su exactitud. Los cálculos y reportes dependen por completo de esos datos.\n\n3. No es asesoría financiera\nLos valores, promedios y reportes son solo informativos. La app no ofrece asesoría financiera, contable ni fiscal y no reemplaza a un profesional calificado.\n\n4. Tus datos y respaldos\nLos datos se guardan únicamente en tu dispositivo. Eres responsable de crear y conservar respaldos. Desinstalar la app o usar "Borrar todos los datos" elimina la información de forma permanente.\n\n5. Plataformas de terceros\nCarJobFinance no tiene relación con las plataformas de transporte que aparecen en la app. Los nombres y marcas pertenecen a sus respectivos dueños y se usan solo para identificación.\n\n6. Sin garantías\nLa app se ofrece "tal cual", sin garantías de ningún tipo. En la medida que la ley lo permita, no nos hacemos responsables de pérdidas derivadas del uso de la app o de la pérdida de datos.\n\n7. Cambios\nEstos términos pueden actualizarse en nuevas versiones de la app. Seguir usándola después de una actualización significa que aceptas los términos revisados.\n\n8. Contacto\nPuedes enviar dudas o problemas con la opción "Reportar un problema".',
+        '1. Sobre la app\nCarJobFinance es una herramienta de registro y organización financiera para conductores de aplicaciones. Al usar la app, aceptas estos términos.\n\n2. Uso de la app\nEres responsable de la información que registras (viajes, gastos, comisiones y metas) y de su exactitud. Los cálculos y reportes dependen por completo de esos datos.\n\n3. No es asesoría financiera\nLos valores, promedios y reportes son solo informativos. La app no ofrece asesoría financiera, contable ni fiscal y no reemplaza a un profesional calificado.\n\n4. Tus datos y respaldos\nLos datos se guardan en tu dispositivo, con una copia automática en la nube vinculada a tu cuenta. Sigues siendo responsable de conservar tus propios respaldos. Desinstalar la app o usar "Borrar todos los datos" elimina la información de forma permanente.\n\n5. Plataformas de terceros\nCarJobFinance no tiene relación con las plataformas de transporte que aparecen en la app. Los nombres y marcas pertenecen a sus respectivos dueños y se usan solo para identificación.\n\n6. Sin garantías\nLa app se ofrece "tal cual", sin garantías de ningún tipo. En la medida que la ley lo permita, no nos hacemos responsables de pérdidas derivadas del uso de la app o de la pérdida de datos.\n\n7. Cambios\nEstos términos pueden actualizarse en nuevas versiones de la app. Seguir usándola después de una actualización significa que aceptas los términos revisados.\n\n8. Contacto\nPuedes enviar dudas o problemas con la opción "Reportar un problema".',
     'legal.privacyBody':
-        '1. Datos que guarda la app\nViajes, gastos, comisiones, metas y preferencias (país, idioma, moneda, plataformas y notificaciones) que tú mismo registras.\n\n2. Dónde se guardan\nTodo se almacena únicamente en tu dispositivo. La app no requiere cuenta, no envía tus datos a servidores y no usa publicidad ni herramientas de rastreo.\n\n3. Exportaciones y respaldos\nLos archivos CSV, PDF y de respaldo se generan solo cuando los solicitas y se guardan o comparten en el destino que elijas. A partir de ahí, el archivo queda bajo tu responsabilidad. El respaldo contiene todos tus registros en texto legible.\n\n4. Notificaciones\nLos recordatorios se programan localmente en el dispositivo. El permiso de notificaciones solo se solicita cuando activas esa función y puedes revocarlo en cualquier momento desde los ajustes del sistema.\n\n5. Enlaces externos\n"Reportar un problema" abre una página externa en el navegador, sujeta a la política de privacidad del servicio que la aloja.\n\n6. Cómo borrar tus datos\nUsa "Borrar todos los datos" en los ajustes o desinstala la app. Los archivos que exportaste deben borrarse manualmente.\n\n7. Cambios\nEsta política puede actualizarse en nuevas versiones de la app.',
+        '1. Datos que guarda la app\nViajes, gastos, comisiones, metas y preferencias (país, idioma, moneda, plataformas y notificaciones) que tú mismo registras. Para crear la cuenta también recopilamos tu nombre, correo electrónico y contraseña.\n\n2. Dónde se guardan\nTus registros se guardan en la base de datos de tu dispositivo. La app requiere una cuenta: el inicio de sesión se hace con Supabase (nuestro proveedor de autenticación y almacenamiento), que guarda tu nombre, correo electrónico y contraseña (protegida con hash). La copia de seguridad en la nube se envía automáticamente, como máximo una vez cada 24 horas y cuando tus datos cambian, e incluye tus registros (viajes, gastos y demás datos de la app). Los datos viajan por una conexión cifrada (HTTPS) y cada cuenta solo accede a su propia copia. No vendemos ni compartimos tus datos con terceros, y la app no usa publicidad ni herramientas de rastreo.\n\n3. Exportaciones y respaldos\nLos archivos CSV, PDF y de respaldo se generan solo cuando los solicitas y se guardan o comparten en el destino que elijas. A partir de ahí, el archivo queda bajo tu responsabilidad. El respaldo contiene todos tus registros en texto legible.\n\n4. Notificaciones\nLos recordatorios se programan localmente en el dispositivo. El permiso de notificaciones solo se solicita cuando activas esa función y puedes revocarlo en cualquier momento desde los ajustes del sistema.\n\n5. Enlaces externos\n"Reportar un problema" abre una página externa en el navegador, sujeta a la política de privacidad del servicio que la aloja.\n\n6. Cómo borrar tus datos\nUsa "Borrar todos los datos" en los ajustes para borrar los datos del dispositivo o desinstala la app. Esto no elimina tu cuenta ni la copia en la nube. Para borrar de una vez la cuenta, la copia en la nube y los datos del dispositivo, usa "Eliminar cuenta" en Ajustes, en la sección Cuenta. La eliminación es permanente. También puedes solicitarla al correo de soporte indicado en la página de la app en Google Play. Los archivos que exportaste deben borrarse manualmente.\n\n7. Cambios\nEsta política puede actualizarse en nuevas versiones de la app.',
     'platforms.createNew': 'Crear nueva',
     'platforms.newName': 'Nombre de la plataforma',
     'platforms.namePlaceholder': 'Ej: Maxim, Beat',
@@ -718,10 +747,19 @@ class Strings {
     'expenses.commissionAuto': 'Calculadas automáticamente de los viajes',
     'expenses.others': 'Otros gastos',
     'expenses.commissionTotal': 'Total de comisiones',
+    'list.sort': 'Ordenar',
+    'list.filter': 'Filtrar',
+    'list.sortNewest': 'Más recientes',
+    'list.sortOldest': 'Más antiguos',
+    'list.sortHighest': 'Mayor valor',
+    'list.sortLowest': 'Menor valor',
+    'list.filterAll': 'Todas',
+    'list.noResults': 'Sin resultados para este filtro',
+    'list.clearFilter': 'Quitar filtro',
     'reports.commissions': 'Comisiones de plataforma',
     'reports.otherExpenses': 'Otros gastos',
     // Onboarding
-    'onboarding.welcome': 'Bienvenido a CarJobFinance',
+    'onboarding.welcome': 'Bienvenido a CarJob - Driver Finances',
     'onboarding.subtitle':
         'Selecciona tu país para configurar moneda, idioma y plataformas disponibles.',
     'onboarding.country': 'País',
@@ -824,6 +862,13 @@ class Strings {
     'settings.signOutConfirm': 'Sign out?',
     'settings.signOutMsg':
         'Your data stays on this device. If you are online, a backup is sent to the cloud before signing out.',
+    'settings.deleteAccount': 'Delete account',
+    'settings.deleteAccountConfirm': 'Delete account permanently?',
+    'settings.deleteAccountMsg':
+        'Your account, login and cloud backup will be erased from our servers, and all data on this device will be removed. This action cannot be undone.',
+    'settings.deleteAccountPasswordHint':
+        'For your security, enter your password to confirm.',
+    'settings.deleteAccountWrongPassword': 'Incorrect password',
     'gate.foreignTitle': 'Data from another account',
     'gate.foreignMsg':
         'This device has rides and expenses recorded under another account. To sign in as {email}, that data will be erased from this device.',
@@ -875,6 +920,9 @@ class Strings {
     'dash.confirmGoalMsg': 'Are you sure you want to save this monthly goal?',
     'dash.confirmYes': 'Yes',
     'dash.confirmNo': 'No',
+    'dash.greetingMorning': 'Good morning',
+    'dash.greetingAfternoon': 'Good afternoon',
+    'dash.greetingNight': 'Good evening',
     'dash.save': 'Save',
     'dash.cancel': 'Cancel',
     'dash.rideSingular': 'ride',
@@ -1073,9 +1121,9 @@ class Strings {
     'notif.reminderTitle': 'Time to log your day',
     'notif.reminderBody': 'Record today\'s rides and expenses.',
     'legal.termsBody':
-        '1. About the app\nCarJobFinance is a record-keeping and financial organisation tool for rideshare drivers. By using the app you agree to these terms.\n\n2. Using the app\nYou are responsible for the information you record (rides, expenses, commissions and goals) and for its accuracy. All calculations and reports depend entirely on that data.\n\n3. Not financial advice\nThe amounts, averages and reports shown are for information only. The app does not provide financial, accounting or tax advice and does not replace a qualified professional.\n\n4. Your data and backups\nData is stored only on your device. You are responsible for creating and keeping backups. Uninstalling the app or using "Clear all data" permanently deletes your information.\n\n5. Third-party platforms\nCarJobFinance is not affiliated with the ride platforms listed in the app. Names and trademarks belong to their respective owners and are used for identification only.\n\n6. No warranty\nThe app is provided "as is", without warranties of any kind. To the extent permitted by law, we are not liable for losses arising from use of the app or from loss of data.\n\n7. Changes\nThese terms may be updated in new versions of the app. Continuing to use the app after an update means you accept the revised terms.\n\n8. Contact\nQuestions or problems can be sent through "Report an issue".',
+        '1. About the app\nCarJobFinance is a record-keeping and financial organisation tool for rideshare drivers. By using the app you agree to these terms.\n\n2. Using the app\nYou are responsible for the information you record (rides, expenses, commissions and goals) and for its accuracy. All calculations and reports depend entirely on that data.\n\n3. Not financial advice\nThe amounts, averages and reports shown are for information only. The app does not provide financial, accounting or tax advice and does not replace a qualified professional.\n\n4. Your data and backups\nData is stored on your device, with an automatic cloud copy linked to your account. You remain responsible for keeping your own backups. Uninstalling the app or using "Clear all data" permanently deletes your information.\n\n5. Third-party platforms\nCarJobFinance is not affiliated with the ride platforms listed in the app. Names and trademarks belong to their respective owners and are used for identification only.\n\n6. No warranty\nThe app is provided "as is", without warranties of any kind. To the extent permitted by law, we are not liable for losses arising from use of the app or from loss of data.\n\n7. Changes\nThese terms may be updated in new versions of the app. Continuing to use the app after an update means you accept the revised terms.\n\n8. Contact\nQuestions or problems can be sent through "Report an issue".',
     'legal.privacyBody':
-        '1. Data the app keeps\nRides, expenses, commissions, goals and preferences (country, language, currency, platforms and notifications) that you enter yourself.\n\n2. Where data is stored\nEverything is stored only on your device. The app requires no account, does not send your data to any server, and uses no advertising or tracking tools.\n\n3. Exports and backups\nCSV, PDF and backup files are created only when you ask for them and are saved or shared to the destination you choose. From then on, the file is in your care. The backup contains all your records in readable text.\n\n4. Notifications\nReminders are scheduled locally on the device. Notification permission is requested only when you turn the feature on, and you can revoke it at any time in the system settings.\n\n5. External links\n"Report an issue" opens an external page in your browser, which is subject to the privacy policy of the service hosting it.\n\n6. Deleting your data\nUse "Clear all data" in settings or uninstall the app. Files you have exported must be deleted manually.\n\n7. Changes\nThis policy may be updated in new versions of the app.',
+        '1. Data the app keeps\nRides, expenses, commissions, goals and preferences (country, language, currency, platforms and notifications) that you enter yourself. To create your account we also collect your name, email address and password.\n\n2. Where data is stored\nYour records are kept in the database on your device. The app requires an account: sign-in is handled by Supabase (our authentication and storage provider), which stores your name, email address and password (protected by hashing). The cloud backup is uploaded automatically, at most once every 24 hours and only when your data has changed, and includes your records (rides, expenses and other app data). Data travels over an encrypted connection (HTTPS) and each account can only access its own backup. We do not sell or share your data with third parties, and the app uses no advertising or tracking tools.\n\n3. Exports and backups\nCSV, PDF and backup files are created only when you ask for them and are saved or shared to the destination you choose. From then on, the file is in your care. The backup contains all your records in readable text.\n\n4. Notifications\nReminders are scheduled locally on the device. Notification permission is requested only when you turn the feature on, and you can revoke it at any time in the system settings.\n\n5. External links\n"Report an issue" opens an external page in your browser, which is subject to the privacy policy of the service hosting it.\n\n6. Deleting your data\nUse "Clear all data" in settings to delete the data on your device, or uninstall the app. This does not delete your account or your cloud backup. To erase your account, cloud backup and device data in one step, use "Delete account" in settings, in the Account section. Deletion is permanent. You can also request it through the support email listed on the Google Play page of this app. Files you have exported must be deleted manually.\n\n7. Changes\nThis policy may be updated in new versions of the app.',
     'platforms.createNew': 'Create new',
     'platforms.newName': 'Platform name',
     'platforms.namePlaceholder': 'E.g. Maxim, Beat',
@@ -1106,10 +1154,19 @@ class Strings {
     'expenses.commissionAuto': 'Calculated automatically from rides',
     'expenses.others': 'Other expenses',
     'expenses.commissionTotal': 'Total commissions',
+    'list.sort': 'Sort',
+    'list.filter': 'Filter',
+    'list.sortNewest': 'Newest first',
+    'list.sortOldest': 'Oldest first',
+    'list.sortHighest': 'Highest amount',
+    'list.sortLowest': 'Lowest amount',
+    'list.filterAll': 'All',
+    'list.noResults': 'No results for this filter',
+    'list.clearFilter': 'Clear filter',
     'reports.commissions': 'Platform commissions',
     'reports.otherExpenses': 'Other expenses',
     // Onboarding
-    'onboarding.welcome': 'Welcome to CarJobFinance',
+    'onboarding.welcome': 'Welcome to CarJob - Driver Finances',
     'onboarding.subtitle':
         'Select your country to configure currency, language and available platforms.',
     'onboarding.country': 'Country',
@@ -1167,6 +1224,13 @@ class Strings {
     'settings.signOutConfirm': 'Keluar dari akun?',
     'settings.signOutMsg':
         'Data Anda tetap ada di perangkat ini. Jika ada internet, cadangan dikirim ke cloud sebelum keluar.',
+    'settings.deleteAccount': 'Hapus akun',
+    'settings.deleteAccountConfirm': 'Hapus akun secara permanen?',
+    'settings.deleteAccountMsg':
+        'Akun, login, dan cadangan cloud Anda akan dihapus dari server kami, dan semua data di perangkat ini akan dihapus. Tindakan ini tidak dapat dibatalkan.',
+    'settings.deleteAccountPasswordHint':
+        'Demi keamanan, masukkan kata sandi Anda untuk mengonfirmasi.',
+    'settings.deleteAccountWrongPassword': 'Kata sandi salah',
     'gate.foreignTitle': 'Data dari akun lain',
     'gate.foreignMsg':
         'Perangkat ini memiliki perjalanan dan pengeluaran yang dicatat dengan akun lain. Untuk masuk sebagai {email}, data tersebut akan dihapus dari perangkat ini.',
@@ -1218,6 +1282,9 @@ class Strings {
     'dash.confirmGoalMsg': 'Yakin ingin menyimpan target bulan ini?',
     'dash.confirmYes': 'Ya',
     'dash.confirmNo': 'Tidak',
+    'dash.greetingMorning': 'Selamat pagi',
+    'dash.greetingAfternoon': 'Selamat siang',
+    'dash.greetingNight': 'Selamat malam',
     'dash.save': 'Simpan',
     'dash.cancel': 'Batal',
     'dash.rideSingular': 'perjalanan',
@@ -1416,9 +1483,9 @@ class Strings {
     'notif.reminderTitle': 'Saatnya mencatat hari Anda',
     'notif.reminderBody': 'Catat perjalanan dan pengeluaran hari ini.',
     'legal.termsBody':
-        '1. Tentang aplikasi\nCarJobFinance adalah alat pencatatan dan pengelolaan keuangan untuk pengemudi transportasi online. Dengan menggunakan aplikasi ini, Anda menyetujui ketentuan ini.\n\n2. Penggunaan aplikasi\nAnda bertanggung jawab atas informasi yang Anda catat (perjalanan, pengeluaran, komisi, dan target) serta keakuratannya. Semua perhitungan dan laporan sepenuhnya bergantung pada data tersebut.\n\n3. Bukan nasihat keuangan\nNilai, rata-rata, dan laporan yang ditampilkan hanya bersifat informatif. Aplikasi ini tidak memberikan nasihat keuangan, akuntansi, atau pajak dan tidak menggantikan tenaga profesional.\n\n4. Data dan cadangan Anda\nData hanya disimpan di perangkat Anda. Anda bertanggung jawab membuat dan menyimpan cadangan. Menghapus aplikasi atau menggunakan "Hapus semua data" akan menghapus informasi secara permanen.\n\n5. Platform pihak ketiga\nCarJobFinance tidak berafiliasi dengan platform transportasi yang tercantum di aplikasi. Nama dan merek dagang adalah milik pemiliknya masing-masing dan hanya digunakan untuk identifikasi.\n\n6. Tanpa jaminan\nAplikasi disediakan "apa adanya", tanpa jaminan apa pun. Sejauh diizinkan hukum, kami tidak bertanggung jawab atas kerugian akibat penggunaan aplikasi atau kehilangan data.\n\n7. Perubahan\nKetentuan ini dapat diperbarui pada versi aplikasi yang baru. Tetap menggunakan aplikasi setelah pembaruan berarti Anda menerima ketentuan yang telah direvisi.\n\n8. Kontak\nPertanyaan atau masalah dapat dikirim melalui "Laporkan masalah".',
+        '1. Tentang aplikasi\nCarJobFinance adalah alat pencatatan dan pengelolaan keuangan untuk pengemudi transportasi online. Dengan menggunakan aplikasi ini, Anda menyetujui ketentuan ini.\n\n2. Penggunaan aplikasi\nAnda bertanggung jawab atas informasi yang Anda catat (perjalanan, pengeluaran, komisi, dan target) serta keakuratannya. Semua perhitungan dan laporan sepenuhnya bergantung pada data tersebut.\n\n3. Bukan nasihat keuangan\nNilai, rata-rata, dan laporan yang ditampilkan hanya bersifat informatif. Aplikasi ini tidak memberikan nasihat keuangan, akuntansi, atau pajak dan tidak menggantikan tenaga profesional.\n\n4. Data dan cadangan Anda\nData disimpan di perangkat Anda, dengan salinan otomatis di cloud yang terhubung ke akun Anda. Anda tetap bertanggung jawab menyimpan cadangan Anda sendiri. Menghapus aplikasi atau menggunakan "Hapus semua data" akan menghapus informasi secara permanen.\n\n5. Platform pihak ketiga\nCarJobFinance tidak berafiliasi dengan platform transportasi yang tercantum di aplikasi. Nama dan merek dagang adalah milik pemiliknya masing-masing dan hanya digunakan untuk identifikasi.\n\n6. Tanpa jaminan\nAplikasi disediakan "apa adanya", tanpa jaminan apa pun. Sejauh diizinkan hukum, kami tidak bertanggung jawab atas kerugian akibat penggunaan aplikasi atau kehilangan data.\n\n7. Perubahan\nKetentuan ini dapat diperbarui pada versi aplikasi yang baru. Tetap menggunakan aplikasi setelah pembaruan berarti Anda menerima ketentuan yang telah direvisi.\n\n8. Kontak\nPertanyaan atau masalah dapat dikirim melalui "Laporkan masalah".',
     'legal.privacyBody':
-        '1. Data yang disimpan aplikasi\nPerjalanan, pengeluaran, komisi, target, dan preferensi (negara, bahasa, mata uang, platform, dan notifikasi) yang Anda masukkan sendiri.\n\n2. Tempat data disimpan\nSemuanya hanya disimpan di perangkat Anda. Aplikasi tidak memerlukan akun, tidak mengirim data Anda ke server, dan tidak memakai iklan atau alat pelacakan.\n\n3. Ekspor dan cadangan\nFile CSV, PDF, dan cadangan hanya dibuat saat Anda memintanya dan disimpan atau dibagikan ke tujuan yang Anda pilih. Setelah itu, file tersebut menjadi tanggung jawab Anda. Cadangan berisi semua catatan Anda dalam teks yang dapat dibaca.\n\n4. Notifikasi\nPengingat dijadwalkan secara lokal di perangkat. Izin notifikasi hanya diminta saat Anda mengaktifkan fitur ini dan dapat dicabut kapan saja di pengaturan sistem.\n\n5. Tautan eksternal\n"Laporkan masalah" membuka halaman eksternal di browser, yang tunduk pada kebijakan privasi layanan yang menghostingnya.\n\n6. Menghapus data Anda\nGunakan "Hapus semua data" di pengaturan atau hapus aplikasi. File yang telah Anda ekspor harus dihapus secara manual.\n\n7. Perubahan\nKebijakan ini dapat diperbarui pada versi aplikasi yang baru.',
+        '1. Data yang disimpan aplikasi\nPerjalanan, pengeluaran, komisi, target, dan preferensi (negara, bahasa, mata uang, platform, dan notifikasi) yang Anda masukkan sendiri. Untuk membuat akun, kami juga mengumpulkan nama, alamat email, dan kata sandi Anda.\n\n2. Tempat data disimpan\nCatatan Anda disimpan di basis data perangkat Anda. Aplikasi memerlukan akun: proses masuk ditangani oleh Supabase (penyedia autentikasi dan penyimpanan kami), yang menyimpan nama, alamat email, dan kata sandi Anda (dilindungi dengan hash). Cadangan cloud diunggah secara otomatis, paling banyak sekali setiap 24 jam dan hanya saat data Anda berubah, dan mencakup catatan Anda (perjalanan, pengeluaran, dan data aplikasi lainnya). Data dikirim melalui koneksi terenkripsi (HTTPS) dan setiap akun hanya dapat mengakses cadangannya sendiri. Kami tidak menjual atau membagikan data Anda kepada pihak ketiga, dan aplikasi tidak memakai iklan atau alat pelacakan.\n\n3. Ekspor dan cadangan\nFile CSV, PDF, dan cadangan hanya dibuat saat Anda memintanya dan disimpan atau dibagikan ke tujuan yang Anda pilih. Setelah itu, file tersebut menjadi tanggung jawab Anda. Cadangan berisi semua catatan Anda dalam teks yang dapat dibaca.\n\n4. Notifikasi\nPengingat dijadwalkan secara lokal di perangkat. Izin notifikasi hanya diminta saat Anda mengaktifkan fitur ini dan dapat dicabut kapan saja di pengaturan sistem.\n\n5. Tautan eksternal\n"Laporkan masalah" membuka halaman eksternal di browser, yang tunduk pada kebijakan privasi layanan yang menghostingnya.\n\n6. Menghapus data Anda\nGunakan "Hapus semua data" di pengaturan untuk menghapus data di perangkat, atau hapus aplikasi. Ini tidak menghapus akun maupun cadangan cloud Anda. Untuk menghapus akun, cadangan cloud, dan data perangkat sekaligus, gunakan "Hapus akun" di pengaturan, pada bagian Akun. Penghapusan bersifat permanen. Anda juga dapat memintanya melalui email dukungan yang tercantum di halaman aplikasi di Google Play. File yang telah Anda ekspor harus dihapus secara manual.\n\n7. Perubahan\nKebijakan ini dapat diperbarui pada versi aplikasi yang baru.',
     'platforms.createNew': 'Buat baru',
     'platforms.newName': 'Nama platform',
     'platforms.namePlaceholder': 'Misal: Maxim, Beat',
@@ -1449,10 +1516,19 @@ class Strings {
     'expenses.commissionAuto': 'Dihitung otomatis dari perjalanan',
     'expenses.others': 'Pengeluaran lainnya',
     'expenses.commissionTotal': 'Total komisi',
+    'list.sort': 'Urutkan',
+    'list.filter': 'Saring',
+    'list.sortNewest': 'Terbaru',
+    'list.sortOldest': 'Terlama',
+    'list.sortHighest': 'Nilai tertinggi',
+    'list.sortLowest': 'Nilai terendah',
+    'list.filterAll': 'Semua',
+    'list.noResults': 'Tidak ada hasil untuk filter ini',
+    'list.clearFilter': 'Hapus filter',
     'reports.commissions': 'Komisi platform',
     'reports.otherExpenses': 'Pengeluaran lainnya',
     // Onboarding
-    'onboarding.welcome': 'Selamat datang di CarJobFinance',
+    'onboarding.welcome': 'Selamat datang di CarJob - Driver Finances',
     'onboarding.subtitle':
         'Pilih negara Anda untuk mengatur mata uang, bahasa, dan platform yang tersedia.',
     'onboarding.country': 'Negara',
@@ -1509,6 +1585,13 @@ class Strings {
     'settings.signOutConfirm': 'साइन आउट करें?',
     'settings.signOutMsg':
         'आपका डेटा इस डिवाइस पर बना रहेगा। इंटरनेट होने पर साइन आउट से पहले क्लाउड पर बैकअप भेजा जाता है।',
+    'settings.deleteAccount': 'खाता हटाएँ',
+    'settings.deleteAccountConfirm': 'खाता स्थायी रूप से हटाएँ?',
+    'settings.deleteAccountMsg':
+        'आपका खाता, लॉगिन और क्लाउड बैकअप हमारे सर्वर से मिटा दिए जाएँगे, और इस डिवाइस का सारा डेटा हट जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।',
+    'settings.deleteAccountPasswordHint':
+        'सुरक्षा के लिए, पुष्टि करने हेतु अपना पासवर्ड दर्ज करें।',
+    'settings.deleteAccountWrongPassword': 'पासवर्ड गलत है',
     'gate.foreignTitle': 'किसी दूसरे खाते का डेटा',
     'gate.foreignMsg':
         'इस डिवाइस पर किसी दूसरे खाते की राइड और खर्च दर्ज हैं। {email} के रूप में साइन इन करने के लिए वह डेटा इस डिवाइस से मिटा दिया जाएगा।',
@@ -1560,6 +1643,9 @@ class Strings {
     'dash.confirmGoalMsg': 'क्या आप यह मासिक लक्ष्य सहेजना चाहते हैं?',
     'dash.confirmYes': 'हाँ',
     'dash.confirmNo': 'नहीं',
+    'dash.greetingMorning': 'सुप्रभात',
+    'dash.greetingAfternoon': 'नमस्कार',
+    'dash.greetingNight': 'शुभ संध्या',
     'dash.save': 'सेव करें',
     'dash.cancel': 'रद्द करें',
     'dash.rideSingular': 'सवारी',
@@ -1757,9 +1843,9 @@ class Strings {
     'notif.reminderTitle': 'अपना दिन दर्ज करने का समय',
     'notif.reminderBody': 'आज की राइड और खर्च दर्ज करें।',
     'legal.termsBody':
-        '1. ऐप के बारे में\nCarJobFinance राइडशेयर ड्राइवरों के लिए रिकॉर्ड रखने और वित्तीय प्रबंधन का एक टूल है। ऐप का उपयोग करके आप इन शर्तों से सहमत होते हैं।\n\n2. ऐप का उपयोग\nआप जो जानकारी दर्ज करते हैं (राइड, खर्च, कमीशन और लक्ष्य) और उसकी सटीकता के लिए आप ज़िम्मेदार हैं। सभी गणनाएँ और रिपोर्ट पूरी तरह उसी डेटा पर निर्भर हैं।\n\n3. यह वित्तीय सलाह नहीं है\nदिखाई गई राशियाँ, औसत और रिपोर्ट केवल जानकारी के लिए हैं। ऐप वित्तीय, लेखा या कर संबंधी सलाह नहीं देता और किसी योग्य पेशेवर का विकल्प नहीं है।\n\n4. आपका डेटा और बैकअप\nडेटा केवल आपके डिवाइस पर सहेजा जाता है। बैकअप बनाना और सुरक्षित रखना आपकी ज़िम्मेदारी है। ऐप अनइंस्टॉल करने या "सारा डेटा हटाएँ" का उपयोग करने से जानकारी स्थायी रूप से हट जाती है।\n\n5. तृतीय-पक्ष प्लेटफ़ॉर्म\nCarJobFinance का ऐप में सूचीबद्ध राइड प्लेटफ़ॉर्म से कोई संबंध नहीं है। नाम और ट्रेडमार्क उनके संबंधित स्वामियों के हैं और केवल पहचान के लिए उपयोग किए जाते हैं।\n\n6. कोई वारंटी नहीं\nऐप "जैसा है" के आधार पर, बिना किसी वारंटी के उपलब्ध कराया जाता है। कानून द्वारा अनुमत सीमा तक, ऐप के उपयोग या डेटा के नुकसान से हुई हानि के लिए हम उत्तरदायी नहीं हैं।\n\n7. बदलाव\nऐप के नए संस्करणों में ये शर्तें अपडेट की जा सकती हैं। अपडेट के बाद ऐप का उपयोग जारी रखने का अर्थ है कि आप संशोधित शर्तें स्वीकार करते हैं।\n\n8. संपर्क\nप्रश्न या समस्याएँ "समस्या रिपोर्ट करें" विकल्प से भेजी जा सकती हैं।',
+        '1. ऐप के बारे में\nCarJobFinance राइडशेयर ड्राइवरों के लिए रिकॉर्ड रखने और वित्तीय प्रबंधन का एक टूल है। ऐप का उपयोग करके आप इन शर्तों से सहमत होते हैं।\n\n2. ऐप का उपयोग\nआप जो जानकारी दर्ज करते हैं (राइड, खर्च, कमीशन और लक्ष्य) और उसकी सटीकता के लिए आप ज़िम्मेदार हैं। सभी गणनाएँ और रिपोर्ट पूरी तरह उसी डेटा पर निर्भर हैं।\n\n3. यह वित्तीय सलाह नहीं है\nदिखाई गई राशियाँ, औसत और रिपोर्ट केवल जानकारी के लिए हैं। ऐप वित्तीय, लेखा या कर संबंधी सलाह नहीं देता और किसी योग्य पेशेवर का विकल्प नहीं है।\n\n4. आपका डेटा और बैकअप\nडेटा आपके डिवाइस पर सहेजा जाता है, और आपके खाते से जुड़ी एक स्वचालित क्लाउड कॉपी भी रहती है। अपने बैकअप सुरक्षित रखना फिर भी आपकी ज़िम्मेदारी है। ऐप अनइंस्टॉल करने या "सारा डेटा हटाएँ" का उपयोग करने से जानकारी स्थायी रूप से हट जाती है।\n\n5. तृतीय-पक्ष प्लेटफ़ॉर्म\nCarJobFinance का ऐप में सूचीबद्ध राइड प्लेटफ़ॉर्म से कोई संबंध नहीं है। नाम और ट्रेडमार्क उनके संबंधित स्वामियों के हैं और केवल पहचान के लिए उपयोग किए जाते हैं।\n\n6. कोई वारंटी नहीं\nऐप "जैसा है" के आधार पर, बिना किसी वारंटी के उपलब्ध कराया जाता है। कानून द्वारा अनुमत सीमा तक, ऐप के उपयोग या डेटा के नुकसान से हुई हानि के लिए हम उत्तरदायी नहीं हैं।\n\n7. बदलाव\nऐप के नए संस्करणों में ये शर्तें अपडेट की जा सकती हैं। अपडेट के बाद ऐप का उपयोग जारी रखने का अर्थ है कि आप संशोधित शर्तें स्वीकार करते हैं।\n\n8. संपर्क\nप्रश्न या समस्याएँ "समस्या रिपोर्ट करें" विकल्प से भेजी जा सकती हैं।',
     'legal.privacyBody':
-        '1. ऐप कौन-सा डेटा रखता है\nराइड, खर्च, कमीशन, लक्ष्य और प्राथमिकताएँ (देश, भाषा, मुद्रा, प्लेटफ़ॉर्म और सूचनाएँ) जो आप स्वयं दर्ज करते हैं।\n\n2. डेटा कहाँ सहेजा जाता है\nसब कुछ केवल आपके डिवाइस पर सहेजा जाता है। ऐप को किसी खाते की ज़रूरत नहीं है, यह आपका डेटा किसी सर्वर पर नहीं भेजता और विज्ञापन या ट्रैकिंग टूल का उपयोग नहीं करता।\n\n3. एक्सपोर्ट और बैकअप\nCSV, PDF और बैकअप फ़ाइलें केवल आपके कहने पर बनती हैं और आपके चुने हुए स्थान पर सहेजी या साझा की जाती हैं। उसके बाद फ़ाइल की ज़िम्मेदारी आपकी है। बैकअप में आपके सभी रिकॉर्ड पढ़ने योग्य टेक्स्ट में होते हैं।\n\n4. सूचनाएँ\nरिमाइंडर डिवाइस पर ही शेड्यूल होते हैं। सूचना की अनुमति केवल तब माँगी जाती है जब आप यह सुविधा चालू करते हैं, और आप इसे सिस्टम सेटिंग में कभी भी वापस ले सकते हैं।\n\n5. बाहरी लिंक\n"समस्या रिपोर्ट करें" ब्राउज़र में एक बाहरी पेज खोलता है, जिस पर उसे होस्ट करने वाली सेवा की गोपनीयता नीति लागू होती है।\n\n6. अपना डेटा कैसे हटाएँ\nसेटिंग में "सारा डेटा हटाएँ" का उपयोग करें या ऐप अनइंस्टॉल करें। आपकी एक्सपोर्ट की गई फ़ाइलें आपको स्वयं हटानी होंगी।\n\n7. बदलाव\nऐप के नए संस्करणों में यह नीति अपडेट की जा सकती है।',
+        '1. ऐप कौन-सा डेटा रखता है\nराइड, खर्च, कमीशन, लक्ष्य और प्राथमिकताएँ (देश, भाषा, मुद्रा, प्लेटफ़ॉर्म और सूचनाएँ) जो आप स्वयं दर्ज करते हैं। खाता बनाने के लिए हम आपका नाम, ईमेल पता और पासवर्ड भी एकत्र करते हैं।\n\n2. डेटा कहाँ सहेजा जाता है\nआपके रिकॉर्ड आपके डिवाइस के डेटाबेस में रहते हैं। ऐप के लिए खाता ज़रूरी है: साइन-इन Supabase (हमारा ऑथेंटिकेशन और स्टोरेज प्रदाता) संभालता है, जो आपका नाम, ईमेल पता और पासवर्ड (हैशिंग से सुरक्षित) सहेजता है। क्लाउड बैकअप अपने-आप अपलोड होता है, अधिकतम हर 24 घंटे में एक बार और केवल तब जब आपका डेटा बदला हो, और उसमें आपके रिकॉर्ड (राइड, खर्च और ऐप का अन्य डेटा) शामिल होते हैं। डेटा एन्क्रिप्टेड कनेक्शन (HTTPS) से जाता है और हर खाता केवल अपने बैकअप तक पहुँच सकता है। हम आपका डेटा तीसरे पक्ष को बेचते या साझा नहीं करते, और ऐप विज्ञापन या ट्रैकिंग टूल का उपयोग नहीं करता।\n\n3. एक्सपोर्ट और बैकअप\nCSV, PDF और बैकअप फ़ाइलें केवल आपके कहने पर बनती हैं और आपके चुने हुए स्थान पर सहेजी या साझा की जाती हैं। उसके बाद फ़ाइल की ज़िम्मेदारी आपकी है। बैकअप में आपके सभी रिकॉर्ड पढ़ने योग्य टेक्स्ट में होते हैं।\n\n4. सूचनाएँ\nरिमाइंडर डिवाइस पर ही शेड्यूल होते हैं। सूचना की अनुमति केवल तब माँगी जाती है जब आप यह सुविधा चालू करते हैं, और आप इसे सिस्टम सेटिंग में कभी भी वापस ले सकते हैं।\n\n5. बाहरी लिंक\n"समस्या रिपोर्ट करें" ब्राउज़र में एक बाहरी पेज खोलता है, जिस पर उसे होस्ट करने वाली सेवा की गोपनीयता नीति लागू होती है।\n\n6. अपना डेटा कैसे हटाएँ\nडिवाइस का डेटा हटाने के लिए सेटिंग में "सारा डेटा हटाएँ" का उपयोग करें या ऐप अनइंस्टॉल करें। इससे आपका खाता और क्लाउड बैकअप नहीं हटता। खाता, क्लाउड बैकअप और डिवाइस का डेटा एक साथ हटाने के लिए सेटिंग के खाता अनुभाग में "खाता हटाएँ" का उपयोग करें। यह हटाना स्थायी है। आप Google Play पर ऐप के पेज पर दिए गए सपोर्ट ईमेल से भी इसका अनुरोध कर सकते हैं। आपकी एक्सपोर्ट की गई फ़ाइलें आपको स्वयं हटानी होंगी।\n\n7. बदलाव\nऐप के नए संस्करणों में यह नीति अपडेट की जा सकती है।',
     'platforms.createNew': 'नया बनाएँ',
     'platforms.newName': 'प्लेटफोर्म का नाम',
     'platforms.namePlaceholder': 'जैसे: Maksim, Beat',
@@ -1790,10 +1876,19 @@ class Strings {
     'expenses.commissionAuto': 'सवारियों से स्वतः गणना',
     'expenses.others': 'अन्य खर्च',
     'expenses.commissionTotal': 'कुल कमीशन',
+    'list.sort': 'क्रमबद्ध करें',
+    'list.filter': 'फ़िल्टर',
+    'list.sortNewest': 'नवीनतम पहले',
+    'list.sortOldest': 'सबसे पुराने पहले',
+    'list.sortHighest': 'सबसे अधिक राशि',
+    'list.sortLowest': 'सबसे कम राशि',
+    'list.filterAll': 'सभी',
+    'list.noResults': 'इस फ़िल्टर के लिए कोई परिणाम नहीं',
+    'list.clearFilter': 'फ़िल्टर हटाएँ',
     'reports.commissions': 'प्लेटफोर्म कमीशन',
     'reports.otherExpenses': 'अन्य खर्च',
     // Onboarding
-    'onboarding.welcome': 'CarJobFinance में आपका स्वागत है',
+    'onboarding.welcome': 'CarJob - Driver Finances में आपका स्वागत है',
     'onboarding.subtitle':
         'मुद्रा, भाषा और उपलब्ध प्लेटफ़ॉर्म कॉन्फ़िगर करने के लिए अपना देश चुनें।',
     'onboarding.country': 'देश',
