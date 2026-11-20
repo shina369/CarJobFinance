@@ -11,6 +11,9 @@ import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
+import '../../../presentation/controllers/list_view_options.dart';
+import '../../../presentation/widgets/expense_category_icon.dart';
+import '../../../presentation/widgets/list_sort_filter_actions.dart';
 import '../../../domain/entities/expense.dart' as entity_expense;
 
 class ExpensesPage extends ConsumerWidget {
@@ -32,28 +35,43 @@ class ExpensesPage extends ConsumerWidget {
       }
     }
 
+    final options = ref.watch(expensesViewOptionsProvider);
+    void setOptions(ListViewOptions o) =>
+        ref.read(expensesViewOptionsProvider.notifier).state = o;
+    final allExpenses =
+        expensesState.valueOrNull ?? const <entity_expense.Expense>[];
+
     final isLight = Theme.of(context).brightness == Brightness.light;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.tr('expenses.title')),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () {},
+          ListSortFilterActions(
+            options: options,
+            filterOptions: filterValues(allExpenses.map((e) => e.category)),
+            onChanged: setOptions,
+            lang: lang,
           ),
         ],
       ),
       body: expensesState.when(
-        data: (expenses) => _ExpensesList(
-          expenses: expenses,
-          commissionByPlatform: commissionByPlatform,
-          lang: lang,
-        ),
+        data: (expenses) {
+          final view = applyExpenseView(expenses, options);
+          if (options.filter != null && view.isEmpty) {
+            return FilteredEmptyState(
+              lang: lang,
+              onClear: () => setOptions(options.withFilter(null)),
+            );
+          }
+          // Commissions aren't a category, so they hide while filtering.
+          return _ExpensesList(
+            expenses: view,
+            commissionByPlatform:
+                options.filter == null ? commissionByPlatform : const {},
+            lang: lang,
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
             child: Text(lang.tr('error.generic', args: {'error': '$error'}))),
@@ -256,7 +274,7 @@ class ExpenseCard extends ConsumerWidget {
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.errorContainer,
           child: Icon(
-            Icons.local_gas_station,
+            expenseCategoryIcon(expense.category),
             color: Theme.of(context).colorScheme.error,
           ),
         ),

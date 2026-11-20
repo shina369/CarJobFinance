@@ -108,4 +108,44 @@ void main() {
     expect(find.textContaining('€'), findsOneWidget);
     expect(find.textContaining(r'R$'), findsNothing);
   });
+
+  testWidgets('each expense shows its category icon and the filter works',
+      (tester) async {
+    final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appSettingsProvider.overrideWith((ref) => _MockAppSettingsNotifier(
+              AppSettings.fromCountry(br, br.platforms))),
+          languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+          expenseRepositoryProvider.overrideWithValue(_FakeExpenseRepository([
+            Expense(
+                id: 'e1',
+                date: DateTime(2026, 11, 2),
+                category: 'Combustível',
+                amount: 200),
+            Expense(
+                id: 'e2',
+                date: DateTime(2026, 11, 5),
+                category: 'Lavagem',
+                amount: 40),
+          ])),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+        ],
+        child: const MaterialApp(home: ExpensesPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.local_gas_station), findsOneWidget);
+    expect(find.byIcon(Icons.local_car_wash), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('list-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lavagem').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.local_car_wash), findsOneWidget);
+    expect(find.byIcon(Icons.local_gas_station), findsNothing);
+  });
 }

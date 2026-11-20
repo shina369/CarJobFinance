@@ -100,6 +100,77 @@ void main() {
     expect(find.textContaining(r'R$'), findsNothing);
   });
 
+  group('sort and filter', () {
+    Ride ride(String id, int day, double earnings, String platform) => Ride(
+          id: id,
+          date: DateTime(2026, 11, day),
+          platform: platform,
+          earnings: earnings,
+          distanceKm: 5,
+          durationMinutes: 10,
+          rideType: 'Comum',
+        );
+
+    Future<void> pumpPage(WidgetTester tester) async {
+      final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appSettingsProvider.overrideWith((ref) => _MockAppSettingsNotifier(
+                AppSettings.fromCountry(br, br.platforms))),
+            languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+            rideRepositoryProvider.overrideWithValue(_FakeRideRepository([
+              ride('old', 1, 30, 'Uber'),
+              ride('new', 20, 10, '99'),
+              ride('mid', 10, 50, 'inDrive'),
+            ])),
+          ],
+          child: const MaterialApp(home: RidesPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    List<String> shownDates(WidgetTester tester) {
+      final texts = find.textContaining('/11/2026').evaluate().toList()
+        ..sort((a, b) => tester
+            .getTopLeft(find.byWidget(a.widget))
+            .dy
+            .compareTo(tester.getTopLeft(find.byWidget(b.widget)).dy));
+      return [for (final e in texts) (e.widget as Text).data!.substring(0, 2)];
+    }
+
+    testWidgets('lists the newest ride first', (tester) async {
+      await pumpPage(tester);
+      expect(shownDates(tester), ['20', '10', '01']);
+    });
+
+    testWidgets('the sort menu orders by highest earnings', (tester) async {
+      await pumpPage(tester);
+      await tester.tap(find.byKey(const Key('list-sort')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Maior valor'));
+      await tester.pumpAndSettle();
+      expect(shownDates(tester), ['10', '01', '20']);
+    });
+
+    testWidgets('the filter menu shows only the chosen platform',
+        (tester) async {
+      await pumpPage(tester);
+      await tester.tap(find.byKey(const Key('list-filter')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('99').last);
+      await tester.pumpAndSettle();
+      expect(shownDates(tester), ['20']);
+
+      await tester.tap(find.byKey(const Key('list-filter')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Todas'));
+      await tester.pumpAndSettle();
+      expect(shownDates(tester), ['20', '10', '01']);
+    });
+  });
+
   testWidgets('the add button uses the Home green in the light theme',
       (tester) async {
     final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
