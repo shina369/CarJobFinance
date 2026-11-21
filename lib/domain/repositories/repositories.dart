@@ -32,4 +32,6 @@ abstract class ExpenseRepository {
 abstract class SettingsRepository {
   Future<double> getMonthlyGoal();
   Future<void> setMonthlyGoal(double value);
+  Future<Map<int, double?>> getGoalsForYear(int year);
+  Future<void> setGoalsForYear(int year, Map<int, double?> goals);
 }

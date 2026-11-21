@@ -201,19 +201,48 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   SettingsRepositoryImpl(this.dao);
 
-  static const _monthlyGoalKey = 'monthly_goal';
+  static const _legacyMonthlyGoalKey = 'monthly_goal';
+  static const _defaultMonthlyGoal = 5000.0;
+
+  static String _monthKey(int year, int month) =>
+      'monthly_goal.$year-${month.toString().padLeft(2, '0')}';
 
   @override
   Future<double> getMonthlyGoal() async {
-    final value = await dao.getSetting(_monthlyGoalKey);
-    if (value != null) {
-      return double.tryParse(value) ?? 5000.0;
-    }
-    return 5000.0;
+    final now = DateTime.now();
+    final goals = await getGoalsForYear(now.year);
+    return goals[now.month] ?? _defaultMonthlyGoal;
   }
 
   @override
   Future<void> setMonthlyGoal(double value) async {
-    await dao.setSetting(_monthlyGoalKey, value.toString());
+    final now = DateTime.now();
+    await dao.setSetting(_monthKey(now.year, now.month), value.toString());
   }
+
+  @override
+  Future<Map<int, double?>> getGoalsForYear(int year) async {
+    final stored = await dao.getAllSettings();
+    final legacy = _parse(stored[_legacyMonthlyGoalKey]);
+    return {
+      for (var month = 1; month <= 12; month++)
+        month: _parse(stored[_monthKey(year, month)]) ?? legacy,
+    };
+  }
+
+  @override
+  Future<void> setGoalsForYear(int year, Map<int, double?> goals) async {
+    for (final entry in goals.entries) {
+      final key = _monthKey(year, entry.key);
+      final value = entry.value;
+      if (value == null) {
+        await dao.deleteSetting(key);
+      } else {
+        await dao.setSetting(key, value.toString());
+      }
+    }
+  }
+
+  static double? _parse(String? value) =>
+      value == null ? null : double.tryParse(value);
 }
