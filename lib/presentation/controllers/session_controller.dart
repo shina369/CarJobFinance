@@ -210,15 +210,22 @@ class SessionController extends StateNotifier<SessionState> {
     state = const SessionState();
   }
 
-  /// Erases the account on the server, then everything it left on this
-  /// device. The [password] is checked against the server first (throwing
-  /// [AuthFailure] when wrong), and nothing is erased if any server call fails.
-  Future<void> deleteAccount(String password) async {
+  /// Checks [password] against the server for the signed-in account and
+  /// changes nothing on this device. Throws [AuthFailure] when it is wrong or
+  /// the server cannot be reached.
+  Future<void> confirmPassword(String password) async {
     final email = state.user?.email;
     if (email == null) {
       throw const AuthFailure(AuthFailureReason.invalidCredentials);
     }
     await _auth.signIn(email, password);
+  }
+
+  /// Erases the account on the server, then everything it left on this
+  /// device. The [password] is checked against the server first (throwing
+  /// [AuthFailure] when wrong), and nothing is erased if any server call fails.
+  Future<void> deleteAccount(String password) async {
+    await confirmPassword(password);
     await _auth.deleteAccount();
     await _ref.read(dataControllerProvider).clearAll();
     await _store.delete(dataOwnerKey);

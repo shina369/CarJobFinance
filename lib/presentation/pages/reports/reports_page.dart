@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/languages.dart';
@@ -28,7 +29,15 @@ extension ReportPeriodExtension on ReportPeriod {
     }
   }
 
-  DateTimeRange get range {
+  /// Like [label], with the picked dates appended for [ReportPeriod.custom].
+  String labelFor(AppLanguage lang, DateTimeRange? custom) {
+    final base = label(lang);
+    if (this != ReportPeriod.custom || custom == null) return base;
+    final fmt = DateFormat('dd/MM/yyyy');
+    return '$base (${fmt.format(custom.start)} – ${fmt.format(custom.end)})';
+  }
+
+  DateTimeRange rangeFor(DateTimeRange? custom) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     switch (this) {
@@ -58,7 +67,7 @@ extension ReportPeriodExtension on ReportPeriod {
             DateTime(now.year + 1, 1, 1).subtract(const Duration(seconds: 1));
         return DateTimeRange(start: yearStart, end: yearEnd);
       case ReportPeriod.custom:
-        return DateTimeRange(start: today, end: today);
+        return custom ?? DateTimeRange(start: today, end: today);
     }
   }
 }
@@ -66,6 +75,9 @@ extension ReportPeriodExtension on ReportPeriod {
 // Provider para o período selecionado
 final selectedReportPeriodProvider =
     StateProvider<ReportPeriod>((ref) => ReportPeriod.month);
+
+// Intervalo escolhido em "Personalizado"; null até o usuário escolher.
+final customReportRangeProvider = StateProvider<DateTimeRange?>((ref) => null);
 
 class ReportsPage extends ConsumerWidget {
   const ReportsPage({super.key});
@@ -86,6 +98,7 @@ class _PeriodDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(selectedReportPeriodProvider);
+    final customRange = ref.watch(customReportRangeProvider);
     final lang = ref.watch(appLanguageProvider);
 
     return MenuAnchor(
@@ -114,7 +127,7 @@ class _PeriodDropdown extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  selectedPeriod.label(lang),
+                  selectedPeriod.labelFor(lang, customRange),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -138,7 +151,11 @@ class _PeriodDropdown extends ConsumerWidget {
       menuChildren: ReportPeriod.values.map((period) {
         return MenuItemButton(
           onPressed: () {
-            ref.read(selectedReportPeriodProvider.notifier).state = period;
+            if (period == ReportPeriod.custom) {
+              _pickCustomRange(context, ref);
+            } else {
+              ref.read(selectedReportPeriodProvider.notifier).state = period;
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -160,6 +177,20 @@ class _PeriodDropdown extends ConsumerWidget {
         );
       }).toList(),
     );
+  }
+
+  /// Cancelling the picker keeps the current period and range.
+  Future<void> _pickCustomRange(BuildContext context, WidgetRef ref) async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      initialDateRange: ref.read(customReportRangeProvider),
+    );
+    if (picked == null) return;
+    ref.read(customReportRangeProvider.notifier).state = picked;
+    ref.read(selectedReportPeriodProvider.notifier).state = ReportPeriod.custom;
   }
 }
 
@@ -190,6 +221,7 @@ class _ReportsContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(selectedReportPeriodProvider);
+    final customRange = ref.watch(customReportRangeProvider);
     final ridesAsync = ref.watch(ridesControllerProvider);
     final expensesAsync = ref.watch(expensesControllerProvider);
     final currency = ref.watch(currency_pkg.appCurrencyProvider);
@@ -199,7 +231,7 @@ class _ReportsContent extends ConsumerWidget {
       data: (rides) => expensesAsync.when(
         data: (expenses) {
           // Filter by period
-          final range = period.range;
+          final range = period.rangeFor(customRange);
           final filteredRides = rides.where((r) {
             final date = DateTime(r.date.year, r.date.month, r.date.day);
             return !date.isBefore(range.start) && !date.isAfter(range.end);
@@ -248,7 +280,7 @@ class _ReportsContent extends ConsumerWidget {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             TextSpan(
-                              text: '\n${period.label(lang)}',
+                              text: '\n${period.labelFor(lang, customRange)}',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
