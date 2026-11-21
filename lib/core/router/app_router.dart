@@ -27,6 +27,7 @@ import '../../presentation/pages/onboarding/onboarding_page.dart';
 import '../../presentation/pages/settings/backup_page.dart';
 import '../../presentation/pages/settings/legal_page.dart';
 import '../../presentation/pages/settings/reminders_page.dart';
+import '../../presentation/pages/goals/my_goals_page.dart';
 
 /// Adapts a [Stream] to the [Listenable] GoRouter refreshes on.
 class _StreamListenable extends ChangeNotifier {
@@ -230,6 +231,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/account-gate',
         name: 'account-gate',
         builder: (context, state) => const AccountGatePage(),
+      ),
+      GoRoute(
+        path: '/goals',
+        name: 'goals',
+        builder: (context, state) => const MyGoalsPage(),
       ),
     ],
 
