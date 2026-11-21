@@ -15,6 +15,7 @@ import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/dashboard/dashboard_page.dart';
 import '../../presentation/pages/rides/rides_page.dart';
+import '../../presentation/pages/rides/ride_detail_page.dart';
 import '../../presentation/pages/rides/ride_form_page.dart';
 import '../../presentation/pages/expenses/expenses_page.dart';
 import '../../presentation/pages/expenses/expense_form_page.dart';
@@ -374,27 +375,6 @@ class _ErrorPage extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder for RideDetailPage (to be implemented)
-class RideDetailPage extends ConsumerWidget {
-  const RideDetailPage({super.key, required this.rideId});
-
-  final String rideId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lang = ref.watch(appLanguageProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(lang.tr('rides.details'))),
-      body: Center(
-        child: Text(
-          lang.tr('rides.detailsWip', args: {'id': rideId}),
-          textAlign: TextAlign.center,
         ),
       ),
     );
