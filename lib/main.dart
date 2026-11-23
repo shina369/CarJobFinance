@@ -1,4 +1,5 @@
 // Ponto de entrada da aplicação CarJobFinance
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +12,12 @@ import 'core/l10n/language_provider.dart';
 import 'core/l10n/languages.dart';
 import 'core/l10n/strings.dart';
 import 'core/notifications/notification_settings.dart';
+import 'core/purchases/purchases_gateway.dart';
+import 'core/purchases/revenuecat_gateway.dart';
 import 'core/router/app_router.dart';
 import 'core/settings/app_settings_notifier.dart';
 import 'core/theme/app_theme.dart';
+import 'presentation/controllers/entitlement_controller.dart';
 import 'presentation/controllers/session_controller.dart';
 
 final getIt = GetIt.instance;
@@ -28,17 +32,27 @@ void main() async {
   await Strings.initIntlDateFormats();
 
   final env = await Env.load();
+  // Null without a store key: the app runs with nothing premium.
+  final purchases = await RevenueCatGateway.configure(env);
 
   // One container for start-up and for the app, so what is loaded here
   // (settings, language, saved session) is what the first frame sees.
   final container = ProviderContainer(
-    overrides: [envProvider.overrideWithValue(env)],
+    overrides: [
+      envProvider.overrideWithValue(env),
+      premiumOverrideProvider
+          .overrideWithValue(kDebugMode ? env.premiumOverride : null),
+      if (purchases != null)
+        purchasesGatewayProvider.overrideWithValue(purchases),
+    ],
   );
   await container.read(appSettingsProvider.notifier).initialize();
   await container.read(languageProvider.notifier).initialize();
   await container.read(sessionProvider.notifier).initialize();
   // Starts loading reminders and re-schedules them.
   container.read(notificationSettingsProvider);
+  // Starts asking the store whether the signed-in account is premium.
+  container.read(entitlementProvider);
 
   runApp(UncontrolledProviderScope(
     container: container,
