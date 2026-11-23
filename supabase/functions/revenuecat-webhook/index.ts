@@ -1,12 +1,16 @@
 // Mirrors RevenueCat's view of the `premium` entitlement into
 // public.entitlements, which the backups RLS policies consult.
 //
-// Deploy:  supabase functions deploy revenuecat-webhook --no-verify-jwt
-// Secret:  supabase secrets set REVENUECAT_WEBHOOK_SECRET=<value>
-// RevenueCat sends no Supabase JWT, so the gateway check is off and the
-// request is trusted only if its Authorization header equals the secret
-// configured in the RevenueCat dashboard. Ignored events still get a 200 so
-// RevenueCat stops retrying; database failures get a 500 so it retries.
+// Deploy:  supabase functions deploy revenuecat-webhook
+// Secrets: supabase secrets set REVENUECAT_WEBHOOK_SECRET=<value>
+//          supabase secrets set REVENUECAT_ALLOW_SANDBOX=true  (testing only)
+// RevenueCat sends no Supabase JWT, so supabase/config.toml turns verify_jwt
+// off for this function and the request is trusted only if its Authorization
+// header equals the secret configured in the RevenueCat dashboard. Events from
+// any environment other than PRODUCTION are ignored unless
+// REVENUECAT_ALLOW_SANDBOX is "true" (Play license testers buy in SANDBOX).
+// Ignored events still get a 200 so RevenueCat stops retrying; database
+// failures get a 500 so it retries.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   applyEvent,
@@ -16,16 +20,10 @@ import {
   transferredFrom,
 } from "./handler.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
 function reply(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -39,7 +37,6 @@ async function readEvent(req: Request): Promise<RcEvent | null> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
   const secret = Deno.env.get("REVENUECAT_WEBHOOK_SECRET");
@@ -50,9 +47,10 @@ Deno.serve(async (req) => {
   const event = await readEvent(req);
   if (!event) return reply(400, { error: "invalid_event" });
 
+  const options = { allowSandbox: Deno.env.get("REVENUECAT_ALLOW_SANDBOX") === "true" };
   const ts = eventTime(event);
-  const change = applyEvent(event);
-  const from = transferredFrom(event);
+  const change = applyEvent(event, options);
+  const from = transferredFrom(event, options);
   if (!ts || (!change && from.length === 0)) {
     return reply(200, { ignored: event.type });
   }
@@ -67,7 +65,6 @@ Deno.serve(async (req) => {
     ? await admin.rpc("transfer_entitlement", {
       from_ids: from,
       to_id: change?.userId ?? null,
-      expires: change?.expiresAt ?? null,
       ts,
     })
     : await admin.rpc("apply_entitlement", {

@@ -119,7 +119,14 @@ Deno.test("unknown event type is ignored", () => {
   assertEquals(applyEvent(event({ type: "SOMETHING_NEW" })), null);
 });
 
-for (const type of ["TEST", "SUBSCRIPTION_PAUSED", "TEMPORARY_ENTITLEMENT_GRANT"]) {
+for (
+  const type of [
+    "TEST",
+    "SUBSCRIPTION_PAUSED",
+    "TEMPORARY_ENTITLEMENT_GRANT",
+    "NON_RENEWING_PURCHASE",
+  ]
+) {
   Deno.test(`${type} is ignored`, () => {
     assertEquals(applyEvent(event({ type })), null);
   });
@@ -140,16 +147,84 @@ Deno.test("deprecated entitlement_id is still honoured", () => {
   );
 });
 
-Deno.test("NON_RENEWING_PURCHASE grants premium until its expiry", () => {
-  assertEquals(applyEvent(event({ type: "NON_RENEWING_PURCHASE" })), {
+Deno.test("production events are applied", () => {
+  assertEquals(applyEvent(event({ environment: "PRODUCTION" }))?.isPremium, true);
+});
+
+Deno.test("sandbox events are ignored by default", () => {
+  assertEquals(applyEvent(event({ environment: "SANDBOX" })), null);
+});
+
+Deno.test("events without environment are ignored by default", () => {
+  assertEquals(applyEvent(event({ environment: undefined })), null);
+});
+
+Deno.test("sandbox events are applied when sandbox is allowed", () => {
+  assertEquals(applyEvent(event({ environment: "SANDBOX" }), { allowSandbox: true }), {
     userId: USER,
     isPremium: true,
     expiresAt: EXPIRES_ISO,
   });
 });
 
-Deno.test("sandbox events are applied like production ones", () => {
-  assertEquals(applyEvent(event({ environment: "SANDBOX" }))?.isPremium, true);
+Deno.test("sandbox TRANSFER is ignored by default", () => {
+  const transfer: RcEvent = {
+    type: "TRANSFER",
+    event_timestamp_ms: EVENT_MS,
+    environment: "SANDBOX",
+    transferred_from: [OTHER],
+    transferred_to: [USER],
+  };
+  assertEquals(applyEvent(transfer), null);
+  assertEquals(transferredFrom(transfer), []);
+  assertEquals(transferredFrom(transfer, { allowSandbox: true }), [OTHER]);
+});
+
+Deno.test("TRANSFER never carries an expiry from the event", () => {
+  const transfer: RcEvent = {
+    type: "TRANSFER",
+    event_timestamp_ms: EVENT_MS,
+    expiration_at_ms: EXPIRES_MS,
+    transferred_from: [OTHER],
+    transferred_to: [USER],
+  };
+  assertEquals(applyEvent(transfer)?.expiresAt, null);
+});
+
+Deno.test("out-of-range or non-numeric expiry becomes null instead of throwing", () => {
+  assertEquals(applyEvent(event({ expiration_at_ms: 1e20 }))?.expiresAt, null);
+  assertEquals(applyEvent(event({ expiration_at_ms: NaN }))?.expiresAt, null);
+  assertEquals(
+    applyEvent(event({ expiration_at_ms: "soon" as unknown as number }))?.expiresAt,
+    null,
+  );
+  assertEquals(
+    applyEvent(event({ type: "BILLING_ISSUE", grace_period_expiration_at_ms: 1e20 }))
+      ?.expiresAt,
+    EXPIRES_ISO,
+  );
+});
+
+Deno.test("out-of-range event timestamp becomes null instead of throwing", () => {
+  assertEquals(eventTime(event({ event_timestamp_ms: 1e20 })), null);
+});
+
+Deno.test("string entitlement_ids do not substring-match", () => {
+  assertEquals(
+    applyEvent(event({ entitlement_ids: "premium_plus" as unknown as string[] })),
+    null,
+  );
+});
+
+Deno.test("non-array transfer lists are ignored", () => {
+  const transfer = {
+    type: "TRANSFER",
+    event_timestamp_ms: EVENT_MS,
+    transferred_from: OTHER,
+    transferred_to: USER,
+  } as unknown as RcEvent;
+  assertEquals(applyEvent(transfer), null);
+  assertEquals(transferredFrom(transfer), []);
 });
 
 Deno.test("purchase without expiration has no expiry", () => {

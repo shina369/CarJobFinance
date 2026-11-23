@@ -64,12 +64,13 @@ revoke execute on function public.apply_entitlement(uuid, boolean, timestamptz, 
 grant execute on function public.apply_entitlement(uuid, boolean, timestamptz, timestamptz)
   to service_role;
 
--- TRANSFER events carry no expiry, so the destination inherits the latest
--- expiry held by the source accounts.
+-- TRANSFER events carry no expiry. Every source account gets a revoked row
+-- stamped `ts` (so a stale grant arriving later is dropped), and the
+-- destination inherits the latest expiry among the premium rows this call
+-- actually revoked; a stale transfer revokes nothing and grants nothing.
 create or replace function public.transfer_entitlement(
   from_ids uuid[],
   to_id uuid,
-  expires timestamptz,
   ts timestamptz
 )
 returns void
@@ -80,13 +81,25 @@ as $$
 declare
   moved timestamptz;
 begin
-  select greatest(expires, max(expires_at)) into moved
-  from public.entitlements
-  where user_id = any (from_ids) and is_premium;
-
-  update public.entitlements
-  set is_premium = false, updated_at = ts
-  where user_id = any (from_ids) and updated_at <= ts;
+  with previous as (
+    select user_id, is_premium, expires_at
+    from public.entitlements
+    where user_id = any (from_ids)
+  ), revoked as (
+    insert into public.entitlements (user_id, is_premium, expires_at, updated_at)
+    select id, false, null::timestamptz, ts
+    from auth.users
+    where id = any (from_ids)
+    on conflict (user_id) do update
+      set is_premium = false,
+          updated_at = excluded.updated_at
+      where excluded.updated_at >= entitlements.updated_at
+    returning user_id
+  )
+  select max(previous.expires_at) into moved
+  from previous
+  join revoked using (user_id)
+  where previous.is_premium;
 
   if to_id is not null and moved is not null then
     perform public.apply_entitlement(to_id, true, moved, ts);
@@ -94,9 +107,9 @@ begin
 end;
 $$;
 
-revoke execute on function public.transfer_entitlement(uuid[], uuid, timestamptz, timestamptz)
+revoke execute on function public.transfer_entitlement(uuid[], uuid, timestamptz)
   from public, anon, authenticated;
-grant execute on function public.transfer_entitlement(uuid[], uuid, timestamptz, timestamptz)
+grant execute on function public.transfer_entitlement(uuid[], uuid, timestamptz)
   to service_role;
 
 drop policy if exists "backups_insert_own" on public.backups;
