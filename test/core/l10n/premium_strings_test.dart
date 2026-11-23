@@ -3,6 +3,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:carjobfinance/core/l10n/strings.dart';
 
 const _tags = ['pt_BR', 'es_MX', 'en_US', 'id_ID', 'hi_IN'];
+const _derivedSpanishTags = ['es_AR', 'es_CO', 'es_CL', 'es_ES'];
+
+const _sameAsPortuguese = {
+  'premium.title',
+  'premium.locked',
+  'premium.settings.tile',
+};
+
+const _sameAsPortugueseInSpanish = {'premium.restore'};
+
+void _expectTranslated(String key, String tag, {bool spanish = false}) {
+  final value = Strings.t(key, tag);
+  expect(value, isNotEmpty, reason: '$tag $key');
+  expect(value, isNot(key), reason: '$tag $key');
+  if (_sameAsPortuguese.contains(key)) return;
+  if (spanish && _sameAsPortugueseInSpanish.contains(key)) return;
+  expect(
+    value,
+    isNot(Strings.t(key, 'pt_BR')),
+    reason: '$tag $key falls back to pt_BR',
+  );
+}
 
 const _keys = [
   'premium.title',
@@ -38,9 +60,13 @@ void main() {
     for (final tag in _tags) {
       test('$tag defines every premium key', () {
         for (final key in _keys) {
-          final value = Strings.t(key, tag);
-          expect(value, isNotEmpty, reason: '$tag $key');
-          expect(value, isNot(key), reason: '$tag $key');
+          if (tag == 'pt_BR') {
+            final value = Strings.t(key, tag);
+            expect(value, isNotEmpty, reason: '$tag $key');
+            expect(value, isNot(key), reason: '$tag $key');
+          } else {
+            _expectTranslated(key, tag, spanish: tag == 'es_MX');
+          }
         }
       });
 
@@ -54,9 +80,10 @@ void main() {
     }
 
     test('derived tags resolve premium keys', () {
-      for (final tag in ['pt_PT', 'es_AR', 'es_CO', 'es_CL', 'es_ES']) {
-        for (final key in _keys) {
-          expect(Strings.t(key, tag), isNot(key), reason: '$tag $key');
+      for (final key in _keys) {
+        expect(Strings.t(key, 'pt_PT'), Strings.t(key, 'pt_BR'), reason: key);
+        for (final tag in _derivedSpanishTags) {
+          expect(Strings.t(key, tag), Strings.t(key, 'es_MX'), reason: '$tag $key');
         }
       }
     });
