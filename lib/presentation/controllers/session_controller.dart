@@ -210,6 +210,21 @@ class SessionController extends StateNotifier<SessionState> {
     state = const SessionState();
   }
 
+  Future<void> updateProfile({
+    required String firstName,
+    required String lastName,
+  }) async {
+    final user = await _auth.updateProfile(
+      firstName: firstName,
+      lastName: lastName,
+    );
+    state = SessionState(
+      user: user,
+      gate: state.gate,
+      cloudBackupAt: state.cloudBackupAt,
+    );
+  }
+
   /// Checks [password] against the server for the signed-in account and
   /// changes nothing on this device. Throws [AuthFailure] when it is wrong or
   /// the server cannot be reached.

@@ -119,6 +119,24 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthUser> updateProfile({
+    required String firstName,
+    required String lastName,
+  }) =>
+      _guard(() async {
+        final response = await _auth.updateUser(UserAttributes(data: {
+          'first_name': firstName.trim(),
+          'last_name': lastName.trim(),
+        }));
+        final user = response.user;
+        if (user == null) {
+          throw const AuthFailure(
+              AuthFailureReason.unknown, 'no user returned');
+        }
+        return _toUser(user);
+      });
+
+  @override
   Future<AuthUser> confirmSignUp(String email, String code) => _guard(() async {
         final response = await _auth.verifyOTP(
           email: email.trim(),
@@ -215,14 +233,17 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @visibleForTesting
   static AuthUser toAuthUser(User user) {
-    final firstName = user.userMetadata?['first_name'];
     return AuthUser(
       id: user.id,
       email: user.email ?? '',
-      firstName: firstName is String && firstName.trim().isNotEmpty
-          ? firstName.trim()
-          : null,
+      firstName: _nameOf(user.userMetadata?['first_name']),
+      lastName: _nameOf(user.userMetadata?['last_name']),
     );
+  }
+
+  static String? _nameOf(Object? value) {
+    final trimmed = value is String ? value.trim() : '';
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {

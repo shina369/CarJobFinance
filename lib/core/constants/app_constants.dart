@@ -5,8 +5,6 @@ class AppConstants {
   static const String appName = 'CarJob - Driver Finances';
   static const String appVersion = '1.0.0';
   static const String bundleId = 'com.carjobfinance.app';
-  static const String issueTrackerUrl =
-      'https://github.com/shina369/CarJobFinance/issues/new';
 
   // Database
   static const String databaseName = 'carjobfinance.db';

@@ -5,7 +5,12 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class AuthUser {
-  const AuthUser({required this.id, required this.email, this.firstName});
+  const AuthUser({
+    required this.id,
+    required this.email,
+    this.firstName,
+    this.lastName,
+  });
 
   final String id;
   final String email;
@@ -13,15 +18,19 @@ class AuthUser {
   /// Given at sign-up; null for accounts without one.
   final String? firstName;
 
+  /// Given at sign-up; null for accounts without one.
+  final String? lastName;
+
   @override
   bool operator ==(Object other) =>
       other is AuthUser &&
       other.id == id &&
       other.email == email &&
-      other.firstName == firstName;
+      other.firstName == firstName &&
+      other.lastName == lastName;
 
   @override
-  int get hashCode => Object.hash(id, email, firstName);
+  int get hashCode => Object.hash(id, email, firstName, lastName);
 
   @override
   String toString() => 'AuthUser($id, $email)';
@@ -72,6 +81,12 @@ abstract class AuthRepository {
   /// Updates the language the server uses for e-mails to the signed-in
   /// account. Best effort: never throws.
   Future<void> updateLanguage(String languageCode);
+
+  /// Saves the name of the signed-in account on the server.
+  Future<AuthUser> updateProfile({
+    required String firstName,
+    required String lastName,
+  });
 
   Future<AuthUser> confirmSignUp(String email, String code);
 

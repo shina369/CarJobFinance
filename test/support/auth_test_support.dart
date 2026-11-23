@@ -88,6 +88,21 @@ class FakeAuth implements AuthRepository {
   }
 
   @override
+  Future<AuthUser> updateProfile({
+    required String firstName,
+    required String lastName,
+  }) async {
+    _maybeFail();
+    calls.add('profile:$firstName $lastName');
+    return current = AuthUser(
+      id: account.id,
+      email: account.email,
+      firstName: firstName,
+      lastName: lastName,
+    );
+  }
+
+  @override
   Future<AuthUser> confirmSignUp(String email, String code) async {
     _maybeFail();
     calls.add('confirm:$email');

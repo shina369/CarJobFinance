@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/currency_provider.dart';
@@ -11,16 +10,14 @@ import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/platforms_provider.dart';
 import '../../../core/l10n/strings.dart';
 import '../../../core/notifications/notification_settings.dart';
+import '../../../core/settings/app_settings_notifier.dart';
+import '../../../core/settings/country_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../controllers/session_controller.dart';
 import '../../widgets/export_actions.dart';
 import 'clear_data_dialog.dart';
 import 'delete_account_dialog.dart';
-
-/// Opens a link outside the app. Overridable in tests.
-final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
-  (ref) => (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
-);
+import 'profile_edit_dialog.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -203,20 +200,7 @@ class SettingsPage extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                Consumer(
-                  builder: (context, ref, _) {
-                    final email = ref.watch(
-                        sessionProvider.select((s) => s.user?.email ?? ''));
-                    return ListTile(
-                      leading: Icon(
-                        Icons.account_circle_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      title: Text(tr('auth.email')),
-                      subtitle: Text(email),
-                    );
-                  },
-                ),
+                const _ProfileSection(),
                 const Divider(height: 1, indent: 72),
                 ListTile(
                   key: const Key('settings-sign-out'),
@@ -288,7 +272,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   title: Text(tr('settings.reportIssue')),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _reportIssue(context, ref, tr),
+                  onTap: () => _showReportIssueDialog(context, tr),
                 ),
               ],
             ),
@@ -380,22 +364,22 @@ class SettingsPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _reportIssue(
-      BuildContext context, WidgetRef ref, String Function(String) tr) async {
-    final messenger = ScaffoldMessenger.of(context);
-    var opened = false;
-    try {
-      opened = await ref
-          .read(urlOpenerProvider)(Uri.parse(AppConstants.issueTrackerUrl));
-    } catch (_) {
-      opened = false;
-    }
-    if (!opened) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(
-            '${tr('settings.linkFailed')} ${AppConstants.issueTrackerUrl}'),
-      ));
-    }
+  void _showReportIssueDialog(
+      BuildContext context, String Function(String) tr) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tr('settings.reportIssue')),
+        content: Text(tr('settings.reportIssueMsg')),
+        actions: [
+          TextButton(
+            key: const Key('settings-report-issue-close'),
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr('dash.close')),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showSignOutDialog(
@@ -435,6 +419,72 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (_) => const ClearDataDialog(),
+    );
+  }
+}
+
+class _ProfileSection extends ConsumerWidget {
+  const _ProfileSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    final user = ref.watch(sessionProvider.select((s) => s.user));
+    final countryCode =
+        ref.watch(appSettingsProvider.select((s) => s.countryCode));
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final countries = COUNTRIES.where((c) => c.code == countryCode);
+    final countryName =
+        countries.isEmpty ? countryCode : countries.first.namePt;
+
+    ListTile row(IconData icon, String title, String value) => ListTile(
+          leading: Icon(icon, color: primary),
+          title: Text(title),
+          subtitle: Text(value),
+        );
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 8, top: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lang.tr('settings.profile'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                key: const Key('settings-profile-edit'),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(lang.tr('settings.profileEdit')),
+                onPressed: user == null
+                    ? null
+                    : () => showDialog<void>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const ProfileEditDialog(),
+                        ),
+              ),
+            ],
+          ),
+        ),
+        row(Icons.person_outline, lang.tr('auth.firstName'),
+            user?.firstName ?? '—'),
+        const Divider(height: 1, indent: 72),
+        row(Icons.person_outline, lang.tr('auth.lastName'),
+            user?.lastName ?? '—'),
+        const Divider(height: 1, indent: 72),
+        row(Icons.account_circle_outlined, lang.tr('auth.email'),
+            user?.email ?? ''),
+        const Divider(height: 1, indent: 72),
+        row(Icons.flag_outlined, lang.tr('onboarding.country'), countryName),
+      ],
     );
   }
 }
