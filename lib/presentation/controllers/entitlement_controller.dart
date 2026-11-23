@@ -60,6 +60,7 @@ class EntitlementController extends StateNotifier<EntitlementState> {
   final bool? _forced;
   final Duration resolveTimeout;
   late final Future<void> _ready;
+  bool _loggedIn = false;
   StreamSubscription<PremiumInfo>? _subscription;
 
   Future<void> _afterPendingSwitch(Future<void> Function() call) {
@@ -71,14 +72,34 @@ class EntitlementController extends StateNotifier<EntitlementState> {
 
   Future<void> _init(String userId) async {
     try {
-      await _afterPendingSwitch(() => _gateway.logIn(userId));
+      await _logIn(userId);
       if (!mounted) return;
-      _subscription = _gateway.updates.listen(_apply, onError: (_) {});
       _apply(await _gateway.currentInfo());
     } catch (_) {
       if (mounted && !state.resolved) {
         state = const EntitlementState(resolved: true);
       }
+    }
+  }
+
+  Future<void> _logIn(String userId) async {
+    await _afterPendingSwitch(() => _gateway.logIn(userId));
+    if (!mounted) return;
+    _loggedIn = true;
+    _subscription ??= _gateway.updates.listen(_apply, onError: (_) {});
+  }
+
+  /// A purchase or restore must never run under another store identity, so a
+  /// failed login is retried first and its error rethrown.
+  Future<void> _ensureLoggedIn() async {
+    await _ready;
+    final userId = _userId;
+    if (_loggedIn || userId == null) return;
+    await _logIn(userId);
+    try {
+      _apply(await _gateway.currentInfo());
+    } catch (_) {
+      // The purchase or restore that follows still reports the state.
     }
   }
 
@@ -97,13 +118,13 @@ class EntitlementController extends StateNotifier<EntitlementState> {
   /// Throws [PurchaseCancelled] when the driver gives up.
   Future<void> purchase(PremiumOffer offer) async {
     if (_forced != null) return;
-    await _ready;
+    await _ensureLoggedIn();
     _apply(await _gateway.purchase(offer));
   }
 
   Future<void> restore() async {
     if (_forced != null) return;
-    await _ready;
+    await _ensureLoggedIn();
     _apply(await _gateway.restore());
   }
 

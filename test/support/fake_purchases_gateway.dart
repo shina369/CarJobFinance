@@ -24,6 +24,9 @@ class FakePurchasesGateway implements PurchasesGateway {
   /// Thrown by [currentInfo], [purchase] and [restore] while set.
   Object? error;
 
+  /// Thrown by [logIn] while set.
+  Object? logInError;
+
   /// Applied to every call before it returns.
   Duration? delay;
 
@@ -55,7 +58,11 @@ class FakePurchasesGateway implements PurchasesGateway {
   Stream<PremiumInfo> get updates => push.stream;
 
   @override
-  Future<void> logIn(String userId) => _step('logIn:$userId');
+  Future<void> logIn(String userId) async {
+    await _step('logIn:$userId');
+    final pending = logInError;
+    if (pending != null) throw pending;
+  }
 
   @override
   Future<void> logOut() => _step('logOut');

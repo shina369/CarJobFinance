@@ -124,6 +124,65 @@ void main() {
     expect(container.read(entitlementProvider).resolved, isTrue);
   });
 
+  group('when logIn fails at start', () {
+    late ProviderContainer container;
+    late EntitlementController controller;
+
+    setUp(() async {
+      gateway
+        ..info = activePremium
+        ..logInError = Exception('offline');
+      container = containerFor(_ana);
+      controller = controllerOf(container);
+      await controller.resolveIsPremium();
+    });
+
+    test('resolves as not premium without asking the store', () {
+      expect(container.read(entitlementProvider),
+          const EntitlementState(resolved: true));
+      expect(gateway.calls, ['logIn:user-a']);
+      expect(gateway.push.hasListener, isFalse);
+    });
+
+    test('purchase retries logIn and throws without buying if it fails again',
+        () async {
+      await expectLater(
+          controller.purchase(annualTestOffer), throwsA(isA<Exception>()));
+      expect(gateway.calls, ['logIn:user-a', 'logIn:user-a']);
+      expect(container.read(isPremiumProvider), isFalse);
+    });
+
+    test('purchase buys for the user once the retried logIn succeeds',
+        () async {
+      gateway.logInError = null;
+
+      await controller.purchase(annualTestOffer);
+
+      expect(gateway.loggedIn, ['user-a', 'user-a']);
+      expect(gateway.calls.last, 'purchase:${annualTestOffer.packageId}');
+      expect(gateway.push.hasListener, isTrue);
+      expect(container.read(isPremiumProvider), isTrue);
+    });
+
+    test('restore retries logIn and throws without restoring if it fails again',
+        () async {
+      await expectLater(controller.restore(), throwsA(isA<Exception>()));
+      expect(gateway.calls, ['logIn:user-a', 'logIn:user-a']);
+      expect(container.read(isPremiumProvider), isFalse);
+    });
+
+    test('restore runs for the user once the retried logIn succeeds', () async {
+      gateway.logInError = null;
+
+      await controller.restore();
+
+      expect(gateway.loggedIn, ['user-a', 'user-a']);
+      expect(gateway.calls.last, 'restore');
+      expect(gateway.push.hasListener, isTrue);
+      expect(container.read(isPremiumProvider), isTrue);
+    });
+  });
+
   test('switching accounts resets to none and logs the old one out', () async {
     gateway.info = activePremium;
     final container = containerFor(_ana);
