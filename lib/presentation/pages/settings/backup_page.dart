@@ -1,6 +1,7 @@
 // Backup e Restauração: export every table to JSON or restore from a file.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/language_provider.dart';
@@ -9,6 +10,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../data/datasources/local/backup_data.dart';
 import '../../controllers/cloud_backup_controller.dart';
 import '../../controllers/data_controller.dart';
+import '../../controllers/entitlement_controller.dart';
 import '../../widgets/export_feedback.dart';
 import '../auth/auth_widgets.dart';
 
@@ -20,6 +22,8 @@ class BackupPage extends ConsumerWidget {
     final lang = ref.watch(appLanguageProvider);
     final cs = Theme.of(context).colorScheme;
     final lastCloud = ref.watch(lastCloudBackupProvider).valueOrNull;
+    final entitlement = ref.watch(entitlementProvider);
+    final locked = entitlement.resolved && !entitlement.isPremium;
     final lastCloudText = lastCloud == null
         ? lang.tr('cloud.never')
         : lang.tr('cloud.last', args: {
@@ -78,14 +82,25 @@ class BackupPage extends ConsumerWidget {
                   subtitle: Text(lang.tr('cloud.autoInfo')),
                 ),
                 const Divider(height: 1, indent: 72),
-                ListTile(
-                  key: const Key('cloud-backup-now'),
-                  leading: Icon(Icons.cloud_upload_outlined, color: cs.primary),
-                  title: Text(lang.tr('cloud.backupNow')),
-                  subtitle: Text(lang.tr('cloud.backupNowSub')),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _cloudBackup(context, ref, lang),
-                ),
+                if (locked)
+                  ListTile(
+                    key: const Key('cloud-upgrade'),
+                    leading: Icon(Icons.lock_outline, color: cs.primary),
+                    title: Text(lang.tr('cloud.backupNow')),
+                    subtitle: Text(lang.tr('premium.backup.locked')),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/paywall'),
+                  )
+                else
+                  ListTile(
+                    key: const Key('cloud-backup-now'),
+                    leading:
+                        Icon(Icons.cloud_upload_outlined, color: cs.primary),
+                    title: Text(lang.tr('cloud.backupNow')),
+                    subtitle: Text(lang.tr('cloud.backupNowSub')),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _cloudBackup(context, ref, lang),
+                  ),
                 const Divider(height: 1, indent: 72),
                 ListTile(
                   key: const Key('cloud-restore'),
@@ -113,6 +128,8 @@ class BackupPage extends ConsumerWidget {
       await ref.read(cloudBackupControllerProvider).backupNow();
       ref.invalidate(lastCloudBackupProvider);
       notify(lang.tr('cloud.done'));
+    } on PremiumRequiredException {
+      if (context.mounted) context.push('/paywall');
     } catch (e) {
       notify(authErrorMessage(lang, e));
     }

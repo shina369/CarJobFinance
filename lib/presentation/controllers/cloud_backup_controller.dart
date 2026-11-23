@@ -9,6 +9,15 @@ import '../../core/storage/device_store.dart';
 import '../../data/datasources/local/backup_data.dart';
 import 'controllers.dart';
 import 'data_controller.dart';
+import 'entitlement_controller.dart';
+
+/// Uploading a cloud backup needs the premium subscription.
+class PremiumRequiredException implements Exception {
+  const PremiumRequiredException();
+
+  @override
+  String toString() => 'PremiumRequiredException';
+}
 
 class CloudBackupController {
   CloudBackupController(this._ref);
@@ -43,7 +52,12 @@ class CloudBackupController {
   /// When the account's cloud backup was written, from any device.
   Future<DateTime?> remoteBackupAt() => _cloud.lastBackupAt();
 
+  Future<bool> _isPremium() =>
+      _ref.read(entitlementProvider.notifier).resolveIsPremium();
+
+  /// Throws [PremiumRequiredException] without the subscription.
   Future<DateTime> backupNow() async {
+    if (!await _isPremium()) throw const PremiumRequiredException();
     final data = await _ref.read(appDaoProvider).readBackupData();
     return _upload(data);
   }
@@ -61,7 +75,7 @@ class CloudBackupController {
 
   /// Uploads when the last backup is older than [autoBackupInterval] and the
   /// data changed since. Never throws: a failure (e.g. offline) is retried
-  /// the next time the app opens.
+  /// the next time the app opens. Without the subscription it does nothing.
   Future<bool> autoBackupIfDue({DateTime? now}) async {
     try {
       final last = await lastBackupAt();
@@ -73,6 +87,7 @@ class CloudBackupController {
       // An empty device must not replace a backup that holds real data.
       if (!hasUserData(data)) return false;
       if (fingerprint(data) == await _store.read(lastHashKey)) return false;
+      if (!await _isPremium()) return false;
       await _upload(data);
       return true;
     } catch (_) {

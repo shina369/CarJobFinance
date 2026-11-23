@@ -221,6 +221,30 @@ void main() {
     expect(h.auth.calls.last, 'signOut');
   });
 
+  test('signing out without the subscription skips the backup but signs out',
+      () async {
+    h.premium = false;
+    h.dao.data = _withData;
+    final session = controllerOf(h);
+    await session.signIn('ana@example.com', 'senha1234');
+    await Future<void>.delayed(Duration.zero);
+    await session.signOut();
+
+    expect(h.cloud.uploads, isEmpty);
+    expect(h.auth.calls.last, 'signOut');
+    expect(session.state.isAuthenticated, isFalse);
+  });
+
+  test('the restore offer after signing in stays free', () async {
+    h.premium = false;
+    h.cloud.remoteAt = DateTime.utc(2026, 1, 2);
+    final session = controllerOf(h);
+    await session.signIn('ana@example.com', 'senha1234');
+
+    expect(session.state.gate, LoginGate.restoreOffer);
+    expect(session.state.cloudBackupAt, DateTime.utc(2026, 1, 2));
+  });
+
   test('an empty device signing out does not upload anything', () async {
     final session = controllerOf(h);
     await session.signIn('ana@example.com', 'senha1234');

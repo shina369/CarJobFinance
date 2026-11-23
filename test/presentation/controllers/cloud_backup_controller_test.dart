@@ -1,6 +1,11 @@
 import 'package:carjobfinance/data/datasources/local/app_database.dart';
 import 'package:carjobfinance/data/datasources/local/backup_data.dart';
+import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
 import 'package:carjobfinance/presentation/controllers/cloud_backup_controller.dart';
+import 'package:carjobfinance/presentation/controllers/data_controller.dart';
+import 'package:carjobfinance/presentation/controllers/entitlement_controller.dart';
+import 'package:carjobfinance/presentation/controllers/session_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/auth_test_support.dart';
@@ -22,15 +27,49 @@ final _withData = BackupData(
   countryPlatforms: const [],
 );
 
+class _RestoringDataController implements DataController {
+  BackupData? restored;
+
+  @override
+  Future<void> restore(BackupData data) async {
+    restored = data;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('RestoringDataController');
+}
+
 void main() {
   late AuthHarness h;
   late CloudBackupController backup;
 
-  setUp(() {
-    h = AuthHarness();
-    final container = h.container();
+  Future<CloudBackupController> signedInBackup(
+    AuthHarness harness, {
+    Duration resolveTimeout = const Duration(seconds: 5),
+    DataController? data,
+  }) async {
+    harness.auth.current = testAccount;
+    final container = ProviderContainer(overrides: [
+      ...harness.overrides,
+      if (data != null) dataControllerProvider.overrideWithValue(data),
+      entitlementProvider.overrideWith(
+        (ref) => EntitlementController(
+          ref.watch(purchasesGatewayProvider),
+          ref.watch(sessionProvider.select((s) => s.user?.id)),
+          resolveTimeout: resolveTimeout,
+        ),
+      ),
+    ]);
     addTearDown(container.dispose);
-    backup = container.read(cloudBackupControllerProvider);
+    await container.read(sessionProvider.notifier).initialize();
+    await Future<void>.delayed(Duration.zero);
+    return container.read(cloudBackupControllerProvider);
+  }
+
+  setUp(() async {
+    h = AuthHarness();
+    backup = await signedInBackup(h);
   });
 
   group('fingerprint', () {
@@ -139,5 +178,64 @@ void main() {
 
     expect(h.cloud.uploads, hasLength(1));
     expect(await h.store.read(CloudBackupController.lastBackupKey), isNotNull);
+  });
+
+  group('without the subscription', () {
+    late AuthHarness free;
+    late CloudBackupController freeBackup;
+    late _RestoringDataController data;
+
+    setUp(() async {
+      free = AuthHarness()..premium = false;
+      data = _RestoringDataController();
+      freeBackup = await signedInBackup(free, data: data);
+      free.dao.data = _withData;
+    });
+
+    test('backupNow throws PremiumRequiredException and never uploads',
+        () async {
+      await expectLater(
+        freeBackup.backupNow(),
+        throwsA(isA<PremiumRequiredException>()),
+      );
+      expect(free.cloud.uploads, isEmpty);
+      expect(
+          await free.store.read(CloudBackupController.lastBackupKey), isNull);
+    });
+
+    test('autoBackupIfDue returns quietly without uploading', () async {
+      expect(await freeBackup.autoBackupIfDue(), isFalse);
+      expect(free.cloud.uploads, isEmpty);
+      expect(await free.store.read(CloudBackupController.lastHashKey), isNull);
+    });
+
+    test('restoreFromCloud, remoteBackupAt and hasLocalData stay free',
+        () async {
+      free.cloud.remoteAt = DateTime.utc(2026, 1, 2);
+      free.cloud.content = _withData.encode();
+
+      expect(await freeBackup.remoteBackupAt(), DateTime.utc(2026, 1, 2));
+      expect(await freeBackup.hasLocalData(), isTrue);
+      expect(await freeBackup.restoreFromCloud(), isTrue);
+      expect(data.restored?.expenses, hasLength(1));
+    });
+  });
+
+  test('a store that answers after the timeout counts as not premium',
+      () async {
+    final slow = AuthHarness();
+    slow.purchases.delay = const Duration(milliseconds: 300);
+    final slowBackup = await signedInBackup(
+      slow,
+      resolveTimeout: const Duration(milliseconds: 20),
+    );
+    slow.dao.data = _withData;
+
+    await expectLater(
+      slowBackup.backupNow(),
+      throwsA(isA<PremiumRequiredException>()),
+    );
+    expect(await slowBackup.autoBackupIfDue(), isFalse);
+    expect(slow.cloud.uploads, isEmpty);
   });
 }
