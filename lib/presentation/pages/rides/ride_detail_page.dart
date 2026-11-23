@@ -8,6 +8,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 import '../../controllers/controllers.dart';
+import '../../widgets/detail_section.dart';
 
 class RideDetailPage extends ConsumerWidget {
   const RideDetailPage({super.key, required this.rideId});
@@ -114,20 +115,20 @@ class _RideDetails extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _SectionCard(
+        DetailSectionCard(
           title: lang.tr('rides.sectionEarnings'),
           children: [
-            _DetailRow(
+            DetailRow(
               label: lang.tr('rides.grossValue'),
               value: money(ride.earnings),
             ),
             if (ride.hasCommission)
-              _DetailRow(
+              DetailRow(
                 label: lang.tr('rides.commission'),
                 value: '− ${money(ride.commissionAmount)}',
                 valueColor: theme.colorScheme.error,
               ),
-            _DetailRow(
+            DetailRow(
               label: lang.tr('rides.netValue'),
               value: money(ride.netEarnings),
               bold: true,
@@ -135,14 +136,14 @@ class _RideDetails extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _SectionCard(
+        DetailSectionCard(
           title: lang.tr('rides.sectionDistance'),
           children: [
-            _DetailRow(
+            DetailRow(
               label: lang.tr('rides.fieldKm'),
               value: '${ride.distanceKm.toStringAsFixed(1)} km',
             ),
-            _DetailRow(
+            DetailRow(
               label: lang.tr('rides.fieldMin'),
               value: ride.formattedDuration,
             ),
@@ -150,14 +151,14 @@ class _RideDetails extends ConsumerWidget {
         ),
         if (hasRoute) ...[
           const SizedBox(height: 16),
-          _SectionCard(
+          DetailSectionCard(
             title: lang.tr('rides.sectionOrigDest'),
             children: [
-              _DetailRow(
+              DetailRow(
                 label: lang.tr('rides.fieldOrigem'),
                 value: origin ?? '—',
               ),
-              _DetailRow(
+              DetailRow(
                 label: lang.tr('rides.fieldDestino'),
                 value: destination ?? '—',
               ),
@@ -165,71 +166,6 @@ class _RideDetails extends ConsumerWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-          ),
-        ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(children: children),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.bold = false,
-  });
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: bold ? FontWeight.bold : FontWeight.w500,
-          color: valueColor,
-        );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: Text(label)),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Text(value, style: style, textAlign: TextAlign.end),
-          ),
-        ],
-      ),
     );
   }
 }

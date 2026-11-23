@@ -18,6 +18,7 @@ import '../../presentation/pages/rides/rides_page.dart';
 import '../../presentation/pages/rides/ride_detail_page.dart';
 import '../../presentation/pages/rides/ride_form_page.dart';
 import '../../presentation/pages/expenses/expenses_page.dart';
+import '../../presentation/pages/expenses/expense_detail_page.dart';
 import '../../presentation/pages/expenses/expense_form_page.dart';
 import '../../presentation/pages/reports/reports_page.dart';
 import '../../presentation/pages/settings/settings_page.dart';
@@ -147,6 +148,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) {
                   final expenseId = state.pathParameters['expenseId']!;
                   return ExpenseFormPage(expenseId: expenseId);
+                },
+              ),
+              GoRoute(
+                path: ':expenseId',
+                name: 'expense-detail',
+                builder: (context, state) {
+                  final expenseId = state.pathParameters['expenseId']!;
+                  return ExpenseDetailPage(expenseId: expenseId);
                 },
               ),
             ],

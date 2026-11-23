@@ -287,7 +287,7 @@ class ExpenseCard extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.error,
               ),
         ),
-        onTap: () => context.push('/expenses/edit/${expense.id}'),
+        onTap: () => context.push('/expenses/${expense.id}'),
       ),
     );
   }
