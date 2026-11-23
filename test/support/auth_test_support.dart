@@ -13,6 +13,8 @@ import 'package:carjobfinance/presentation/controllers/controllers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'fake_purchases_gateway.dart';
+
 const BackupData emptyBackup = BackupData(
   rides: [],
   expenses: [],
@@ -212,6 +214,9 @@ class AuthHarness {
   final FakeCredentialStore credentials = FakeCredentialStore();
   AppLanguage language = languageForTag('pt_BR')!;
 
+  /// False for tests of a driver without the subscription.
+  bool premium = true;
+
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
         cloudBackupRepositoryProvider.overrideWithValue(cloud),
@@ -219,6 +224,7 @@ class AuthHarness {
         deviceStoreProvider.overrideWithValue(store),
         credentialStoreProvider.overrideWithValue(credentials),
         appLanguageProvider.overrideWithValue(language),
+        premiumGatewayOverride(premium: premium),
       ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides);
