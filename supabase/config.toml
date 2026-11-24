@@ -40,3 +40,8 @@ content_path = "./supabase/templates/confirm-signup.html"
 [auth.email.template.recovery]
 subject = '{{$l:=""}}{{with .Data}}{{with .lang}}{{$l = .}}{{end}}{{end}}{{if eq $l "pt"}}Código de nova senha{{else if eq $l "es"}}Código de nueva clave{{else if eq $l "id"}}Kode sandi baru{{else if eq $l "hi"}}पासवर्ड रीसेट कोड{{else}}Password reset code{{end}}'
 content_path = "./supabase/templates/recovery.html"
+
+# RevenueCat calls this hook without a Supabase JWT; the function checks the
+# shared secret in the Authorization header instead.
+[functions.revenuecat-webhook]
+verify_jwt = false

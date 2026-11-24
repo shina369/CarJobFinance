@@ -17,6 +17,7 @@ import '../../controllers/session_controller.dart';
 import '../../widgets/export_actions.dart';
 import 'clear_data_dialog.dart';
 import 'delete_account_dialog.dart';
+import 'premium_tile.dart';
 import 'profile_edit_dialog.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -34,6 +35,9 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const PremiumTile(),
+          const SizedBox(height: 24),
+
           // Aparência
           _SectionHeader(tr('settings.appearance')),
           Card(

@@ -6,12 +6,15 @@ import 'package:carjobfinance/core/auth/supabase_auth_repository.dart';
 import 'package:carjobfinance/core/backup/cloud_backup_repository.dart';
 import 'package:carjobfinance/core/l10n/language_provider.dart';
 import 'package:carjobfinance/core/l10n/languages.dart';
+import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
 import 'package:carjobfinance/core/storage/device_store.dart';
 import 'package:carjobfinance/data/datasources/local/backup_data.dart';
 import 'package:carjobfinance/data/datasources/local/daos.dart';
 import 'package:carjobfinance/presentation/controllers/controllers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_purchases_gateway.dart';
 
 const BackupData emptyBackup = BackupData(
   rides: [],
@@ -212,6 +215,14 @@ class AuthHarness {
   final FakeCredentialStore credentials = FakeCredentialStore();
   AppLanguage language = languageForTag('pt_BR')!;
 
+  /// False for tests of a driver without the subscription.
+  bool premium = true;
+
+  /// The store behind the entitlement; read after setting [premium].
+  late final FakePurchasesGateway purchases = FakePurchasesGateway(
+    info: premium ? activePremium : PremiumInfo.none,
+  );
+
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
         cloudBackupRepositoryProvider.overrideWithValue(cloud),
@@ -219,6 +230,7 @@ class AuthHarness {
         deviceStoreProvider.overrideWithValue(store),
         credentialStoreProvider.overrideWithValue(credentials),
         appLanguageProvider.overrideWithValue(language),
+        purchasesGatewayProvider.overrideWithValue(purchases),
       ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides);

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/l10n/language_provider.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/settings/app_settings_notifier.dart';
+import '../../presentation/controllers/entitlement_controller.dart';
 import '../../presentation/controllers/session_controller.dart';
 import '../../presentation/pages/auth/account_gate_page.dart';
 import '../../presentation/pages/auth/forgot_password_page.dart';
@@ -29,6 +30,7 @@ import '../../presentation/pages/settings/backup_page.dart';
 import '../../presentation/pages/settings/legal_page.dart';
 import '../../presentation/pages/settings/reminders_page.dart';
 import '../../presentation/pages/goals/my_goals_page.dart';
+import '../../presentation/pages/premium/paywall_page.dart';
 
 /// Adapts a [Stream] to the [Listenable] GoRouter refreshes on.
 class _StreamListenable extends ChangeNotifier {
@@ -51,15 +53,22 @@ const Set<String> _signedOutRoutes = {
   '/forgot-password',
 };
 
+/// Wakes GoRouter when a Riverpod value its redirect reads has changed.
+class _RefreshSignal extends ChangeNotifier {
+  void ping() => notifyListeners();
+}
+
 /// Where the app must go instead of [location], or null to stay.
 ///
 /// Order of the gates: login, then any decision pending after login, then the
 /// first-run onboarding (country selection), which a configured device never
-/// sees again.
+/// sees again, then the premium-only pages. An entitlement the store has not
+/// confirmed yet counts as not premium.
 String? appRedirect({
   required SessionState session,
   required bool configured,
   required String location,
+  bool isPremium = true,
 }) {
   if (!session.isAuthenticated) {
     return _signedOutRoutes.contains(location) ? null : '/login';
@@ -73,6 +82,7 @@ String? appRedirect({
   }
   if (!configured && location != '/onboarding') return '/onboarding';
   if (configured && location == '/onboarding') return '/';
+  if (!isPremium && location == '/goals') return '/paywall';
   return null;
 }
 
@@ -82,8 +92,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       _StreamListenable(ref.read(appSettingsProvider.notifier).stream);
   final sessionListenable =
       _StreamListenable(ref.read(sessionProvider.notifier).stream);
+  final premiumListenable = _RefreshSignal();
   ref.onDispose(settingsListenable.dispose);
   ref.onDispose(sessionListenable.dispose);
+  ref.onDispose(premiumListenable.dispose);
+  ref.listen<bool>(isPremiumProvider, (_, __) => premiumListenable.ping());
 
   return GoRouter(
     initialLocation: '/',
@@ -246,16 +259,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'goals',
         builder: (context, state) => const MyGoalsPage(),
       ),
+      GoRoute(
+        path: '/paywall',
+        name: 'paywall',
+        builder: (context, state) => const PaywallPage(),
+      ),
     ],
 
     redirect: (context, state) => appRedirect(
       session: ref.read(sessionProvider),
       configured: ref.read(appSettingsProvider).configured,
       location: state.matchedLocation,
+      isPremium: ref.read(isPremiumProvider),
     ),
 
-    refreshListenable:
-        Listenable.merge([settingsListenable, sessionListenable]),
+    refreshListenable: Listenable.merge(
+        [settingsListenable, sessionListenable, premiumListenable]),
 
     // Observers para analytics/logging
     observers: [

@@ -113,6 +113,45 @@ class Strings {
     'cloud.none': 'Sua conta ainda não tem backup na nuvem',
     'cloud.autoInfo':
         'O backup automático é feito ao abrir o app, no máximo uma vez por dia.',
+    // Premium
+    'premium.title': 'CarJobFinance Premium',
+    'premium.tagline': 'Mais controle sobre o seu lucro, o ano inteiro',
+    'premium.benefit.reports': 'Relatórios completos de ganhos e despesas',
+    'premium.benefit.goals': 'Meus objetivos: metas de lucro mês a mês',
+    'premium.benefit.export': 'Exportação em CSV e PDF',
+    'premium.benefit.backup': 'Backup na nuvem na sua conta',
+    'premium.benefit.reminders': 'Lembretes ilimitados e personalizados',
+    'premium.cta': 'Assinar',
+    'premium.price.year': '{price} por ano',
+    'premium.price.perMonth': 'cerca de {price} por mês',
+    'premium.trial': '{days} dias grátis, cancele quando quiser',
+    'premium.disclosure':
+        'A assinatura renova automaticamente a cada ano pelo preço exibido, até ser cancelada. Se houver teste grátis, a cobrança começa quando ele termina. Cancele quando quiser nas configurações da sua conta do Google Play.',
+    'premium.restore': 'Restaurar compras',
+    'premium.terms': 'Termos de uso',
+    'premium.privacy': 'Política de privacidade',
+    'premium.manage': 'Gerenciar assinatura no Google Play',
+    'premium.active': 'Premium ativo',
+    'premium.renews': 'Renova em {date}',
+    'premium.expires': 'Expira em {date}',
+    'premium.locked': 'Premium',
+    'premium.reports.sampleBanner':
+        'Exemplo com dados fictícios. Assine o Premium para ver os seus números.',
+    'premium.backup.locked':
+        'Enviar backup para a nuvem é um recurso Premium. Restaurar e exportar o arquivo JSON continuam grátis.',
+    'premium.reminders.limit':
+        'Lembretes extras e personalizados são Premium. No plano grátis você tem 1 lembrete padrão.',
+    'premium.error.purchase':
+        'Não foi possível concluir a assinatura. Tente novamente.',
+    'premium.error.unavailable':
+        'A assinatura não está disponível agora. Verifique sua conexão e o Google Play.',
+    'premium.error.pending':
+        'Pagamento em processamento. O Premium é liberado assim que o Google Play confirmar.',
+    'premium.restore.none':
+        'Nenhuma assinatura encontrada nesta conta do Google Play.',
+    'premium.deleteAccount.warning':
+        'Se você tiver uma assinatura premium, excluir a conta não a cancela. Cancele no Google Play para não ser cobrado.',
+    'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Home',
     'nav.rides': 'Corridas',
@@ -509,6 +548,45 @@ class Strings {
     'cloud.none': 'Tu cuenta aún no tiene respaldo en la nube',
     'cloud.autoInfo':
         'El respaldo automático se hace al abrir la app, como máximo una vez al día.',
+    // Premium
+    'premium.title': 'CarJobFinance Premium',
+    'premium.tagline': 'Más control sobre tus ganancias, todo el año',
+    'premium.benefit.reports': 'Reportes completos de ingresos y gastos',
+    'premium.benefit.goals': 'Mis objetivos: metas de ganancia mes a mes',
+    'premium.benefit.export': 'Exportación a CSV y PDF',
+    'premium.benefit.backup': 'Respaldo en la nube en tu cuenta',
+    'premium.benefit.reminders': 'Recordatorios ilimitados y personalizados',
+    'premium.cta': 'Suscribirme',
+    'premium.price.year': '{price} al año',
+    'premium.price.perMonth': 'unos {price} al mes',
+    'premium.trial': '{days} días gratis, cancela cuando quieras',
+    'premium.disclosure':
+        'La suscripción se renueva automáticamente cada año al precio indicado, hasta que la canceles. Si hay prueba gratuita, el cobro empieza cuando termina. Cancela cuando quieras en los ajustes de tu cuenta de Google Play.',
+    'premium.restore': 'Restaurar compras',
+    'premium.terms': 'Términos de uso',
+    'premium.privacy': 'Política de privacidad',
+    'premium.manage': 'Administrar suscripción en Google Play',
+    'premium.active': 'Premium activo',
+    'premium.renews': 'Se renueva el {date}',
+    'premium.expires': 'Vence el {date}',
+    'premium.locked': 'Premium',
+    'premium.reports.sampleBanner':
+        'Ejemplo con datos ficticios. Suscríbete a Premium para ver tus números.',
+    'premium.backup.locked':
+        'Subir el respaldo a la nube es una función Premium. Restaurar y exportar el archivo JSON siguen siendo gratis.',
+    'premium.reminders.limit':
+        'Los recordatorios extra y personalizados son Premium. En el plan gratis tienes 1 recordatorio predeterminado.',
+    'premium.error.purchase':
+        'No se pudo completar la suscripción. Inténtalo de nuevo.',
+    'premium.error.unavailable':
+        'La suscripción no está disponible ahora. Revisa tu conexión y Google Play.',
+    'premium.error.pending':
+        'Pago en proceso. Premium se activará en cuanto Google Play lo confirme.',
+    'premium.restore.none':
+        'No se encontró ninguna suscripción en esta cuenta de Google Play.',
+    'premium.deleteAccount.warning':
+        'Si tienes una suscripción premium, eliminar la cuenta no la cancela. Cancélala en Google Play para que no te cobren.',
+    'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Inicio',
     'nav.rides': 'Rides',
@@ -927,6 +1005,45 @@ class Strings {
     'cloud.none': 'Your account has no cloud backup yet',
     'cloud.autoInfo':
         'Automatic backup runs when the app opens, at most once a day.',
+    // Premium
+    'premium.title': 'CarJobFinance Premium',
+    'premium.tagline': 'More control over your profit, all year long',
+    'premium.benefit.reports': 'Full earnings and expense reports',
+    'premium.benefit.goals': 'My goals: month-by-month profit targets',
+    'premium.benefit.export': 'CSV and PDF export',
+    'premium.benefit.backup': 'Cloud backup to your account',
+    'premium.benefit.reminders': 'Unlimited, custom reminders',
+    'premium.cta': 'Subscribe',
+    'premium.price.year': '{price} per year',
+    'premium.price.perMonth': 'about {price} per month',
+    'premium.trial': '{days}-day free trial, cancel anytime',
+    'premium.disclosure':
+        'The subscription renews automatically every year at the price shown until you cancel it. If a free trial is offered, you are charged when it ends. Cancel anytime in your Google Play account settings.',
+    'premium.restore': 'Restore purchases',
+    'premium.terms': 'Terms of Use',
+    'premium.privacy': 'Privacy Policy',
+    'premium.manage': 'Manage subscription on Google Play',
+    'premium.active': 'Premium active',
+    'premium.renews': 'Renews on {date}',
+    'premium.expires': 'Expires on {date}',
+    'premium.locked': 'Premium',
+    'premium.reports.sampleBanner':
+        'Sample with fictional data. Subscribe to Premium to see your own numbers.',
+    'premium.backup.locked':
+        'Uploading backups to the cloud is a Premium feature. Restoring and exporting the JSON file stay free.',
+    'premium.reminders.limit':
+        'Extra and custom reminders are Premium. The free plan includes 1 default reminder.',
+    'premium.error.purchase':
+        'We could not complete the subscription. Please try again.',
+    'premium.error.unavailable':
+        'Subscriptions are unavailable right now. Check your connection and Google Play.',
+    'premium.error.pending':
+        'Payment processing. Premium unlocks as soon as Google Play confirms it.',
+    'premium.restore.none':
+        'No subscription found on this Google Play account.',
+    'premium.deleteAccount.warning':
+        'If you have a premium subscription, deleting your account does not cancel it. Cancel it on Google Play to avoid being charged.',
+    'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Home',
     'nav.rides': 'Rides',
@@ -1312,6 +1429,45 @@ class Strings {
     'cloud.none': 'Akun Anda belum memiliki cadangan cloud',
     'cloud.autoInfo':
         'Cadangan otomatis dilakukan saat aplikasi dibuka, paling banyak sekali sehari.',
+    // Premium
+    'premium.title': 'CarJobFinance Premium',
+    'premium.tagline': 'Kendali lebih atas keuntunganmu, sepanjang tahun',
+    'premium.benefit.reports': 'Laporan lengkap pendapatan dan pengeluaran',
+    'premium.benefit.goals': 'Target saya: target keuntungan tiap bulan',
+    'premium.benefit.export': 'Ekspor ke CSV dan PDF',
+    'premium.benefit.backup': 'Cadangan cloud di akunmu',
+    'premium.benefit.reminders':
+        'Pengingat tanpa batas dan bisa diatur sendiri',
+    'premium.cta': 'Berlangganan',
+    'premium.price.year': '{price} per tahun',
+    'premium.price.perMonth': 'sekitar {price} per bulan',
+    'premium.trial': 'Gratis {days} hari, batalkan kapan saja',
+    'premium.disclosure':
+        'Langganan diperpanjang otomatis setiap tahun dengan harga yang tertera hingga Anda membatalkannya. Jika ada uji coba gratis, penagihan dimulai saat uji coba berakhir. Batalkan kapan saja di pengaturan akun Google Play Anda.',
+    'premium.restore': 'Pulihkan pembelian',
+    'premium.terms': 'Ketentuan Penggunaan',
+    'premium.privacy': 'Kebijakan Privasi',
+    'premium.manage': 'Kelola langganan di Google Play',
+    'premium.active': 'Premium aktif',
+    'premium.renews': 'Diperpanjang pada {date}',
+    'premium.expires': 'Berakhir pada {date}',
+    'premium.locked': 'Premium',
+    'premium.reports.sampleBanner':
+        'Contoh dengan data fiktif. Berlangganan Premium untuk melihat angka milikmu.',
+    'premium.backup.locked':
+        'Mengunggah cadangan ke cloud adalah fitur Premium. Memulihkan dan mengekspor file JSON tetap gratis.',
+    'premium.reminders.limit':
+        'Pengingat tambahan dan kustom adalah fitur Premium. Paket gratis mendapat 1 pengingat standar.',
+    'premium.error.purchase':
+        'Langganan tidak dapat diselesaikan. Silakan coba lagi.',
+    'premium.error.unavailable':
+        'Langganan sedang tidak tersedia. Periksa koneksi dan Google Play.',
+    'premium.error.pending':
+        'Pembayaran sedang diproses. Premium aktif setelah Google Play mengonfirmasi.',
+    'premium.restore.none': 'Tidak ada langganan di akun Google Play ini.',
+    'premium.deleteAccount.warning':
+        'Jika Anda memiliki langganan premium, menghapus akun tidak membatalkannya. Batalkan di Google Play agar tidak ditagih.',
+    'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Beranda',
     'nav.rides': 'Perjalanan',
@@ -1683,6 +1839,45 @@ class Strings {
     'cloud.none': 'आपके खाते का अभी कोई क्लाउड बैकअप नहीं है',
     'cloud.autoInfo':
         'ऐप खोलने पर स्वचालित बैकअप होता है, दिन में अधिकतम एक बार।',
+    // Premium
+    'premium.title': 'CarJobFinance Premium',
+    'premium.tagline': 'पूरे साल अपने मुनाफे पर और ज़्यादा नियंत्रण',
+    'premium.benefit.reports': 'कमाई और खर्च की पूरी रिपोर्ट',
+    'premium.benefit.goals': 'मेरे लक्ष्य: हर महीने के मुनाफे का लक्ष्य',
+    'premium.benefit.export': 'CSV और PDF में एक्सपोर्ट',
+    'premium.benefit.backup': 'आपके खाते में क्लाउड बैकअप',
+    'premium.benefit.reminders': 'असीमित और अपनी पसंद के रिमाइंडर',
+    'premium.cta': 'सब्सक्राइब करें',
+    'premium.price.year': '{price} प्रति वर्ष',
+    'premium.price.perMonth': 'लगभग {price} प्रति माह',
+    'premium.trial': '{days} दिन मुफ़्त, कभी भी रद्द करें',
+    'premium.disclosure':
+        'सब्सक्रिप्शन दिखाई गई कीमत पर हर साल अपने-आप नवीनीकृत होता है, जब तक आप उसे रद्द नहीं करते। यदि मुफ़्त ट्रायल मिलता है, तो ट्रायल समाप्त होने पर शुल्क लगना शुरू होता है। आप कभी भी अपने Google Play खाते की सेटिंग में रद्द कर सकते हैं।',
+    'premium.restore': 'खरीदारी रीस्टोर करें',
+    'premium.terms': 'उपयोग की शर्तें',
+    'premium.privacy': 'गोपनीयता नीति',
+    'premium.manage': 'Google Play में सब्सक्रिप्शन प्रबंधित करें',
+    'premium.active': 'Premium सक्रिय है',
+    'premium.renews': '{date} को नवीनीकरण होगा',
+    'premium.expires': '{date} को समाप्त होगा',
+    'premium.locked': 'Premium',
+    'premium.reports.sampleBanner':
+        'यह काल्पनिक डेटा वाला उदाहरण है। अपने आँकड़े देखने के लिए Premium लें।',
+    'premium.backup.locked':
+        'क्लाउड पर बैकअप भेजना Premium सुविधा है। JSON फ़ाइल रीस्टोर और एक्सपोर्ट करना मुफ़्त रहता है।',
+    'premium.reminders.limit':
+        'अतिरिक्त और कस्टम रिमाइंडर Premium में हैं। मुफ़्त प्लान में 1 डिफ़ॉल्ट रिमाइंडर मिलता है।',
+    'premium.error.purchase':
+        'सब्सक्रिप्शन पूरा नहीं हो सका। कृपया फिर से कोशिश करें।',
+    'premium.error.unavailable':
+        'सब्सक्रिप्शन अभी उपलब्ध नहीं है। अपना कनेक्शन और Google Play जाँचें।',
+    'premium.error.pending':
+        'भुगतान प्रोसेस हो रहा है। Google Play की पुष्टि होते ही Premium चालू हो जाएगा।',
+    'premium.restore.none':
+        'इस Google Play खाते में कोई सब्सक्रिप्शन नहीं मिला।',
+    'premium.deleteAccount.warning':
+        'यदि आपके पास प्रीमियम सब्सक्रिप्शन है, तो खाता हटाने से वह रद्द नहीं होता। शुल्क से बचने के लिए उसे Google Play में रद्द करें।',
+    'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'होम',
     'nav.rides': 'सवारी',

@@ -14,8 +14,10 @@ import '../../core/l10n/languages.dart';
 import '../../core/l10n/strings.dart';
 import '../controllers/controllers.dart';
 import '../controllers/data_controller.dart';
+import '../controllers/entitlement_controller.dart';
 import '../pages/reports/reports_page.dart';
 import 'export_feedback.dart';
+import 'premium_gate.dart';
 
 class ExportTiles extends ConsumerWidget {
   const ExportTiles({super.key});
@@ -24,6 +26,14 @@ class ExportTiles extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
     final cs = Theme.of(context).colorScheme;
+    final entitlement = ref.watch(entitlementProvider);
+    final locked = entitlement.resolved && !entitlement.isPremium;
+
+    Future<void> gated(Future<bool> Function() export) async {
+      if (!await ensurePremium(context, ref)) return;
+      if (!context.mounted) return;
+      await runExport(context, lang, export);
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -32,16 +42,26 @@ class ExportTiles extends ConsumerWidget {
           leading: Icon(Icons.table_chart, color: cs.primary),
           title: Text(lang.tr('reports.exportCsv')),
           subtitle: Text(lang.tr('reports.exportCsvSub')),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => runExport(context, lang, () => _exportCsv(ref, lang)),
+          trailing: _trailing(
+            context,
+            lang,
+            locked: locked,
+            lockKey: const Key('export-csv-lock'),
+          ),
+          onTap: () => gated(() => _exportCsv(ref, lang)),
         ),
         const Divider(height: 1, indent: 72),
         ListTile(
           leading: Icon(Icons.picture_as_pdf, color: cs.error),
           title: Text(lang.tr('reports.exportPdf')),
           subtitle: Text(lang.tr('reports.exportPdfSub')),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => runExport(context, lang, () => _exportPdf(ref, lang)),
+          trailing: _trailing(
+            context,
+            lang,
+            locked: locked,
+            lockKey: const Key('export-pdf-lock'),
+          ),
+          onTap: () => gated(() => _exportPdf(ref, lang)),
         ),
         const Divider(height: 1, indent: 72),
         ListTile(
@@ -58,6 +78,30 @@ class ExportTiles extends ConsumerWidget {
       ],
     );
   }
+}
+
+Widget _trailing(
+  BuildContext context,
+  AppLanguage lang, {
+  required bool locked,
+  required Key lockKey,
+}) {
+  if (!locked) return const Icon(Icons.chevron_right);
+  final cs = Theme.of(context).colorScheme;
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.lock_outline, key: lockKey, size: 18, color: cs.primary),
+      const SizedBox(width: 4),
+      Text(
+        lang.tr('premium.locked'),
+        style: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: cs.primary),
+      ),
+    ],
+  );
 }
 
 Future<bool> _exportCsv(WidgetRef ref, AppLanguage lang) async {

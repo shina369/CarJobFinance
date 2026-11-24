@@ -1,7 +1,13 @@
+import 'package:carjobfinance/core/l10n/language_provider.dart';
+import 'package:carjobfinance/core/l10n/languages.dart';
 import 'package:carjobfinance/core/notifications/notification_service.dart';
 import 'package:carjobfinance/core/notifications/notification_settings.dart';
 import 'package:carjobfinance/core/notifications/reminder.dart';
+import 'package:carjobfinance/core/settings/app_settings_notifier.dart'
+    show appDaoProviderForSettings;
 import 'package:carjobfinance/data/datasources/local/daos.dart' show AppDao;
+import 'package:carjobfinance/presentation/controllers/entitlement_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -179,7 +185,8 @@ void main() {
     setUp(() {
       dao = _InMemoryAppDao();
       service = _FakeNotificationService();
-      notifier = NotificationSettingsNotifier(dao, service);
+      notifier =
+          NotificationSettingsNotifier(dao, service, isPremium: () => true);
     });
 
     test('is off with no reminders by default', () async {
@@ -323,7 +330,7 @@ void main() {
       await notifier.setEnabled(true, text);
       await notifier.save(daily, text);
 
-      await notifier.remove(1);
+      await notifier.remove(1, text);
 
       expect(notifier.state.reminders, isEmpty);
       expect(service.cancelled, contains(1));
@@ -355,6 +362,217 @@ void main() {
           daily.copyWith(message: 'Oi', soundUri: 'content://s/2'), text);
 
       expect(service.shown.single, 'Oi|Body|content://s/2');
+    });
+  });
+
+  group('free reminder limit', () {
+    late _InMemoryAppDao dao;
+    late _FakeNotificationService service;
+    late bool premium;
+    late NotificationSettingsNotifier notifier;
+
+    const first = Reminder(
+      id: 1,
+      hour: 8,
+      minute: 0,
+      days: {1},
+      message: 'Um',
+      soundUri: 'content://s/1',
+      soundName: 'Sino',
+    );
+    const second = Reminder(
+      id: 2,
+      hour: 9,
+      minute: 0,
+      days: {2},
+      message: 'Dois',
+      soundUri: 'content://s/2',
+    );
+    const third = Reminder(id: 3, hour: 10, minute: 0, days: {3});
+
+    Future<void> load(List<Reminder> reminders) async {
+      dao.storage[NotificationSettingsNotifier.enabledKey] = 'true';
+      dao.storage[NotificationSettingsNotifier.remindersKey] =
+          Reminder.encodeList(reminders);
+      await notifier.initialize();
+    }
+
+    List<Reminder> stored() => Reminder.decodeList(
+        dao.storage[NotificationSettingsNotifier.remindersKey]);
+
+    setUp(() {
+      dao = _InMemoryAppDao();
+      service = _FakeNotificationService();
+      premium = false;
+      notifier =
+          NotificationSettingsNotifier(dao, service, isPremium: () => premium);
+    });
+
+    test('free users get one reminder', () {
+      expect(NotificationSettingsNotifier.freeReminderLimit, 1);
+    });
+
+    test('is free when no premium check is given', () async {
+      notifier = NotificationSettingsNotifier(dao, service);
+      await load([first, second]);
+
+      await notifier.resync(text);
+
+      expect(service.scheduled, ['#1 8:0 [1] Title|Body|-']);
+    });
+
+    test('without premium only the lowest id is scheduled, with default text',
+        () async {
+      await load([second, first, third]);
+
+      await notifier.resync(text);
+
+      expect(service.scheduled, ['#1 8:0 [1] Title|Body|-']);
+      expect(service.cancelled, containsAll([2, 3]));
+    });
+
+    test('without premium the extra reminders and customizations stay saved',
+        () async {
+      await load([first, second, third]);
+
+      await notifier.resync(text);
+
+      final saved = stored();
+      expect(saved.map((r) => r.id), [1, 2, 3]);
+      expect(saved[0].message, 'Um');
+      expect(saved[0].soundUri, 'content://s/1');
+      expect(saved[0].soundName, 'Sino');
+      expect(saved[1].message, 'Dois');
+      expect(saved[1].soundUri, 'content://s/2');
+      expect(notifier.state.reminders, hasLength(3));
+    });
+
+    test('premium schedules every reminder with its customization', () async {
+      premium = true;
+      await load([first, second, third]);
+
+      await notifier.resync(text);
+
+      expect(service.scheduled, [
+        '#1 8:0 [1] Um|Body|content://s/1',
+        '#2 9:0 [2] Dois|Body|content://s/2',
+        '#3 10:0 [3] Title|Body|-',
+      ]);
+      expect(service.cancelled, isEmpty);
+    });
+
+    test('becoming premium reschedules every reminder', () async {
+      await load([first, second, third]);
+      await notifier.resync(text);
+      service.scheduled.clear();
+
+      premium = true;
+      await notifier.resync(text);
+
+      expect(service.scheduled, [
+        '#1 8:0 [1] Um|Body|content://s/1',
+        '#2 9:0 [2] Dois|Body|content://s/2',
+        '#3 10:0 [3] Title|Body|-',
+      ]);
+    });
+
+    test('losing premium cancels the extra reminders', () async {
+      premium = true;
+      await load([first, second, third]);
+      await notifier.resync(text);
+      service.scheduled.clear();
+      service.cancelled.clear();
+
+      premium = false;
+      await notifier.resync(text);
+
+      expect(service.scheduled, ['#1 8:0 [1] Title|Body|-']);
+      expect(service.cancelled, [2, 3]);
+      expect(stored(), hasLength(3));
+    });
+
+    test('a switched-off first reminder hands the slot to the next one',
+        () async {
+      await load([first, second]);
+      await notifier.resync(text);
+      service.scheduled.clear();
+      service.cancelled.clear();
+
+      await notifier.save(first.copyWith(enabled: false), text);
+
+      expect(service.cancelled, contains(1));
+      expect(service.scheduled, ['#2 9:0 [2] Title|Body|-']);
+      expect(stored().first.enabled, isFalse);
+    });
+
+    test('a second reminder is saved but not scheduled', () async {
+      await load([first]);
+      service.scheduled.clear();
+
+      await notifier.save(second, text);
+
+      expect(stored(), hasLength(2));
+      expect(service.scheduled, ['#1 8:0 [1] Title|Body|-']);
+      expect(service.cancelled, contains(2));
+    });
+
+    test('removing the scheduled reminder schedules the next one', () async {
+      await load([first, second]);
+      await notifier.resync(text);
+      service.scheduled.clear();
+
+      await notifier.remove(1, text);
+
+      expect(service.cancelled, contains(1));
+      expect(service.scheduled, ['#2 9:0 [2] Title|Body|-']);
+    });
+
+    test('turning notifications off still works without premium', () async {
+      await load([first, second, third]);
+      await notifier.resync(text);
+      service.cancelled.clear();
+
+      expect(await notifier.setEnabled(false, text), isTrue);
+
+      expect(service.cancelled, [1, 2, 3]);
+      expect(notifier.state.enabled, isFalse);
+      expect(dao.storage[NotificationSettingsNotifier.enabledKey], 'false');
+      expect(stored(), hasLength(3));
+    });
+
+    test('the provider reschedules when premium changes', () async {
+      final premiumFlag = StateProvider<bool>((_) => false);
+      final container = ProviderContainer(overrides: [
+        appDaoProviderForSettings.overrideWithValue(dao),
+        notificationServiceProvider.overrideWithValue(service),
+        appLanguageProvider.overrideWithValue(languageForTag('pt_BR')!),
+        isPremiumProvider.overrideWith((ref) => ref.watch(premiumFlag)),
+      ]);
+      addTearDown(container.dispose);
+      dao.storage[NotificationSettingsNotifier.enabledKey] = 'true';
+      dao.storage[NotificationSettingsNotifier.remindersKey] =
+          Reminder.encodeList([first, second]);
+
+      container.read(notificationSettingsProvider);
+      await pumpEventQueue();
+      expect(service.scheduled, hasLength(1));
+      service.scheduled.clear();
+
+      container.read(premiumFlag.notifier).state = true;
+      container.read(isPremiumProvider);
+      await pumpEventQueue();
+
+      expect(service.scheduled, hasLength(2));
+      expect(service.scheduled.first, startsWith('#1 8:0 [1] Um|'));
+      service.scheduled.clear();
+      service.cancelled.clear();
+
+      container.read(premiumFlag.notifier).state = false;
+      container.read(isPremiumProvider);
+      await pumpEventQueue();
+
+      expect(service.scheduled, hasLength(1));
+      expect(service.cancelled, [2]);
     });
   });
 }

@@ -204,7 +204,7 @@ class SessionController extends StateNotifier<SessionState> {
         await _backup.backupNow().timeout(signOutBackupTimeout);
       }
     } catch (_) {
-      // Offline or slow: signing out must still work.
+      // Offline, slow or not premium: signing out must still work.
     }
     await _auth.signOut();
     state = const SessionState();

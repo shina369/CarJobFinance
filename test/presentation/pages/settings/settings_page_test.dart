@@ -15,8 +15,12 @@ import 'package:carjobfinance/presentation/controllers/session_controller.dart';
 import 'package:carjobfinance/presentation/pages/settings/option_picker_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/settings_page.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
+import 'package:carjobfinance/presentation/pages/settings/premium_tile.dart';
 
 import '../../../support/auth_test_support.dart';
+import '../../../support/fake_purchases_gateway.dart' show activePremium;
 
 class _InMemoryAppDao implements AppDao {
   final Map<String, String> _storage = {};
@@ -309,6 +313,141 @@ void main() {
     });
   });
 
+  group('SettingsPage premium tile', () {
+    late AuthHarness h;
+    late List<Uri> launched;
+    late List<String> pushed;
+
+    setUpAll(() => Strings.initIntlDateFormats());
+
+    Future<void> pumpSettings(
+      WidgetTester tester, {
+      required PremiumInfo info,
+    }) async {
+      tester.view.physicalSize = const Size(1000, 5000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      h = AuthHarness();
+      h.purchases.info = info;
+      launched = [];
+      pushed = [];
+      final container = ProviderContainer(overrides: [
+        ...h.overrides,
+        languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+        appSettingsProvider
+            .overrideWith((ref) => AppSettingsNotifier.forTesting(
+                  _InMemoryAppDao(),
+                  _StubCountryPlatformsDao(),
+                  AppSettings.defaultBrazil(),
+                )),
+        sessionProvider.overrideWith((ref) =>
+            SessionController(ref, const SessionState(user: testAccount))),
+        manageSubscriptionLauncherProvider.overrideWithValue((uri) async {
+          launched.add(uri);
+          return true;
+        }),
+      ]);
+      addTearDown(container.dispose);
+
+      final router = GoRouter(routes: [
+        GoRoute(path: '/', builder: (_, __) => const SettingsPage()),
+        GoRoute(
+          path: '/paywall',
+          builder: (_, __) {
+            pushed.add('/paywall');
+            return const Scaffold(body: Text('paywall-page'));
+          },
+        ),
+      ]);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: lightTheme, routerConfig: router),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    String tr(String key, {Map<String, String>? args}) =>
+        languageForTag('pt_BR')!.tr(key, args: args);
+
+    testWidgets('a free driver sees the Premium tile that opens the paywall',
+        (tester) async {
+      await pumpSettings(tester, info: PremiumInfo.none);
+
+      final tile = find.byKey(const Key('premium-tile'));
+      expect(tile, findsOneWidget);
+      expect(
+          find.descendant(
+              of: tile, matching: find.text(tr('premium.settings.tile'))),
+          findsOneWidget);
+      expect(find.byKey(const Key('premium-manage')), findsNothing);
+      expect(find.text(tr('premium.active')), findsNothing);
+
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('paywall-page'), findsOneWidget);
+    });
+
+    testWidgets('the tile sits above the first settings section',
+        (tester) async {
+      await pumpSettings(tester, info: PremiumInfo.none);
+
+      final tileTop = tester.getTopLeft(find.byKey(const Key('premium-tile')));
+      final sectionTop =
+          tester.getTopLeft(find.text(tr('settings.appearance')));
+      expect(tileTop.dy, lessThan(sectionTop.dy));
+    });
+
+    testWidgets('a renewing subscriber sees the renewal date and manage action',
+        (tester) async {
+      final expiresAt = DateTime.now().add(const Duration(days: 90));
+      await pumpSettings(
+        tester,
+        info:
+            PremiumInfo(isPremium: true, expiresAt: expiresAt, willRenew: true),
+      );
+
+      final date = DateFormat.yMd('pt_BR').format(expiresAt);
+      expect(find.text(tr('premium.active')), findsOneWidget);
+      expect(find.text(tr('premium.renews', args: {'date': date})),
+          findsOneWidget);
+      expect(
+          find.text(tr('premium.expires', args: {'date': date})), findsNothing);
+      expect(find.byKey(const Key('premium-manage')), findsOneWidget);
+    });
+
+    testWidgets('a cancelled subscriber sees when the access expires',
+        (tester) async {
+      final expiresAt = DateTime.now().add(const Duration(days: 12));
+      await pumpSettings(
+        tester,
+        info: PremiumInfo(isPremium: true, expiresAt: expiresAt),
+      );
+
+      final date = DateFormat.yMd('pt_BR').format(expiresAt);
+      expect(find.text(tr('premium.expires', args: {'date': date})),
+          findsOneWidget);
+      expect(
+          find.text(tr('premium.renews', args: {'date': date})), findsNothing);
+    });
+
+    testWidgets('manage opens the Play subscriptions page, not the paywall',
+        (tester) async {
+      await pumpSettings(tester, info: activePremium);
+
+      await tester.tap(find.byKey(const Key('premium-manage')));
+      await tester.pumpAndSettle();
+
+      expect(launched, [
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+      ]);
+      expect(pushed, isEmpty);
+    });
+  });
+
   group('SettingsPage language dialog', () {
     Future<ProviderContainer> buildSettingsPage(
         WidgetTester tester, AppLanguage lang) async {
@@ -362,7 +501,7 @@ void main() {
       final container = await buildSettingsPage(tester, ptBr);
       addTearDown(container.dispose);
 
-      await tester.tap(find.byType(ListTile).at(1)); // language tile
+      await tester.tap(find.byIcon(Icons.language_outlined)); // language tile
       await tester.pumpAndSettle();
 
       expect(find.byType(LanguagePickerPage), findsOneWidget);

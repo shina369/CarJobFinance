@@ -73,6 +73,12 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
               children: [
                 Text(lang.tr('settings.deleteAccountMsg')),
                 const SizedBox(height: 12),
+                Text(
+                  lang.tr('premium.deleteAccount.warning'),
+                  key: const Key('settings-delete-account-premium-warning'),
+                  style: TextStyle(color: scheme.error),
+                ),
+                const SizedBox(height: 12),
                 Text(lang.tr('settings.deleteAccountPasswordHint')),
                 const SizedBox(height: 16),
                 PasswordField(
