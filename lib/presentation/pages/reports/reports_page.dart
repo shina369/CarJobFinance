@@ -10,6 +10,8 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/l10n/currency_provider.dart' as currency_pkg;
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
+import '../../controllers/entitlement_controller.dart';
+import 'reports_sample.dart';
 
 enum ReportPeriod { day, week, month, year, custom }
 
@@ -85,11 +87,16 @@ class ReportsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
+    final entitlement = ref.watch(entitlementProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.tr('reports.title')),
       ),
-      body: _ReportsContent(),
+      body: !entitlement.resolved
+          ? const Center(child: CircularProgressIndicator())
+          : entitlement.isPremium
+              ? _ReportsContent()
+              : const ReportsLockedPreview(),
     );
   }
 }
@@ -295,32 +302,32 @@ class _ReportsContent extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _SummaryRow(
+                      ReportSummaryRow(
                         label: lang.tr('reports.totalEarnings'),
                         value: fmt(totalEarnings),
                         isPositive: true,
                       ),
                       if (totalCommissions > 0) ...[
-                        _SummaryRow(
+                        ReportSummaryRow(
                           label: lang.tr('reports.commissions'),
                           value: fmt(totalCommissions),
                           isPositive: false,
                           isLightValue: true,
                         ),
-                        _SummaryRow(
+                        ReportSummaryRow(
                           label: lang.tr('reports.otherExpenses'),
                           value: fmt(otherExpenses),
                           isPositive: false,
                           isLightValue: true,
                         ),
                       ],
-                      _SummaryRow(
+                      ReportSummaryRow(
                         label: lang.tr('reports.totalExpenses'),
                         value: fmt(totalExpenses),
                         isPositive: false,
                       ),
                       const Divider(),
-                      _SummaryRow(
+                      ReportSummaryRow(
                         label: lang.tr('reports.netProfit'),
                         value: fmt(netProfit),
                         isPositive: netProfit >= 0,
@@ -344,31 +351,31 @@ class _ReportsContent extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 16),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.ridesDone'),
                         value: filteredRides.length.toString(),
                       ),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.totalKm'),
                         value: '${totalKm.toStringAsFixed(1)} km',
                       ),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.hoursWorked'),
                         value: '${(totalMinutes / 60).toStringAsFixed(1)}h',
                       ),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.avgPerKm'),
                         value: totalKm > 0
                             ? '${fmt(totalEarnings / totalKm)}/km'
                             : '${fmt(0)}/km',
                       ),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.avgPerHour'),
                         value: totalMinutes > 0
                             ? '${fmt(totalEarnings / (totalMinutes / 60))}/h'
                             : '${fmt(0)}/h',
                       ),
-                      _MetricRow(
+                      ReportMetricRow(
                         label: lang.tr('reports.avgPerRide'),
                         value: filteredRides.isNotEmpty
                             ? fmt(totalEarnings / filteredRides.length)
@@ -394,8 +401,9 @@ class _ReportsContent extends ConsumerWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
+class ReportSummaryRow extends StatelessWidget {
+  const ReportSummaryRow({
+    super.key,
     required this.label,
     required this.value,
     required this.isPositive,
@@ -442,8 +450,8 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({required this.label, required this.value});
+class ReportMetricRow extends StatelessWidget {
+  const ReportMetricRow({super.key, required this.label, required this.value});
 
   final String label;
   final String value;
