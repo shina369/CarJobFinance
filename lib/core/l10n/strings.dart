@@ -1033,7 +1033,8 @@ class Strings {
         'Subscriptions are unavailable right now. Check your connection and Google Play.',
     'premium.error.pending':
         'Payment processing. Premium unlocks as soon as Google Play confirms it.',
-    'premium.restore.none': 'No subscription found on this Google Play account.',
+    'premium.restore.none':
+        'No subscription found on this Google Play account.',
     'premium.deleteAccount.warning':
         'Deleting your account does not cancel your subscription. Cancel it on Google Play to avoid being charged.',
     'premium.settings.tile': 'Premium',
@@ -1429,7 +1430,8 @@ class Strings {
     'premium.benefit.goals': 'Target saya: target keuntungan tiap bulan',
     'premium.benefit.export': 'Ekspor ke CSV dan PDF',
     'premium.benefit.backup': 'Cadangan cloud di akunmu',
-    'premium.benefit.reminders': 'Pengingat tanpa batas dan bisa diatur sendiri',
+    'premium.benefit.reminders':
+        'Pengingat tanpa batas dan bisa diatur sendiri',
     'premium.cta': 'Berlangganan',
     'premium.price.year': '{price} per tahun',
     'premium.price.perMonth': 'sekitar {price} per bulan',
@@ -1861,7 +1863,8 @@ class Strings {
         'सब्सक्रिप्शन अभी उपलब्ध नहीं है। अपना कनेक्शन और Google Play जाँचें।',
     'premium.error.pending':
         'भुगतान प्रोसेस हो रहा है। Google Play की पुष्टि होते ही Premium चालू हो जाएगा।',
-    'premium.restore.none': 'इस Google Play खाते में कोई सब्सक्रिप्शन नहीं मिला।',
+    'premium.restore.none':
+        'इस Google Play खाते में कोई सब्सक्रिप्शन नहीं मिला।',
     'premium.deleteAccount.warning':
         'खाता हटाने से सब्सक्रिप्शन रद्द नहीं होता। शुल्क से बचने के लिए उसे Google Play में रद्द करें।',
     'premium.settings.tile': 'Premium',

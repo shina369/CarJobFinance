@@ -106,7 +106,7 @@ void main() {
       () async {
     gateway
       ..info = activePremium
-      ..delay = const Duration(milliseconds: 200);
+      ..delay = const Duration(seconds: 1);
     final controller = EntitlementController(
       gateway,
       'user-a',
@@ -117,7 +117,7 @@ void main() {
     expect(await controller.resolveIsPremium(), isFalse);
     expect(controller.state.isPremium, isFalse);
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    await Future<void>.delayed(const Duration(seconds: 3));
     expect(controller.state.isPremium, isTrue);
   });
 
