@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:carjobfinance/core/auth/auth_repository.dart';
 import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
 import 'package:carjobfinance/presentation/controllers/entitlement_controller.dart';
@@ -113,7 +115,58 @@ void main() {
     addTearDown(controller.dispose);
 
     expect(await controller.resolveIsPremium(), isFalse);
-    expect(controller.state.resolved, isFalse);
+    expect(controller.state.isPremium, isFalse);
+
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(controller.state.isPremium, isTrue);
+  });
+
+  group('when the store never answers', () {
+    const timeout = Duration(milliseconds: 20);
+
+    for (final hangingCall in ['logIn', 'currentInfo']) {
+      test('resolves as not premium after resolveTimeout ($hangingCall hangs)',
+          () async {
+        final release = Completer<void>();
+        addTearDown(() {
+          if (!release.isCompleted) release.complete();
+        });
+        gateway.info = activePremium;
+        if (hangingCall == 'logIn') {
+          gateway.stall = release;
+        } else {
+          gateway.stallCurrentInfo = release;
+        }
+        final controller =
+            EntitlementController(gateway, 'user-a', resolveTimeout: timeout);
+        addTearDown(controller.dispose);
+
+        expect(controller.state.resolved, isFalse);
+        await Future<void>.delayed(timeout * 3);
+
+        expect(controller.state.resolved, isTrue);
+        expect(controller.state.isPremium, isFalse);
+      });
+    }
+
+    test('a late answer still reaches the state', () async {
+      final release = Completer<void>();
+      gateway
+        ..info = activePremium
+        ..stall = release;
+      final controller =
+          EntitlementController(gateway, 'user-a', resolveTimeout: timeout);
+      addTearDown(controller.dispose);
+
+      await Future<void>.delayed(timeout * 3);
+      expect(controller.state.isPremium, isFalse);
+
+      release.complete();
+      await pumpEventQueue();
+
+      expect(controller.state.isPremium, isTrue);
+      expect(controller.state.resolved, isTrue);
+    });
   });
 
   test('a failing store (offline, no cache) resolves as not premium', () async {

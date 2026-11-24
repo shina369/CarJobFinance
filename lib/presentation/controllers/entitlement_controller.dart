@@ -49,6 +49,7 @@ class EntitlementController extends StateNotifier<EntitlementState> {
         ) {
     final userId = _userId;
     _ready = forced == null && userId != null ? _init(userId) : Future.value();
+    if (!state.resolved) _giveUpTimer = Timer(resolveTimeout, _giveUp);
   }
 
   /// The store's account switches must not overlap: a log out of the previous
@@ -62,6 +63,7 @@ class EntitlementController extends StateNotifier<EntitlementState> {
   late final Future<void> _ready;
   bool _loggedIn = false;
   StreamSubscription<PremiumInfo>? _subscription;
+  Timer? _giveUpTimer;
 
   Future<void> _afterPendingSwitch(Future<void> Function() call) {
     final previous = _pendingSwitch[_gateway] ?? Future<void>.value();
@@ -76,9 +78,16 @@ class EntitlementController extends StateNotifier<EntitlementState> {
       if (!mounted) return;
       _apply(await _gateway.currentInfo());
     } catch (_) {
-      if (mounted && !state.resolved) {
-        state = const EntitlementState(resolved: true);
-      }
+      _giveUp();
+    }
+  }
+
+  /// A store that never answers must not leave the driver waiting forever;
+  /// an answer that arrives later still goes through [_apply].
+  void _giveUp() {
+    _giveUpTimer?.cancel();
+    if (mounted && !state.resolved) {
+      state = const EntitlementState(resolved: true);
     }
   }
 
@@ -104,6 +113,7 @@ class EntitlementController extends StateNotifier<EntitlementState> {
   }
 
   void _apply(PremiumInfo info) {
+    _giveUpTimer?.cancel();
     if (mounted && _forced == null) {
       state = EntitlementState(info: info, resolved: true);
     }
@@ -130,6 +140,7 @@ class EntitlementController extends StateNotifier<EntitlementState> {
 
   @override
   void dispose() {
+    _giveUpTimer?.cancel();
     _subscription?.cancel();
     if (_forced == null && _userId != null) {
       _afterPendingSwitch(_gateway.logOut).ignore();

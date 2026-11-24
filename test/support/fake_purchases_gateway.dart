@@ -33,6 +33,12 @@ class FakePurchasesGateway implements PurchasesGateway {
   /// Applied to every call before it returns.
   Duration? delay;
 
+  /// Every call waits for it while set, so a call can hang until released.
+  Completer<void>? stall;
+
+  /// Like [stall], for [currentInfo] only.
+  Completer<void>? stallCurrentInfo;
+
   final StreamController<PremiumInfo> push =
       StreamController<PremiumInfo>.broadcast();
 
@@ -48,6 +54,8 @@ class FakePurchasesGateway implements PurchasesGateway {
 
   Future<void> _step(String call) async {
     calls.add(call);
+    final held = stall;
+    if (held != null) await held.future;
     final wait = delay;
     if (wait != null) await Future<void>.delayed(wait);
   }
@@ -73,6 +81,7 @@ class FakePurchasesGateway implements PurchasesGateway {
   @override
   Future<PremiumInfo> currentInfo() async {
     await _step('currentInfo');
+    await stallCurrentInfo?.future;
     _maybeThrow();
     return info;
   }

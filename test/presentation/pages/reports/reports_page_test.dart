@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:carjobfinance/core/l10n/currencies.dart';
 import 'package:carjobfinance/core/l10n/currency_provider.dart' as currency_pkg;
 import 'package:carjobfinance/core/l10n/strings.dart';
+import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
 import 'package:carjobfinance/domain/entities/expense.dart';
 import 'package:carjobfinance/domain/entities/ride.dart';
 import 'package:carjobfinance/domain/repositories/repositories.dart';
@@ -87,6 +88,7 @@ void main() {
     WidgetTester tester, {
     bool? premium,
     bool signedIn = false,
+    Duration? resolveTimeout,
   }) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
@@ -96,6 +98,14 @@ void main() {
     final container = ProviderContainer(overrides: [
       ...h.overrides,
       if (premium != null) premiumOverrideProvider.overrideWithValue(premium),
+      if (resolveTimeout != null)
+        entitlementProvider.overrideWith(
+          (ref) => EntitlementController(
+            ref.watch(purchasesGatewayProvider),
+            ref.watch(sessionProvider.select((s) => s.user?.id)),
+            resolveTimeout: resolveTimeout,
+          ),
+        ),
       rideRepositoryProvider.overrideWithValue(rides),
       expenseRepositoryProvider.overrideWithValue(expenses),
       currency_pkg.appCurrencyProvider.overrideWithValue(_brl),
@@ -216,5 +226,39 @@ void main() {
       expect(locked, findsOneWidget);
       expect(rides.watchCalls, 0);
     });
+
+    for (final hangingCall in ['logIn', 'currentInfo']) {
+      testWidgets(
+          'free user is not stuck on the spinner when $hangingCall never '
+          'completes', (tester) async {
+        h.premium = false;
+        final never = Completer<void>();
+        addTearDown(() {
+          if (!never.isCompleted) never.complete();
+        });
+        if (hangingCall == 'logIn') {
+          h.purchases.stall = never;
+        } else {
+          h.purchases.stallCurrentInfo = never;
+        }
+        final container = await pumpReports(
+          tester,
+          signedIn: true,
+          resolveTimeout: const Duration(milliseconds: 300),
+        );
+
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(locked, findsNothing);
+
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+
+        expect(locked, findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(container.read(isPremiumProvider), isFalse);
+        expect(rides.watchCalls, 0);
+      });
+    }
   });
 }
