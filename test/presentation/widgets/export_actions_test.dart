@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:carjobfinance/core/export/file_exporter.dart';
@@ -14,11 +15,14 @@ import 'package:carjobfinance/presentation/controllers/controllers.dart'
     show expenseRepositoryProvider, rideRepositoryProvider;
 import 'package:carjobfinance/presentation/controllers/data_controller.dart';
 import 'package:carjobfinance/presentation/controllers/entitlement_controller.dart';
+import 'package:carjobfinance/presentation/controllers/session_controller.dart';
 import 'package:carjobfinance/presentation/widgets/export_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../support/auth_test_support.dart';
 
 class _FakeDataController implements DataController {
   int backupsExported = 0;
@@ -76,6 +80,27 @@ void main() {
   late _RecordingExporter exporter;
   late _FakeDataController data;
   late int paywallOpens;
+
+  GoRouter buildRouter() {
+    return GoRouter(routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => const Scaffold(body: ExportTiles()),
+      ),
+      GoRoute(
+        path: '/paywall',
+        builder: (context, _) {
+          paywallOpens++;
+          return Scaffold(
+            body: TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('paywall'),
+            ),
+          );
+        },
+      ),
+    ]);
+  }
 
   Future<void> pumpTiles(WidgetTester tester, {required bool premium}) async {
     exporter = _RecordingExporter();
@@ -219,6 +244,48 @@ void main() {
 
       expect(paywallOpens, 0);
       expect(data.backupsExported, 1);
+    });
+  });
+
+  group('while the entitlement is unresolved', () {
+    testWidgets('a premium driver sees no lock and is not sent to the paywall',
+        (tester) async {
+      exporter = _RecordingExporter();
+      data = _FakeDataController();
+      paywallOpens = 0;
+      final h = AuthHarness()..auth.current = testAccount;
+      final store = Completer<void>();
+      h.purchases.stallCurrentInfo = store;
+      final container = ProviderContainer(overrides: [
+        ...h.overrides,
+        currency_pkg.appCurrencyProvider
+            .overrideWithValue(currencyForCode('BRL')!),
+        fileExporterProvider.overrideWithValue(exporter),
+        dataControllerProvider.overrideWithValue(data),
+        rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+        expenseRepositoryProvider.overrideWithValue(_FakeExpenseRepository()),
+      ]);
+      addTearDown(container.dispose);
+      await tester
+          .runAsync(container.read(sessionProvider.notifier).initialize);
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: buildRouter()),
+      ));
+      await tester.pump();
+
+      expect(container.read(entitlementProvider).resolved, isFalse);
+      expect(find.byKey(const Key('export-csv-lock')), findsNothing);
+      expect(find.byKey(const Key('export-pdf-lock')), findsNothing);
+      expect(find.text(ptBr.tr('premium.locked')), findsNothing);
+
+      await tester.tap(find.text(ptBr.tr('reports.exportCsv')));
+      await tester.pump();
+      store.complete();
+      await tester.pumpAndSettle();
+
+      expect(paywallOpens, 0);
+      expect(exporter.fileNames.single, endsWith('.csv'));
     });
   });
 }

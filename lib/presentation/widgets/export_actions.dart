@@ -26,7 +26,8 @@ class ExportTiles extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
     final cs = Theme.of(context).colorScheme;
-    final premium = ref.watch(isPremiumProvider);
+    final entitlement = ref.watch(entitlementProvider);
+    final locked = entitlement.resolved && !entitlement.isPremium;
 
     Future<void> gated(Future<bool> Function() export) async {
       if (!await ensurePremium(context, ref)) return;
@@ -44,7 +45,7 @@ class ExportTiles extends ConsumerWidget {
           trailing: _trailing(
             context,
             lang,
-            locked: !premium,
+            locked: locked,
             lockKey: const Key('export-csv-lock'),
           ),
           onTap: () => gated(() => _exportCsv(ref, lang)),
@@ -57,7 +58,7 @@ class ExportTiles extends ConsumerWidget {
           trailing: _trailing(
             context,
             lang,
-            locked: !premium,
+            locked: locked,
             lockKey: const Key('export-pdf-lock'),
           ),
           onTap: () => gated(() => _exportPdf(ref, lang)),
