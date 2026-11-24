@@ -27,6 +27,9 @@ class FakePurchasesGateway implements PurchasesGateway {
   /// Thrown by [logIn] while set.
   Object? logInError;
 
+  /// Thrown by [purchase] only, while set.
+  Object? purchaseError;
+
   /// Applied to every call before it returns.
   Duration? delay;
 
@@ -83,6 +86,8 @@ class FakePurchasesGateway implements PurchasesGateway {
   @override
   Future<PremiumInfo> purchase(PremiumOffer offer) async {
     await _step('purchase:${offer.packageId}');
+    final refused = purchaseError;
+    if (refused != null) throw refused;
     _maybeThrow();
     return info = activePremium;
   }

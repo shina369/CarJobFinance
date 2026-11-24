@@ -51,6 +51,8 @@ const _keys = [
   'premium.reminders.limit',
   'premium.error.purchase',
   'premium.error.unavailable',
+  'premium.error.pending',
+  'premium.restore.none',
   'premium.deleteAccount.warning',
   'premium.settings.tile',
 ];
@@ -83,7 +85,8 @@ void main() {
       for (final key in _keys) {
         expect(Strings.t(key, 'pt_PT'), Strings.t(key, 'pt_BR'), reason: key);
         for (final tag in _derivedSpanishTags) {
-          expect(Strings.t(key, tag), Strings.t(key, 'es_MX'), reason: '$tag $key');
+          expect(Strings.t(key, tag), Strings.t(key, 'es_MX'),
+              reason: '$tag $key');
         }
       }
     });

@@ -1,5 +1,6 @@
 import 'package:carjobfinance/core/l10n/languages.dart';
 import 'package:carjobfinance/core/l10n/strings.dart';
+import 'package:carjobfinance/core/purchases/purchases_gateway.dart';
 import 'package:carjobfinance/presentation/controllers/cloud_backup_controller.dart';
 import 'package:carjobfinance/presentation/controllers/session_controller.dart';
 import 'package:carjobfinance/presentation/pages/settings/backup_page.dart';
@@ -10,12 +11,20 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import '../../../support/auth_test_support.dart';
+import '../../../support/fake_purchases_gateway.dart';
 
+/// The subscription lapses between showing the page and the tap.
 class _RefusingBackup extends CloudBackupController {
-  _RefusingBackup(super.ref);
+  _RefusingBackup(super.ref, this._purchases);
+
+  final FakePurchasesGateway _purchases;
 
   @override
-  Future<DateTime> backupNow() async => throw const PremiumRequiredException();
+  Future<DateTime> backupNow() async {
+    _purchases.push.add(PremiumInfo.none);
+    await Future<void>.delayed(Duration.zero);
+    throw const PremiumRequiredException();
+  }
 }
 
 void main() {
@@ -35,7 +44,7 @@ void main() {
       ...h.overrides,
       if (refusing)
         cloudBackupControllerProvider
-            .overrideWith((ref) => _RefusingBackup(ref)),
+            .overrideWith((ref) => _RefusingBackup(ref, h.purchases)),
     ]);
     addTearDown(container.dispose);
     await tester.runAsync(container.read(sessionProvider.notifier).initialize);

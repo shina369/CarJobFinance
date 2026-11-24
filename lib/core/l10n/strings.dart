@@ -143,6 +143,10 @@ class Strings {
         'Não foi possível concluir a assinatura. Tente novamente.',
     'premium.error.unavailable':
         'A assinatura não está disponível agora. Verifique sua conexão e o Google Play.',
+    'premium.error.pending':
+        'Pagamento em processamento. O Premium é liberado assim que o Google Play confirmar.',
+    'premium.restore.none':
+        'Nenhuma assinatura encontrada nesta conta do Google Play.',
     'premium.deleteAccount.warning':
         'Excluir a conta não cancela a assinatura. Cancele no Google Play para não ser cobrado.',
     'premium.settings.tile': 'Premium',
@@ -572,6 +576,10 @@ class Strings {
         'No se pudo completar la suscripción. Inténtalo de nuevo.',
     'premium.error.unavailable':
         'La suscripción no está disponible ahora. Revisa tu conexión y Google Play.',
+    'premium.error.pending':
+        'Pago en proceso. Premium se activará en cuanto Google Play lo confirme.',
+    'premium.restore.none':
+        'No se encontró ninguna suscripción en esta cuenta de Google Play.',
     'premium.deleteAccount.warning':
         'Eliminar la cuenta no cancela la suscripción. Cancélala en Google Play para que no te cobren.',
     'premium.settings.tile': 'Premium',
@@ -1023,6 +1031,9 @@ class Strings {
         'We could not complete the subscription. Please try again.',
     'premium.error.unavailable':
         'Subscriptions are unavailable right now. Check your connection and Google Play.',
+    'premium.error.pending':
+        'Payment processing. Premium unlocks as soon as Google Play confirms it.',
+    'premium.restore.none': 'No subscription found on this Google Play account.',
     'premium.deleteAccount.warning':
         'Deleting your account does not cancel your subscription. Cancel it on Google Play to avoid being charged.',
     'premium.settings.tile': 'Premium',
@@ -1441,6 +1452,9 @@ class Strings {
         'Langganan tidak dapat diselesaikan. Silakan coba lagi.',
     'premium.error.unavailable':
         'Langganan sedang tidak tersedia. Periksa koneksi dan Google Play.',
+    'premium.error.pending':
+        'Pembayaran sedang diproses. Premium aktif setelah Google Play mengonfirmasi.',
+    'premium.restore.none': 'Tidak ada langganan di akun Google Play ini.',
     'premium.deleteAccount.warning':
         'Menghapus akun tidak membatalkan langganan. Batalkan di Google Play agar tidak ditagih.',
     'premium.settings.tile': 'Premium',
@@ -1845,6 +1859,9 @@ class Strings {
         'सब्सक्रिप्शन पूरा नहीं हो सका। कृपया फिर से कोशिश करें।',
     'premium.error.unavailable':
         'सब्सक्रिप्शन अभी उपलब्ध नहीं है। अपना कनेक्शन और Google Play जाँचें।',
+    'premium.error.pending':
+        'भुगतान प्रोसेस हो रहा है। Google Play की पुष्टि होते ही Premium चालू हो जाएगा।',
+    'premium.restore.none': 'इस Google Play खाते में कोई सब्सक्रिप्शन नहीं मिला।',
     'premium.deleteAccount.warning':
         'खाता हटाने से सब्सक्रिप्शन रद्द नहीं होता। शुल्क से बचने के लिए उसे Google Play में रद्द करें।',
     'premium.settings.tile': 'Premium',

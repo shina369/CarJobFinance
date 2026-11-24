@@ -1,7 +1,6 @@
 // Backup e Restauração: export every table to JSON or restore from a file.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/language_provider.dart';
@@ -12,6 +11,7 @@ import '../../controllers/cloud_backup_controller.dart';
 import '../../controllers/data_controller.dart';
 import '../../controllers/entitlement_controller.dart';
 import '../../widgets/export_feedback.dart';
+import '../../widgets/premium_gate.dart';
 import '../auth/auth_widgets.dart';
 
 class BackupPage extends ConsumerWidget {
@@ -89,7 +89,7 @@ class BackupPage extends ConsumerWidget {
                     title: Text(lang.tr('cloud.backupNow')),
                     subtitle: Text(lang.tr('premium.backup.locked')),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/paywall'),
+                    onTap: () => ensurePremium(context, ref),
                   )
                 else
                   ListTile(
@@ -129,7 +129,7 @@ class BackupPage extends ConsumerWidget {
       ref.invalidate(lastCloudBackupProvider);
       notify(lang.tr('cloud.done'));
     } on PremiumRequiredException {
-      if (context.mounted) context.push('/paywall');
+      if (context.mounted) await ensurePremium(context, ref);
     } catch (e) {
       notify(authErrorMessage(lang, e));
     }

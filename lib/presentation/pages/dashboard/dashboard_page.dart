@@ -12,6 +12,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/settings/locale_helper.dart';
 import '../../../presentation/controllers/controllers.dart';
 import '../../../presentation/widgets/dashboard_greeting.dart';
+import '../../../presentation/widgets/premium_gate.dart';
 import '../../../presentation/widgets/sky_backdrop.dart';
 import '../../../domain/entities/ride.dart' as entity_ride;
 import '../rides/rides_page.dart';
@@ -229,7 +230,11 @@ class _StaticDashboardBodyState extends ConsumerState<_StaticDashboardBody> {
             label: month.label,
             goal: _localGoal,
             onSetGoal: _showSetGoalDialog,
-            onOpenGoals: () => context.push('/goals'),
+            onOpenGoals: () async {
+              if (await ensurePremium(context, ref) && context.mounted) {
+                context.push('/goals');
+              }
+            },
             lang: lang,
             currency: _currency,
           ),
