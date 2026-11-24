@@ -3,6 +3,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/daos.dart' show AppDao;
+import '../../presentation/controllers/entitlement_controller.dart'
+    show isPremiumProvider;
 import '../l10n/language_provider.dart';
 import '../l10n/strings.dart';
 import '../settings/app_settings_notifier.dart';
@@ -27,8 +29,13 @@ class NotificationPrefs {
 typedef ReminderText = ({String title, String body});
 
 class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
-  NotificationSettingsNotifier(this._dao, this._service)
-      : super(const NotificationPrefs());
+  /// Without [isPremium] the driver is treated as free.
+  NotificationSettingsNotifier(
+    this._dao,
+    this._service, {
+    bool Function() isPremium = _notPremium,
+  })  : _isPremium = isPremium,
+        super(const NotificationPrefs());
 
   static const enabledKey = 'notifications_enabled';
   static const remindersKey = 'reminders';
@@ -37,8 +44,14 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
   static const legacyTimeKey = 'daily_reminder_time';
   static const legacyMessageKey = 'daily_reminder_message';
 
+  /// Reminders a free driver can create; only the first one is scheduled.
+  static const freeReminderLimit = 1;
+
+  static bool _notPremium() => false;
+
   final AppDao _dao;
   final NotificationService _service;
+  final bool Function() _isPremium;
   bool _disposed = false;
 
   @override
@@ -104,16 +117,25 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
       list.add(reminder);
     }
     await _persist(list);
-    await _apply(reminder, text);
+    // A free driver's scheduled reminder depends on the whole list.
+    if (_isPremium()) {
+      await _apply(reminder, text);
+    } else {
+      await resync(text);
+    }
   }
 
-  Future<void> remove(int id) async {
+  Future<void> remove(int id, ReminderText text) async {
     await _persist(state.reminders.where((r) => r.id != id).toList());
     await _service.cancelReminder(id);
+    if (!_isPremium()) await resync(text);
   }
 
   /// Re-schedules every reminder, or cancels them all while notifications
   /// are off. Also refreshes texts after a language change.
+  ///
+  /// A free driver keeps only the active reminder with the lowest id, with
+  /// the default text and sound; the others stay saved but unscheduled.
   Future<void> resync(ReminderText text) async {
     for (final reminder in state.reminders) {
       await _apply(reminder, text);
@@ -134,7 +156,10 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
   }
 
   Future<void> _apply(Reminder reminder, ReminderText text) async {
-    if (!state.enabled || !reminder.enabled || reminder.days.isEmpty) {
+    final premium = _isPremium();
+    if (!state.enabled ||
+        !_isActive(reminder) ||
+        (!premium && reminder.id != _freeReminderId())) {
       await _service.cancelReminder(reminder.id);
       return;
     }
@@ -143,18 +168,31 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationPrefs> {
       hour: reminder.hour,
       minute: reminder.minute,
       days: reminder.days,
-      title: reminder.message ?? text.title,
+      title: premium ? reminder.message ?? text.title : text.title,
       body: text.body,
-      soundUri: reminder.soundUri,
+      soundUri: premium ? reminder.soundUri : null,
     );
   }
 
-  /// Shows [reminder] right away to preview its text and sound.
+  static bool _isActive(Reminder r) => r.enabled && r.days.isNotEmpty;
+
+  /// The reminder a free driver keeps: the first created that is active.
+  int? _freeReminderId() {
+    int? id;
+    for (final r in state.reminders) {
+      if (_isActive(r) && (id == null || r.id < id)) id = r.id;
+    }
+    return id;
+  }
+
+  /// Shows [reminder] right away to preview its text and sound, as they
+  /// would be scheduled.
   Future<void> preview(Reminder reminder, ReminderText text) {
+    final premium = _isPremium();
     return _service.showNow(
-      title: reminder.message ?? text.title,
+      title: premium ? reminder.message ?? text.title : text.title,
       body: text.body,
-      soundUri: reminder.soundUri,
+      soundUri: premium ? reminder.soundUri : null,
     );
   }
 
@@ -178,13 +216,18 @@ final notificationSettingsProvider =
   final notifier = NotificationSettingsNotifier(
     ref.watch(appDaoProviderForSettings),
     ref.watch(notificationServiceProvider),
+    isPremium: () => ref.read(isPremiumProvider),
   );
+  Future<void> resync() =>
+      notifier.resync(reminderTextFor(ref.read(appLanguageProvider).tr));
   // Re-schedule on start so reminders survive time-zone changes and
   // pick up the current language.
-  final lang = ref.read(appLanguageProvider);
-  notifier
-      .initialize()
-      .then((_) => notifier.resync(reminderTextFor(lang.tr)))
-      .catchError((_) {});
+  final ready = notifier.initialize().then((_) => resync());
+  ready.catchError((_) {});
+  // Gaining or losing premium changes which reminders are scheduled.
+  ref.listen<bool>(isPremiumProvider, (previous, next) {
+    if (previous == next) return;
+    ready.then((_) => resync()).catchError((_) {});
+  });
   return notifier;
 });

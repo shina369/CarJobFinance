@@ -8,6 +8,8 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/notifications/notification_settings.dart';
 import '../../../core/notifications/reminder.dart';
+import '../../controllers/entitlement_controller.dart';
+import '../../widgets/premium_gate.dart';
 
 const _weekdays = {1, 2, 3, 4, 5};
 const _weekend = {6, 7};
@@ -34,7 +36,7 @@ class RemindersPage extends ConsumerWidget {
       appBar: AppBar(title: Text(tr('reminders.title'))),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('reminder-add'),
-        onPressed: () => _openEditor(context, null),
+        onPressed: () => _add(context, ref, prefs.reminders.length),
         shape: const StadiumBorder(),
         icon: const Icon(Icons.add),
         label: Text(tr('reminders.add')),
@@ -83,6 +85,15 @@ class RemindersPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Past the free limit, a new reminder needs premium.
+  Future<void> _add(BuildContext context, WidgetRef ref, int count) async {
+    if (count >= NotificationSettingsNotifier.freeReminderLimit &&
+        !await ensurePremium(context, ref)) {
+      return;
+    }
+    if (context.mounted) _openEditor(context, null);
   }
 
   void _openEditor(BuildContext context, Reminder? reminder) {
@@ -232,7 +243,20 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
     if (picked != null) setState(() => _time = picked);
   }
 
+  /// Custom messages and sounds are premium; a free driver goes to the
+  /// paywall and keeps the default unless they subscribe there.
+  Future<bool> _allowCustomization() async =>
+      ref.read(isPremiumProvider) || await ensurePremium(context, ref);
+
+  Future<void> _chooseMessage(_MessageChoice choice) async {
+    if (choice != _MessageChoice.standard && !await _allowCustomization()) {
+      return;
+    }
+    if (mounted) setState(() => _choice = choice);
+  }
+
   Future<void> _pickSound() async {
+    if (!await _allowCustomization() || !mounted) return;
     final sound =
         await ref.read(notificationServiceProvider).pickSound(_soundUri);
     if (sound == null || !mounted) return;
@@ -271,11 +295,11 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
     navigator.pop();
   }
 
-  Future<void> _delete() async {
+  Future<void> _delete(String Function(String) tr) async {
     final navigator = Navigator.of(context);
     await ref
         .read(notificationSettingsProvider.notifier)
-        .remove(widget.reminder!.id);
+        .remove(widget.reminder!.id, reminderTextFor(tr));
     navigator.pop();
   }
 
@@ -285,6 +309,11 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
     String tr(String key) => lang.tr(key);
     final editing = widget.reminder != null;
     final android = defaultTargetPlatform == TargetPlatform.android;
+    final entitlement = ref.watch(entitlementProvider);
+    final locked = entitlement.resolved && !entitlement.isPremium;
+    final primary = Theme.of(context).colorScheme.primary;
+    Widget lock(String key) =>
+        Icon(Icons.lock_outline, key: Key(key), size: 18, color: primary);
 
     Widget header(String text) => Padding(
           padding: const EdgeInsets.only(top: 20, bottom: 8),
@@ -303,7 +332,7 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
               key: const Key('reminder-delete'),
               icon: const Icon(Icons.delete_outline),
               tooltip: tr('reminders.delete'),
-              onPressed: _delete,
+              onPressed: () => _delete(tr),
             ),
         ],
       ),
@@ -370,7 +399,7 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
             child: RadioGroup<_MessageChoice>(
               groupValue: _choice,
               onChanged: (value) {
-                if (value != null) setState(() => _choice = value);
+                if (value != null) _chooseMessage(value);
               },
               child: Column(
                 children: [
@@ -400,6 +429,9 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
                       key: Key('reminder-message-$key'),
                       value: choice,
                       title: Text(label),
+                      secondary: locked && choice != _MessageChoice.standard
+                          ? lock('reminder-message-$key-lock')
+                          : null,
                     ),
                   if (_choice == _MessageChoice.custom)
                     Padding(
@@ -429,7 +461,9 @@ class _ReminderEditorPageState extends ConsumerState<ReminderEditorPage> {
                     ? tr('reminders.soundDefault')
                     : _soundName!),
                 trailing: _soundUri == null
-                    ? const Icon(Icons.chevron_right)
+                    ? (locked
+                        ? lock('reminder-sound-lock')
+                        : const Icon(Icons.chevron_right))
                     : IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () => setState(() {

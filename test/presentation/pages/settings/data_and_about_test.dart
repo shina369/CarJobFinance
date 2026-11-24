@@ -309,6 +309,7 @@ void main() {
       _FakeNotificationService? service,
       _InMemoryAppDao? dao,
       _FakeDataController? data,
+      bool premium = false,
     }) async {
       useTallScreen(tester);
       final router = GoRouter(
@@ -340,6 +341,7 @@ void main() {
               .overrideWithValue(service ?? _FakeNotificationService()),
           dataControllerProvider
               .overrideWithValue(data ?? _FakeDataController()),
+          if (premium) premiumOverrideProvider.overrideWithValue(true),
         ],
         child: MaterialApp.router(routerConfig: router),
       ));
@@ -394,7 +396,7 @@ void main() {
         (tester) async {
       final service = _FakeNotificationService();
       final dao = _InMemoryAppDao();
-      await pumpSettings(tester, service: service, dao: dao);
+      await pumpSettings(tester, service: service, dao: dao, premium: true);
       await tester.tap(find.byKey(const Key('settings-reminders')));
       await tester.pumpAndSettle();
 
