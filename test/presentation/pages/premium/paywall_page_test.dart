@@ -137,6 +137,29 @@ void main() {
       expect(find.byKey(const Key('paywall-trial')), findsNothing);
     });
 
+    testWidgets('discloses the automatic renewal under the price',
+        (tester) async {
+      await pumpPaywall(tester);
+
+      expect(
+        tester.widget<Text>(find.byKey(const Key('paywall-disclosure'))).data,
+        lang.tr('premium.disclosure'),
+      );
+    });
+
+    testWidgets('discloses the automatic renewal when there is no trial',
+        (tester) async {
+      h.purchases.offer = const PremiumOffer(
+        packageId: '\$rc_annual',
+        priceText: 'R\$ 59,90',
+        monthlyText: 'R\$ 4,99',
+      );
+      await pumpPaywall(tester);
+
+      expect(find.byKey(const Key('paywall-trial')), findsNothing);
+      expect(find.byKey(const Key('paywall-disclosure')), findsOneWidget);
+    });
+
     testWidgets('without an offer explains it and disables the button',
         (tester) async {
       h.purchases.offer = null;

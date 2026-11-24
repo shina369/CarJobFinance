@@ -343,6 +343,14 @@ class _Price extends StatelessWidget {
             label: Text(lang.tr('premium.trial', args: {'days': '$trialDays'})),
           ),
         ],
+        const SizedBox(height: 12),
+        Text(
+          lang.tr('premium.disclosure'),
+          key: const Key('paywall-disclosure'),
+          textAlign: TextAlign.center,
+          style:
+              theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        ),
       ],
     );
   }

@@ -38,6 +38,7 @@ const _keys = [
   'premium.price.year',
   'premium.price.perMonth',
   'premium.trial',
+  'premium.disclosure',
   'premium.restore',
   'premium.terms',
   'premium.privacy',

@@ -125,6 +125,8 @@ class Strings {
     'premium.price.year': '{price} por ano',
     'premium.price.perMonth': 'cerca de {price} por mês',
     'premium.trial': '{days} dias grátis, cancele quando quiser',
+    'premium.disclosure':
+        'A assinatura renova automaticamente a cada ano pelo preço exibido, até ser cancelada. Se houver teste grátis, a cobrança começa quando ele termina. Cancele quando quiser nas configurações da sua conta do Google Play.',
     'premium.restore': 'Restaurar compras',
     'premium.terms': 'Termos de uso',
     'premium.privacy': 'Política de privacidade',
@@ -558,6 +560,8 @@ class Strings {
     'premium.price.year': '{price} al año',
     'premium.price.perMonth': 'unos {price} al mes',
     'premium.trial': '{days} días gratis, cancela cuando quieras',
+    'premium.disclosure':
+        'La suscripción se renueva automáticamente cada año al precio indicado, hasta que la canceles. Si hay prueba gratuita, el cobro empieza cuando termina. Cancela cuando quieras en los ajustes de tu cuenta de Google Play.',
     'premium.restore': 'Restaurar compras',
     'premium.terms': 'Términos de uso',
     'premium.privacy': 'Política de privacidad',
@@ -1013,6 +1017,8 @@ class Strings {
     'premium.price.year': '{price} per year',
     'premium.price.perMonth': 'about {price} per month',
     'premium.trial': '{days}-day free trial, cancel anytime',
+    'premium.disclosure':
+        'The subscription renews automatically every year at the price shown until you cancel it. If a free trial is offered, you are charged when it ends. Cancel anytime in your Google Play account settings.',
     'premium.restore': 'Restore purchases',
     'premium.terms': 'Terms of Use',
     'premium.privacy': 'Privacy Policy',
@@ -1436,6 +1442,8 @@ class Strings {
     'premium.price.year': '{price} per tahun',
     'premium.price.perMonth': 'sekitar {price} per bulan',
     'premium.trial': 'Gratis {days} hari, batalkan kapan saja',
+    'premium.disclosure':
+        'Langganan diperpanjang otomatis setiap tahun dengan harga yang tertera hingga Anda membatalkannya. Jika ada uji coba gratis, penagihan dimulai saat uji coba berakhir. Batalkan kapan saja di pengaturan akun Google Play Anda.',
     'premium.restore': 'Pulihkan pembelian',
     'premium.terms': 'Ketentuan Penggunaan',
     'premium.privacy': 'Kebijakan Privasi',
@@ -1843,6 +1851,8 @@ class Strings {
     'premium.price.year': '{price} प्रति वर्ष',
     'premium.price.perMonth': 'लगभग {price} प्रति माह',
     'premium.trial': '{days} दिन मुफ़्त, कभी भी रद्द करें',
+    'premium.disclosure':
+        'सब्सक्रिप्शन दिखाई गई कीमत पर हर साल अपने-आप नवीनीकृत होता है, जब तक आप उसे रद्द नहीं करते। यदि मुफ़्त ट्रायल मिलता है, तो ट्रायल समाप्त होने पर शुल्क लगना शुरू होता है। आप कभी भी अपने Google Play खाते की सेटिंग में रद्द कर सकते हैं।',
     'premium.restore': 'खरीदारी रीस्टोर करें',
     'premium.terms': 'उपयोग की शर्तें',
     'premium.privacy': 'गोपनीयता नीति',
