@@ -21,6 +21,8 @@ import 'package:carjobfinance/domain/repositories/repositories.dart';
 import 'package:carjobfinance/presentation/controllers/controllers.dart'
     show expenseRepositoryProvider, rideRepositoryProvider;
 import 'package:carjobfinance/presentation/controllers/data_controller.dart';
+import 'package:carjobfinance/presentation/controllers/entitlement_controller.dart'
+    show premiumOverrideProvider;
 import 'package:carjobfinance/presentation/pages/settings/backup_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/legal_page.dart';
 import 'package:carjobfinance/presentation/pages/settings/reminders_page.dart';
@@ -229,6 +231,7 @@ void main() {
           rideRepositoryProvider.overrideWithValue(_FakeRideRepository([ride])),
           expenseRepositoryProvider
               .overrideWithValue(_FakeExpenseRepository([expense])),
+          premiumOverrideProvider.overrideWithValue(true),
           fileExporterProvider.overrideWithValue(exporter),
           dataControllerProvider.overrideWithValue(data),
           appDaoProviderForSettings.overrideWithValue(_InMemoryAppDao()),
