@@ -148,7 +148,7 @@ class Strings {
     'premium.restore.none':
         'Nenhuma assinatura encontrada nesta conta do Google Play.',
     'premium.deleteAccount.warning':
-        'Excluir a conta não cancela a assinatura. Cancele no Google Play para não ser cobrado.',
+        'Se você tiver uma assinatura premium, excluir a conta não a cancela. Cancele no Google Play para não ser cobrado.',
     'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Home',
@@ -581,7 +581,7 @@ class Strings {
     'premium.restore.none':
         'No se encontró ninguna suscripción en esta cuenta de Google Play.',
     'premium.deleteAccount.warning':
-        'Eliminar la cuenta no cancela la suscripción. Cancélala en Google Play para que no te cobren.',
+        'Si tienes una suscripción premium, eliminar la cuenta no la cancela. Cancélala en Google Play para que no te cobren.',
     'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Inicio',
@@ -1036,7 +1036,7 @@ class Strings {
     'premium.restore.none':
         'No subscription found on this Google Play account.',
     'premium.deleteAccount.warning':
-        'Deleting your account does not cancel your subscription. Cancel it on Google Play to avoid being charged.',
+        'If you have a premium subscription, deleting your account does not cancel it. Cancel it on Google Play to avoid being charged.',
     'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Home',
@@ -1458,7 +1458,7 @@ class Strings {
         'Pembayaran sedang diproses. Premium aktif setelah Google Play mengonfirmasi.',
     'premium.restore.none': 'Tidak ada langganan di akun Google Play ini.',
     'premium.deleteAccount.warning':
-        'Menghapus akun tidak membatalkan langganan. Batalkan di Google Play agar tidak ditagih.',
+        'Jika Anda memiliki langganan premium, menghapus akun tidak membatalkannya. Batalkan di Google Play agar tidak ditagih.',
     'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'Beranda',
@@ -1866,7 +1866,7 @@ class Strings {
     'premium.restore.none':
         'इस Google Play खाते में कोई सब्सक्रिप्शन नहीं मिला।',
     'premium.deleteAccount.warning':
-        'खाता हटाने से सब्सक्रिप्शन रद्द नहीं होता। शुल्क से बचने के लिए उसे Google Play में रद्द करें।',
+        'यदि आपके पास प्रीमियम सब्सक्रिप्शन है, तो खाता हटाने से वह रद्द नहीं होता। शुल्क से बचने के लिए उसे Google Play में रद्द करें।',
     'premium.settings.tile': 'Premium',
     // Navigation
     'nav.home': 'होम',
