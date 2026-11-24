@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:carjobfinance/core/l10n/currencies.dart';
 import 'package:carjobfinance/core/l10n/currency_provider.dart' as currency_pkg;
 import 'package:carjobfinance/core/l10n/language_provider.dart';
@@ -147,5 +148,45 @@ void main() {
 
     expect(find.byIcon(Icons.local_car_wash), findsOneWidget);
     expect(find.byIcon(Icons.local_gas_station), findsNothing);
+  });
+
+  testWidgets('tapping an expense opens its detail page', (tester) async {
+    final br = COUNTRIES.firstWhere((c) => c.code == 'BR');
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, __) => const ExpensesPage()),
+        GoRoute(
+          path: '/expenses/:expenseId',
+          builder: (context, state) => Scaffold(
+            body: Text('detail ${state.pathParameters['expenseId']}'),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appSettingsProvider.overrideWith((ref) => _MockAppSettingsNotifier(
+              AppSettings.fromCountry(br, br.platforms))),
+          languageDaoProvider.overrideWithValue(_InMemoryAppDao()),
+          expenseRepositoryProvider.overrideWithValue(_FakeExpenseRepository([
+            Expense(
+                id: 'e1',
+                date: DateTime(2026, 11, 2),
+                category: 'Combustível',
+                amount: 200),
+          ])),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Combustível').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('detail e1'), findsOneWidget);
   });
 }

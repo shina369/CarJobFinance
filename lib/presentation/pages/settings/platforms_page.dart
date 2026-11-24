@@ -1,6 +1,6 @@
 // PlatformsPage – manage active platforms for the current country.
 // Built-ins can be toggled on/off; customs can also be deleted.
-// New platforms are created via a dialog that validates duplicate names
+// New platforms are added from a bottom sheet that validates duplicate names
 // (case-insensitive, against both built-ins and existing customs).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,78 +29,34 @@ class PlatformsPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(tr('platforms.title'))),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context, ref, tr, platforms),
+        onPressed: () => _showAddSheet(context, platforms),
         icon: const Icon(Icons.add),
         label: Text(tr('platforms.add')),
       ),
-      body: Column(
-        children: [
-          if (active.isEmpty && inactive.isEmpty)
-            Expanded(
-              child: Center(
-                  child: Text(tr('platforms.none'),
-                      style: Theme.of(context).textTheme.bodyMedium)),
-            )
-          else
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (active.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8, left: 4),
-                      child: Text(
-                        tr('platforms.active'),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                    Card(
-                      child: Column(
-                        children: active
-                            .map((p) => _PlatformTile(
-                                  platform: p,
-                                  tr: tr,
-                                  ref: ref,
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (inactive.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8, left: 4),
-                      child: Text(
-                        tr('platforms.inactive'),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                    Card(
-                      child: Column(
-                        children: inactive
-                            .map((p) => _PlatformTile(
-                                  platform: p,
-                                  tr: tr,
-                                  ref: ref,
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  ],
+      body: platforms.platforms.isEmpty
+          ? Center(
+              child: Text(tr('platforms.none'),
+                  style: Theme.of(context).textTheme.bodyMedium))
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              children: [
+                if (active.isNotEmpty) ...[
+                  _SectionTitle(text: tr('platforms.active')),
+                  _PlatformsCard(platforms: active),
+                  const SizedBox(height: 24),
                 ],
-              ),
+                if (inactive.isNotEmpty) ...[
+                  _SectionTitle(
+                    text: tr('platforms.inactive'),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                  ),
+                  _PlatformsCard(platforms: inactive),
+                ],
+              ],
             ),
-        ],
-      ),
     );
   }
 
@@ -121,165 +77,76 @@ class PlatformsPage extends ConsumerWidget {
     return names;
   }
 
-  void _showAddDialog(BuildContext context, WidgetRef ref,
-      String Function(String) tr, AppPlatformsPref platforms) {
-    final existingNames =
-        platforms.platforms.map((p) => p.name.toLowerCase()).toSet();
-    final inactiveBuiltins = platforms.inactiveBuiltinNames;
-    final otherCountryNames = _platformsFromOtherCountries(
-      platforms.countryCode,
-      excludedLowerNames: existingNames.union(
-        inactiveBuiltins.map((n) => n.toLowerCase()).toSet(),
+  void _showAddSheet(BuildContext context, AppPlatformsPref platforms) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => _AddPlatformSheet(platforms: platforms),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.text, this.color});
+
+  final String text;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: color ?? Theme.of(context).colorScheme.primary,
+            ),
       ),
     );
-    final newCtrl = TextEditingController();
+  }
+}
 
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final entered = newCtrl.text.trim();
-            final isDuplicate = entered.isNotEmpty &&
-                existingNames.contains(entered.toLowerCase());
+class _PlatformsCard extends StatelessWidget {
+  const _PlatformsCard({required this.platforms});
 
-            return AlertDialog(
-              title: Text(tr('platforms.add')),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (inactiveBuiltins.isNotEmpty) ...[
-                    Text(
-                      tr('platforms.addExisting'),
-                      style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(ctx).colorScheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: inactiveBuiltins
-                          .map(
-                            (name) => ActionChip(
-                              label: Text(name),
-                              onPressed: () {
-                                ref
-                                    .read(platformsProvider.notifier)
-                                    .togglePlatform(name, true);
-                                Navigator.pop(ctx);
-                              },
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    Divider(height: 1, color: Theme.of(ctx).dividerColor),
-                    const SizedBox(height: 12),
-                  ],
-                  if (otherCountryNames.isNotEmpty) ...[
-                    Text(
-                      tr('platforms.addFromOtherCountries'),
-                      style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(ctx).colorScheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: otherCountryNames
-                          .map(
-                            (name) => ActionChip(
-                              label: Text(name),
-                              onPressed: () {
-                                ref
-                                    .read(platformsProvider.notifier)
-                                    .addCustomPlatform(name);
-                                Navigator.pop(ctx);
-                              },
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    Divider(height: 1, color: Theme.of(ctx).dividerColor),
-                    const SizedBox(height: 12),
-                  ],
-                  Text(
-                    tr('platforms.createNew'),
-                    style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                          color: Theme.of(ctx).colorScheme.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: newCtrl,
-                    autofocus:
-                        inactiveBuiltins.isEmpty && otherCountryNames.isEmpty,
-                    onChanged: (_) => setModalState(() {}),
-                    decoration: InputDecoration(
-                      labelText: tr('platforms.newName'),
-                      hintText: tr('platforms.namePlaceholder'),
-                      errorText: isDuplicate ? tr('platforms.duplicate') : null,
-                      filled: true,
-                      fillColor:
-                          Theme.of(ctx).colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      isDense: true,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(tr('dash.cancel')),
-                ),
-                FilledButton(
-                  onPressed: (entered.isNotEmpty && !isDuplicate)
-                      ? () {
-                          ref
-                              .read(platformsProvider.notifier)
-                              .addCustomPlatform(entered);
-                          Navigator.pop(ctx);
-                        }
-                      : null,
-                  child: Text(tr('platforms.createNew')),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  final List<AppPlatformInfo> platforms;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < platforms.length; i++) ...[
+            _PlatformTile(platform: platforms[i]),
+            if (i < platforms.length - 1)
+              const Divider(height: 1, indent: 64, endIndent: 16),
+          ],
+        ],
+      ),
     );
   }
 }
 
 class _PlatformTile extends ConsumerWidget {
-  const _PlatformTile({
-    required this.platform,
-    required this.tr,
-    required this.ref,
-  });
+  const _PlatformTile({required this.platform});
 
   final AppPlatformInfo platform;
-  final String Function(String) tr;
-  final WidgetRef ref;
 
   @override
-  Widget build(BuildContext context, WidgetRef _) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    String tr(String key) => lang.tr(key);
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
     final currency = ref.watch(appCurrencyProvider);
     final subtitleParts = <String>[
       if (platform.isCustom) tr('platforms.custom'),
       if (platform.hasCommission)
-        ref.watch(appLanguageProvider).tr(
+        lang.tr(
           'platforms.commissionLabel',
           args: {
             'value': formatCommissionConfig(platform.commissionType,
@@ -288,64 +155,97 @@ class _PlatformTile extends ConsumerWidget {
         ),
     ];
 
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 18,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Text(
-          platform.name.isNotEmpty ? platform.name[0].toUpperCase() : '?',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-      ),
-      title: Text(platform.name),
-      subtitle: subtitleParts.isEmpty
-          ? null
-          : Text(subtitleParts.join(' • '),
-              style: const TextStyle(fontSize: 11, color: Colors.grey)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextButton.icon(
-            icon: Icon(
-              Icons.percent,
-              size: 16,
-              color: platform.hasCommission
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            label: Text(
-              tr('platforms.commissionSet'),
-              style: TextStyle(
-                fontSize: 12,
-                color: platform.hasCommission
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                child: Text(
+                  platform.name.isNotEmpty
+                      ? platform.name[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              visualDensity: VisualDensity.compact,
-            ),
-            onPressed: () => _showCommissionDialog(context),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      platform.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                    if (subtitleParts.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          subtitleParts.join(' • '),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: platform.isActive,
+                onChanged: (active) => ref
+                    .read(platformsProvider.notifier)
+                    .togglePlatform(platform.name, active),
+              ),
+            ],
           ),
-          if (platform.isCustom)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20),
-              tooltip: tr('platforms.delete'),
-              onPressed: () => _confirmDelete(context, ref, tr, platform.name),
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  icon: Icon(
+                    Icons.percent,
+                    size: 16,
+                    color: platform.hasCommission ? primary : null,
+                  ),
+                  label: Text(
+                    tr('platforms.commissionSet'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: platform.hasCommission ? primary : null,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  onPressed: () => _showCommissionDialog(context, ref),
+                ),
+                if (platform.isCustom) ...[
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    tooltip: tr('platforms.delete'),
+                    onPressed: () =>
+                        _confirmDelete(context, ref, tr, platform.name),
+                  ),
+                ],
+              ],
             ),
-          Switch(
-            value: platform.isActive,
-            onChanged: (active) => ref
-                .read(platformsProvider.notifier)
-                .togglePlatform(platform.name, active),
           ),
         ],
       ),
     );
   }
 
-  void _showCommissionDialog(BuildContext context) {
+  void _showCommissionDialog(BuildContext context, WidgetRef ref) {
     final lang = ref.read(appLanguageProvider);
     final currency = ref.read(appCurrencyProvider);
     var type = platform.commissionType ?? kCommissionPercent;
@@ -418,7 +318,7 @@ class _PlatformTile extends ConsumerWidget {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _applyCommission(context, null, null);
+                    _applyCommission(context, ref, null, null);
                   },
                   child: Text(
                     lang.tr('platforms.commissionRemove'),
@@ -427,13 +327,13 @@ class _PlatformTile extends ConsumerWidget {
                 ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text(tr('dash.cancel')),
+                child: Text(lang.tr('dash.cancel')),
               ),
               FilledButton(
                 onPressed: isValid
                     ? () {
                         Navigator.pop(ctx);
-                        _applyCommission(context, type, parsed);
+                        _applyCommission(context, ref, type, parsed);
                       }
                     : null,
                 child: Text(lang.tr('platforms.commissionSet')),
@@ -449,7 +349,7 @@ class _PlatformTile extends ConsumerWidget {
   /// has recorded rides — asks whether to recalculate their snapshots or
   /// apply the change only to new rides.
   Future<void> _applyCommission(
-      BuildContext context, String? type, double? value) async {
+      BuildContext context, WidgetRef ref, String? type, double? value) async {
     final lang = ref.read(appLanguageProvider);
     await ref
         .read(platformsProvider.notifier)
@@ -518,6 +418,172 @@ class _PlatformTile extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AddPlatformSheet extends ConsumerStatefulWidget {
+  const _AddPlatformSheet({required this.platforms});
+
+  final AppPlatformsPref platforms;
+
+  @override
+  ConsumerState<_AddPlatformSheet> createState() => _AddPlatformSheetState();
+}
+
+class _AddPlatformSheetState extends ConsumerState<_AddPlatformSheet> {
+  final _newCtrl = TextEditingController();
+
+  late final Set<String> _existingLower =
+      widget.platforms.platforms.map((p) => p.name.toLowerCase()).toSet();
+
+  late final List<String> _inactiveBuiltins =
+      widget.platforms.inactiveBuiltinNames;
+
+  late final List<String> _otherCountryNames =
+      PlatformsPage._platformsFromOtherCountries(
+    widget.platforms.countryCode,
+    excludedLowerNames: _existingLower.union(
+      _inactiveBuiltins.map((n) => n.toLowerCase()).toSet(),
+    ),
+  );
+
+  @override
+  void dispose() {
+    _newCtrl.dispose();
+    super.dispose();
+  }
+
+  void _activate(String name) {
+    ref.read(platformsProvider.notifier).togglePlatform(name, true);
+    Navigator.pop(context);
+  }
+
+  void _addCustom(String name) {
+    ref.read(platformsProvider.notifier).addCustomPlatform(name);
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+    final theme = Theme.of(context);
+    final hasSuggestions =
+        _inactiveBuiltins.isNotEmpty || _otherCountryNames.isNotEmpty;
+
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _newCtrl,
+      builder: (context, value, _) {
+        final entered = value.text.trim();
+        final isDuplicate = entered.isNotEmpty &&
+            _existingLower.contains(entered.toLowerCase());
+        final canCreate = entered.isNotEmpty && !isDuplicate;
+
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+                child: Text(
+                  lang.tr('platforms.add'),
+                  style: theme.textTheme.headlineSmall,
+                ),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_inactiveBuiltins.isNotEmpty) ...[
+                        _SectionTitle(text: lang.tr('platforms.addExisting')),
+                        _ChipGroup(
+                          names: _inactiveBuiltins,
+                          onSelected: _activate,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      if (_otherCountryNames.isNotEmpty) ...[
+                        _SectionTitle(
+                            text: lang.tr('platforms.addFromOtherCountries')),
+                        _ChipGroup(
+                          names: _otherCountryNames,
+                          onSelected: _addCustom,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      if (hasSuggestions) ...[
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
+                      ],
+                      TextField(
+                        controller: _newCtrl,
+                        autofocus: !hasSuggestions,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          labelText: lang.tr('platforms.newName'),
+                          hintText: lang.tr('platforms.namePlaceholder'),
+                          errorText: isDuplicate
+                              ? lang.tr('platforms.duplicate')
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(lang.tr('dash.cancel')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: canCreate ? () => _addCustom(entered) : null,
+                        child: Text(lang.tr('platforms.createNew')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ChipGroup extends StatelessWidget {
+  const _ChipGroup({required this.names, required this.onSelected});
+
+  final List<String> names;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final name in names)
+          ActionChip(
+            avatar: Icon(Icons.add, size: 16, color: primary),
+            label: Text(name),
+            onPressed: () => onSelected(name),
+          ),
+      ],
     );
   }
 }

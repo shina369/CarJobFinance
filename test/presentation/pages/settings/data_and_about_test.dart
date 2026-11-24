@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:carjobfinance/core/constants/app_constants.dart';
 import 'package:carjobfinance/core/export/file_exporter.dart';
 import 'package:carjobfinance/core/l10n/currencies.dart';
 import 'package:carjobfinance/core/l10n/currency_provider.dart' as currency_pkg;
@@ -307,7 +306,6 @@ void main() {
       _FakeNotificationService? service,
       _InMemoryAppDao? dao,
       _FakeDataController? data,
-      Future<bool> Function(Uri)? opener,
     }) async {
       useTallScreen(tester);
       final router = GoRouter(
@@ -339,7 +337,6 @@ void main() {
               .overrideWithValue(service ?? _FakeNotificationService()),
           dataControllerProvider
               .overrideWithValue(data ?? _FakeDataController()),
-          if (opener != null) urlOpenerProvider.overrideWithValue(opener),
         ],
         child: MaterialApp.router(routerConfig: router),
       ));
@@ -481,7 +478,8 @@ void main() {
 
       expect(service.scheduled.single, startsWith('now '));
     });
-    testWidgets('Clear All Data wipes only after confirmation', (tester) async {
+    testWidgets('Clear All Data is kept when the dialog is cancelled',
+        (tester) async {
       final data = _FakeDataController();
       await pumpSettings(tester, data: data);
 
@@ -489,39 +487,28 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(ptBr.tr('dash.cancel')));
       await tester.pumpAndSettle();
+
       expect(data.clears, 0);
-
-      await tester.tap(find.text(ptBr.tr('settings.clearData')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(ptBr.tr('settings.deleteAll')));
-      await tester.pumpAndSettle();
-
-      expect(data.clears, 1);
-      expect(find.text(ptBr.tr('settings.dataCleared')), findsOneWidget);
     });
 
-    testWidgets('Report Issue opens the issue tracker', (tester) async {
-      final opened = <Uri>[];
-      await pumpSettings(tester, opener: (uri) async {
-        opened.add(uri);
-        return true;
-      });
-
-      await tester.tap(find.text(ptBr.tr('settings.reportIssue')));
-      await tester.pumpAndSettle();
-
-      expect(opened, [Uri.parse(AppConstants.issueTrackerUrl)]);
-      expect(find.byType(SnackBar), findsNothing);
-    });
-
-    testWidgets('Report Issue shows the address when it cannot be opened',
+    testWidgets('Report Issue shows the contact e-mail in a popup',
         (tester) async {
-      await pumpSettings(tester, opener: (uri) async => false);
+      await pumpSettings(tester);
 
       await tester.tap(find.text(ptBr.tr('settings.reportIssue')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining(AppConstants.issueTrackerUrl), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+            'Para qualquer problema envie um email para carjobfinance@gmail.com. Obrigado'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('settings-report-issue-close')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
     });
 
     testWidgets('Terms, Privacy and Backup tiles open their pages',

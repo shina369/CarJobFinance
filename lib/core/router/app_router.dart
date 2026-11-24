@@ -15,8 +15,10 @@ import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/dashboard/dashboard_page.dart';
 import '../../presentation/pages/rides/rides_page.dart';
+import '../../presentation/pages/rides/ride_detail_page.dart';
 import '../../presentation/pages/rides/ride_form_page.dart';
 import '../../presentation/pages/expenses/expenses_page.dart';
+import '../../presentation/pages/expenses/expense_detail_page.dart';
 import '../../presentation/pages/expenses/expense_form_page.dart';
 import '../../presentation/pages/reports/reports_page.dart';
 import '../../presentation/pages/settings/settings_page.dart';
@@ -26,6 +28,7 @@ import '../../presentation/pages/onboarding/onboarding_page.dart';
 import '../../presentation/pages/settings/backup_page.dart';
 import '../../presentation/pages/settings/legal_page.dart';
 import '../../presentation/pages/settings/reminders_page.dart';
+import '../../presentation/pages/goals/my_goals_page.dart';
 
 /// Adapts a [Stream] to the [Listenable] GoRouter refreshes on.
 class _StreamListenable extends ChangeNotifier {
@@ -147,6 +150,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   return ExpenseFormPage(expenseId: expenseId);
                 },
               ),
+              GoRoute(
+                path: ':expenseId',
+                name: 'expense-detail',
+                builder: (context, state) {
+                  final expenseId = state.pathParameters['expenseId']!;
+                  return ExpenseDetailPage(expenseId: expenseId);
+                },
+              ),
             ],
           ),
 
@@ -229,6 +240,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/account-gate',
         name: 'account-gate',
         builder: (context, state) => const AccountGatePage(),
+      ),
+      GoRoute(
+        path: '/goals',
+        name: 'goals',
+        builder: (context, state) => const MyGoalsPage(),
       ),
     ],
 
@@ -374,27 +390,6 @@ class _ErrorPage extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder for RideDetailPage (to be implemented)
-class RideDetailPage extends ConsumerWidget {
-  const RideDetailPage({super.key, required this.rideId});
-
-  final String rideId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lang = ref.watch(appLanguageProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(lang.tr('rides.details'))),
-      body: Center(
-        child: Text(
-          lang.tr('rides.detailsWip', args: {'id': rideId}),
-          textAlign: TextAlign.center,
         ),
       ),
     );

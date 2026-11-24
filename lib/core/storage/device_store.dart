@@ -34,9 +34,20 @@ class FileDeviceStore implements DeviceStore {
   final Future<File> Function() _locate;
   Map<String, String>? _cache;
 
+  /// Every operation waits for the previous one. Concurrent calls (e.g. the
+  /// session write and the owner write right after a login) would otherwise
+  /// share the temporary file and lose updates or fail on rename.
+  Future<void> _queue = Future.value();
+
   static Future<File> _defaultFile() async {
     final dir = await getApplicationSupportDirectory();
     return File(p.join(dir.path, 'device_state.json'));
+  }
+
+  Future<T> _serialized<T>(Future<T> Function() action) {
+    final run = _queue.then((_) => action());
+    _queue = run.then((_) {}, onError: (_) {});
+    return run;
   }
 
   Future<Map<String, String>> _load() async {
@@ -64,20 +75,21 @@ class FileDeviceStore implements DeviceStore {
   }
 
   @override
-  Future<String?> read(String key) async => (await _load())[key];
+  Future<String?> read(String key) =>
+      _serialized(() async => (await _load())[key]);
 
   @override
-  Future<void> write(String key, String value) async {
-    final values = await _load();
-    values[key] = value;
-    await _save(values);
-  }
+  Future<void> write(String key, String value) => _serialized(() async {
+        final values = await _load();
+        values[key] = value;
+        await _save(values);
+      });
 
   @override
-  Future<void> delete(String key) async {
-    final values = await _load();
-    if (values.remove(key) != null) await _save(values);
-  }
+  Future<void> delete(String key) => _serialized(() async {
+        final values = await _load();
+        if (values.remove(key) != null) await _save(values);
+      });
 }
 
 final deviceStoreProvider = Provider<DeviceStore>((ref) => FileDeviceStore());

@@ -84,7 +84,8 @@ Future<bool> _exportPdf(WidgetRef ref, AppLanguage lang) async {
 
 Future<ReportData> _periodData(
     WidgetRef ref, ReportPeriod period, AppLanguage lang) async {
-  final range = period.range;
+  final custom = ref.read(customReportRangeProvider);
+  final range = period.rangeFor(custom);
   bool inRange(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
     return !day.isBefore(range.start) && !day.isAfter(range.end);
@@ -93,7 +94,7 @@ Future<ReportData> _periodData(
   final rides = await ref.read(rideRepositoryProvider).getAll();
   final expenses = await ref.read(expenseRepositoryProvider).getAll();
   return ReportData(
-    periodLabel: period.label(lang),
+    periodLabel: period.labelFor(lang, custom),
     rides: rides.where((r) => inRange(r.date)).toList(),
     expenses: expenses.where((e) => inRange(e.date)).toList(),
   );

@@ -26,4 +26,19 @@ void main() {
       isNull,
     );
   });
+
+  test('reads the last name given at sign-up', () {
+    final user =
+        SupabaseAuthRepository.toAuthUser(_user({'last_name': ' Silva '}));
+    expect(user.lastName, 'Silva');
+    expect(user.firstName, isNull);
+  });
+
+  test('no or blank last name maps to null', () {
+    expect(SupabaseAuthRepository.toAuthUser(_user(null)).lastName, isNull);
+    expect(
+      SupabaseAuthRepository.toAuthUser(_user({'last_name': '  '})).lastName,
+      isNull,
+    );
+  });
 }

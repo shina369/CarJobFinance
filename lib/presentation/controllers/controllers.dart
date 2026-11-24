@@ -181,7 +181,17 @@ class MonthlyGoalController extends StateNotifier<AsyncValue<double>> {
       state = AsyncValue.error(e, st);
     }
   }
+
+  Future<void> saveGoalsForYear(int year, Map<int, double?> changes) async {
+    await _repository.setGoalsForYear(year, changes);
+    state = AsyncValue.data(await _repository.getMonthlyGoal());
+  }
 }
+
+final monthlyGoalsForYearProvider =
+    FutureProvider.autoDispose.family<Map<int, double?>, int>((ref, year) {
+  return ref.watch(settingsRepositoryProvider).getGoalsForYear(year);
+});
 
 // ===== CURRENCY =====
 /// Convenience provider for the current country's symbol.
