@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/l10n/language_provider.dart';
 import '../../../core/l10n/strings.dart';
+import '../../controllers/entitlement_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../auth/auth_widgets.dart';
 
@@ -60,6 +61,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
     final scheme = Theme.of(context).colorScheme;
+    final premium = ref.watch(isPremiumProvider);
     return PopScope(
       canPop: !_busy,
       child: AlertDialog(
@@ -72,6 +74,14 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(lang.tr('settings.deleteAccountMsg')),
+                if (premium) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    lang.tr('premium.deleteAccount.warning'),
+                    key: const Key('settings-delete-account-premium-warning'),
+                    style: TextStyle(color: scheme.error),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Text(lang.tr('settings.deleteAccountPasswordHint')),
                 const SizedBox(height: 16),
